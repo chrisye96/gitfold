@@ -9,12 +9,15 @@
   ],
   "scripts": {
     "dev:worker": "pnpm --filter worker dev",
-    "dev:web": "npx serve web",
+    "dev:web": "serve web",
     "build:worker": "pnpm --filter worker build",
     "deploy:worker": "pnpm --filter worker deploy",
     "deploy:web": "echo 'Deploy web/ to Cloudflare Pages via git push'"
   },
   "engines": {
     "node": ">=18"
+  },
+  "devDependencies": {
+    "serve": "^14.2.6"
   }
 }
