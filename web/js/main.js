@@ -14,7 +14,7 @@
 import { parseUrl, buildSnipUrl, formatRepoInfo, zipFilename } from './parse-url.js'
 import { fetchFiles } from './github.js'
 import { createZip, downloadBlob, formatBytes } from './zip.js'
-import { t } from './i18n.js'
+import { t, applyI18n } from './i18n.js'
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -160,8 +160,10 @@ function setState(newState, data = {}) {
 
     const elapsed = ((Date.now() - downloadStartTime) / 1000).toFixed(1)
     const fileCount = data.fileCount ?? 0
+    const size = formatBytes(data.totalBytes ?? 0)
     resultSummary.textContent = t('success.summary', {
       count: fileCount,
+      size,
       seconds: elapsed,
     })
 
@@ -242,6 +244,8 @@ async function startDownload() {
       announce(t('loading.progress', { done, total }))
     })
 
+    const totalBytes = files.reduce((sum, f) => sum + f.data.byteLength, 0)
+
     progressText.textContent = t('loading.zipping')
     announce(t('loading.zipping'))
 
@@ -251,7 +255,7 @@ async function startDownload() {
     })
 
     setProgress(100)
-    setState('success', { fileCount })
+    setState('success', { fileCount, totalBytes })
 
   } catch (err) {
     setState('error', {
@@ -355,16 +359,5 @@ if (savedToken) tokenInput.value = savedToken
 // Check if navigated directly to a gitsnip path URL
 checkUrlPath()
 
-// Localize static strings in HTML that have data-i18n attributes
-document.querySelectorAll('[data-i18n]').forEach(el => {
-  const key = el.getAttribute('data-i18n')
-  if (key) el.textContent = t(key)
-})
-document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
-  const key = el.getAttribute('data-i18n-placeholder')
-  if (key) /** @type {HTMLInputElement} */ (el).placeholder = t(key)
-})
-document.querySelectorAll('[data-i18n-label]').forEach(el => {
-  const key = el.getAttribute('data-i18n-label')
-  if (key) el.setAttribute('aria-label', t(key))
-})
+// Localize all static strings in HTML (data-i18n, data-i18n-placeholder, data-i18n-label)
+applyI18n()

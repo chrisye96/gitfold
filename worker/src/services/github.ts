@@ -106,6 +106,10 @@ export async function fetchTree(
     truncated: boolean
   }
 
+  if (treeData.truncated) {
+    console.warn('[GitSnip] GitHub truncated the tree (>100k files). Some files may be missing.')
+  }
+
   // Filter: blobs under target path, exclude .git
   const prefix = info.path ? info.path + '/' : ''
   const entries: TreeEntry[] = treeData.tree
@@ -120,7 +124,7 @@ export async function fetchTree(
   if (entries.length === 0) {
     throw errorResponse(
       404, 'NOT_FOUND',
-      `No files found at path '${info.path}'.`,
+      `No files found in '${info.path || '/'}'. Check that the path exists.`,
       'Check that the directory exists and contains files.',
     )
   }

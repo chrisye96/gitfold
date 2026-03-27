@@ -59,7 +59,7 @@ const locales = {
 
     // ── Success state ─────────────────────────────────────────────────
     'success.ready': '✅ Download ready',
-    'success.summary': 'Downloaded {count} files in {seconds}s',
+    'success.summary': 'Downloaded {count} files ({size}) in {seconds}s',
     'success.download_zip': '↓ Download ZIP',
     'success.workflow_hint': 'Use this in your workflow:',
 
@@ -124,4 +124,30 @@ export function getLocale() {
 /** All available locale codes */
 export function getAvailableLocales() {
   return Object.keys(locales)
+}
+
+/**
+ * Apply i18n translations to all elements with data-i18n* attributes.
+ * Call once after the DOM is ready.
+ *
+ * Supported attributes:
+ *   data-i18n             → sets element.textContent
+ *   data-i18n-placeholder → sets input.placeholder
+ *   data-i18n-label       → sets aria-label attribute
+ *
+ * @param {Document | Element} [root] - Scope to search within (default: document)
+ */
+export function applyI18n(root = document) {
+  root.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n')
+    if (key) el.textContent = t(key)
+  })
+  root.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    const key = el.getAttribute('data-i18n-placeholder')
+    if (key) /** @type {HTMLInputElement} */ (el).placeholder = t(key)
+  })
+  root.querySelectorAll('[data-i18n-label]').forEach(el => {
+    const key = el.getAttribute('data-i18n-label')
+    if (key) el.setAttribute('aria-label', t(key))
+  })
 }

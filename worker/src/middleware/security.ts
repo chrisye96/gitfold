@@ -13,7 +13,7 @@
 
 import type { Context, Next } from 'hono'
 import type { Env, RepoInfo } from '../types.js'
-import { parseGithubUrl } from '../lib/parse-url.js'
+import { parseGithubUrl } from '@shared/parse-url.js'
 
 // ─── Limits ──────────────────────────────────────────────────────────────────
 

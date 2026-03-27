@@ -3,7 +3,8 @@
  * Used by both web frontend (browser) and worker backend (Cloudflare Workers)
  */
 
-export type ProviderName = 'github' | 'gitlab' | 'bitbucket'
+// TODO(Phase 3): add 'gitlab' | 'bitbucket' when multi-provider support lands
+export type ProviderName = 'github'
 
 export interface RepoInfo {
   provider: ProviderName
@@ -22,6 +23,7 @@ export interface TreeEntry {
   sha: string
 }
 
+// TODO(Phase 3): implement concrete providers (GitLab, Bitbucket) against this interface
 export interface Provider {
   name: ProviderName
   /** Parse a URL and extract repo info. Returns null if URL is not for this provider. */
@@ -32,6 +34,7 @@ export interface Provider {
   getRawUrl(entry: TreeEntry, info: RepoInfo): string
 }
 
+// TODO(Phase 2): used by CLI and npm library — not yet consumed by web or Worker
 export interface SnipOptions {
   url: string
   token?: string

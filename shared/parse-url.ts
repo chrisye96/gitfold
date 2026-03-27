@@ -1,11 +1,12 @@
 /**
- * GitSnip Worker — URL Parser (TypeScript)
+ * GitSnip — URL Parser (TypeScript, shared)
  *
- * Mirrors web/js/parse-url.js for use inside the Worker bundle.
- * Kept in sync manually; the web version is the source of truth for browser usage.
+ * Single source of truth for URL parsing logic used by the Worker bundle.
+ * The browser (web/js/parse-url.js) is a plain-JS mirror of this file.
+ * When changing parsing logic, update both files.
  */
 
-import type { RepoInfo } from '../types.js'
+import type { RepoInfo } from './types.js'
 
 /**
  * Parse a GitHub directory URL into a RepoInfo object.
