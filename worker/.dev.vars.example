@@ -1,0 +1,4 @@
+# Copy this file to .dev.vars for local development
+# .dev.vars is gitignored — never commit real tokens
+
+GITHUB_TOKEN=ghp_your_personal_access_token_here

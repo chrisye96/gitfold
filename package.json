@@ -1,0 +1,20 @@
+{
+  "name": "gitsnip",
+  "version": "0.1.0",
+  "description": "Download any GitHub directory as a zip — instantly",
+  "private": true,
+  "workspaces": [
+    "worker",
+    "cli"
+  ],
+  "scripts": {
+    "dev:worker": "pnpm --filter worker dev",
+    "dev:web": "npx serve web",
+    "build:worker": "pnpm --filter worker build",
+    "deploy:worker": "pnpm --filter worker deploy",
+    "deploy:web": "echo 'Deploy web/ to Cloudflare Pages via git push'"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

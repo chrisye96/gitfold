@@ -1,0 +1,23 @@
+# GitSnip
+> Download any GitHub subdirectory as a zip. No git clone needed.
+
+## What it does
+Given a GitHub directory URL, GitSnip downloads all files in that directory and returns them as a zip file.
+
+## Web UI
+Visit https://gitsnip.cc and paste any GitHub tree URL.
+Or: replace `github.com` with `gitsnip.cc` in the URL bar and press Enter.
+
+## API
+- Download zip: GET https://api.gitsnip.cc/v1/download?url={githubUrl}
+- Get file info: GET https://api.gitsnip.cc/v1/info?url={githubUrl}
+- Auth header:   X-GitHub-Token: {personalAccessToken}  (optional, increases rate limit)
+
+## URL Format
+https://gitsnip.cc/{owner}/{repo}/tree/{branch}/{path}
+
+## Docs
+https://gitsnip.cc/docs
+
+## Full API docs for AI
+https://gitsnip.cc/llms-full.txt
