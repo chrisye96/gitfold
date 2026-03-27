@@ -1,0 +1,180 @@
+# GitSnip — Full API Reference for AI
+> Download any GitHub subdirectory as a zip. No git clone needed.
+> Version: 1.0.0 | Updated: 2026-03
+
+---
+
+## What is GitSnip?
+
+GitSnip is a web tool and API that downloads a specific subdirectory from any
+public GitHub repository and returns it as a zip file. It is designed to be
+easy for both humans and AI agents to use.
+
+Use cases:
+- Download a plugin, template, or component from a large repo
+- Avoid cloning an entire repository just to get one folder
+- Programmatically fetch code snippets in scripts or AI workflows
+
+---
+
+## Web Interface
+
+URL: https://gitsnip.cc
+
+### Method 1: Paste and download
+1. Open https://gitsnip.cc
+2. Paste a GitHub tree URL
+3. Click Download
+
+### Method 2: URL replacement (fastest)
+Replace `github.com` with `gitsnip.cc` in any GitHub tree URL:
+  Input:  https://github.com/owner/repo/tree/branch/path
+  Output: https://gitsnip.cc/owner/repo/tree/branch/path
+
+Opening the gitsnip.cc URL in a browser triggers an immediate download.
+
+---
+
+## REST API
+
+Base URL: https://api.gitsnip.cc
+
+### Authentication (optional but recommended)
+Header: X-GitHub-Token: ghp_your_personal_access_token
+
+Without token: 60 GitHub API requests/hour per IP
+With token:  5,000 GitHub API requests/hour
+
+---
+
+### GET /v1/download
+
+Downloads a GitHub directory as a zip file.
+
+Parameters:
+  url  (required)  URL-encoded GitHub tree URL
+
+Returns: application/zip binary stream
+
+Examples:
+
+  # Basic download
+  GET https://api.gitsnip.cc/v1/download?url=https%3A%2F%2Fgithub.com%2Fanthropics%2Fclaude-code%2Ftree%2Fmain%2Fplugins%2Ffeature-dev
+
+  # curl
+  curl -L "https://api.gitsnip.cc/v1/download?url=https%3A%2F%2Fgithub.com%2Fanthropics%2Fclaude-code%2Ftree%2Fmain%2Fplugins%2Ffeature-dev" -o feature-dev.zip
+
+  # With token
+  curl -L -H "X-GitHub-Token: ghp_xxxx" "https://api.gitsnip.cc/v1/download?url=..." -o output.zip
+
+  # JavaScript fetch
+  const res = await fetch('https://api.gitsnip.cc/v1/download?url=' + encodeURIComponent(githubUrl))
+  const blob = await res.blob()
+
+  # Python
+  import requests, urllib.parse
+  url = 'https://github.com/anthropics/claude-code/tree/main/plugins/feature-dev'
+  r = requests.get('https://api.gitsnip.cc/v1/download', params={'url': url}, stream=True)
+  with open('feature-dev.zip', 'wb') as f:
+      f.write(r.content)
+
+---
+
+### GET /v1/info
+
+Returns metadata about a directory without downloading it.
+Useful for AI agents to inspect a directory before deciding to download.
+
+Parameters:
+  url  (required)  URL-encoded GitHub tree URL
+
+Returns: JSON
+
+  {
+    "provider": "github",
+    "owner": "anthropics",
+    "repo": "claude-code",
+    "branch": "main",
+    "path": "plugins/feature-dev",
+    "fileCount": 5,
+    "totalSize": 12840,
+    "files": [
+      { "path": "plugins/feature-dev/README.md", "size": 1204 },
+      { "path": "plugins/feature-dev/prompt.md", "size": 11636 }
+    ]
+  }
+
+Example:
+  curl "https://api.gitsnip.cc/v1/info?url=https%3A%2F%2Fgithub.com%2Fanthropics%2Fclaude-code%2Ftree%2Fmain%2Fplugins%2Ffeature-dev"
+
+---
+
+### GET /health
+
+Returns service status.
+
+  { "ok": true, "service": "gitsnip-worker", "version": "1.0.0" }
+
+---
+
+## Error Responses
+
+All errors return JSON:
+
+  {
+    "code":    "RATE_LIMITED",
+    "message": "GitHub API rate limit exceeded.",
+    "hint":    "Provide X-GitHub-Token header to get 5,000 requests/hour."
+  }
+
+Error codes:
+  INVALID_URL      400  Missing/invalid url param, or empty path
+  UNAUTHORIZED     401  GitHub token invalid or expired
+  NOT_FOUND        404  Repository, branch, or path not found
+  TOO_MANY_FILES   413  Directory contains >500 files
+  TOO_LARGE        413  Directory exceeds 100 MB
+  RATE_LIMITED     429  GitHub API rate limit exceeded
+  GITHUB_ERROR     502  GitHub API returned unexpected error
+  INTERNAL_ERROR   500  Unexpected server error
+
+---
+
+## Limits
+
+  Max files per request:  500
+  Max total size:         100 MB
+  Rate limit (no token):  20 requests/min/IP (Cloudflare) + 60 req/hour (GitHub)
+  Rate limit (with token):20 requests/min/IP (Cloudflare) + 5,000 req/hour (GitHub)
+
+---
+
+## URL Format Reference
+
+GitSnip accepts any GitHub tree URL:
+
+  https://github.com/{owner}/{repo}/tree/{branch}/{path}
+  https://github.com/{owner}/{repo}/tree/{branch}          (not supported — path required)
+
+The URL must point to a directory (tree), not a file (blob).
+
+Shareable GitSnip download links have the same structure, just with a different domain:
+  https://gitsnip.cc/{owner}/{repo}/tree/{branch}/{path}
+
+---
+
+## AI Agent Workflow Example
+
+1. User asks: "Download the feature-dev plugin from anthropics/claude-code"
+2. Agent calls /v1/info to verify the directory exists and check file count
+3. Agent generates a shareable link: https://gitsnip.cc/anthropics/claude-code/tree/main/plugins/feature-dev
+4. Agent presents the link to the user OR calls /v1/download to get the zip directly
+
+---
+
+## Human Documentation
+
+https://gitsnip.cc/docs
+
+## Short API docs for AI
+
+https://gitsnip.cc/llms.txt

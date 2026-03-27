@@ -1,0 +1,13 @@
+{
+  "name": "GitSnip",
+  "short_name": "GitSnip",
+  "description": "Download any GitHub directory as a zip — instantly",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0F0F1A",
+  "theme_color": "#0F0F1A",
+  "icons": [
+    { "src": "/favicon.svg", "type": "image/svg+xml", "sizes": "any" },
+    { "src": "/apple-touch-icon.png", "type": "image/png", "sizes": "180x180" }
+  ]
+}

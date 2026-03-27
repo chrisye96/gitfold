@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- ── SEO ────────────────────────────────────────────────────────────── -->
+  <title>GitSnip Docs — How to download any GitHub directory</title>
+  <meta name="description"
+        content="GitSnip documentation: web UI, URL trick, bookmarklet, REST API reference, CLI, and FAQ. Download any GitHub subdirectory as a zip." />
+  <meta name="keywords"
+        content="gitsnip docs, github directory download, gitsnip api, github zip api, download github folder" />
+  <link rel="canonical" href="https://gitsnip.cc/docs" />
+
+  <meta property="og:title"       content="GitSnip Docs" />
+  <meta property="og:description" content="Learn how to download any GitHub directory using GitSnip — web, API, CLI, and bookmarklet." />
+  <meta property="og:url"         content="https://gitsnip.cc/docs" />
+  <meta property="og:type"        content="website" />
+
+  <meta name="theme-color" content="#0F0F1A" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+
+  <!-- ── Styles ────────────────────────────────────────────────────────── -->
+  <link rel="stylesheet" href="/css/main.css" />
+  <style>
+    /* ── Docs-specific layout ───────────────────────────────────────────── */
+    .docs-layout {
+      display: flex;
+      gap: 0;
+      max-width: 900px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 2rem 1rem 4rem;
+      align-items: flex-start;
+    }
+
+    /* Sidebar */
+    .docs-sidebar {
+      width: 200px;
+      flex-shrink: 0;
+      position: sticky;
+      top: 5rem;
+      padding-right: 1.5rem;
+    }
+    .docs-sidebar nav { display: flex; flex-direction: column; gap: 0.125rem; }
+    .docs-sidebar a {
+      display: block;
+      padding: 0.3rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.8375rem;
+      color: var(--c-text-muted);
+      text-decoration: none;
+      transition: color var(--transition), background var(--transition);
+      border-left: 2px solid transparent;
+    }
+    .docs-sidebar a:hover {
+      color: var(--c-text);
+      background: var(--c-surface);
+      text-decoration: none;
+    }
+    .docs-sidebar a.active {
+      color: var(--c-primary);
+      border-left-color: var(--c-primary);
+      background: rgba(245,158,11,.06);
+    }
+    .docs-sidebar .section-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--c-text-muted);
+      padding: 0.75rem 0.75rem 0.25rem;
+    }
+
+    /* Content */
+    .docs-content {
+      flex: 1;
+      min-width: 0;
+    }
+    .docs-content h1 {
+      font-size: 1.75rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      margin-bottom: 0.5rem;
+      color: var(--c-text);
+    }
+    .docs-content h2 {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--c-text);
+      margin: 2.5rem 0 0.75rem;
+      padding-top: 0.5rem;
+      border-top: 1px solid var(--c-border);
+      scroll-margin-top: 5rem;
+    }
+    .docs-content h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--c-text);
+      margin: 1.5rem 0 0.5rem;
+      scroll-margin-top: 5rem;
+    }
+    .docs-content p { color: var(--c-text-muted); margin-bottom: 0.875rem; line-height: 1.7; }
+    .docs-content ul, .docs-content ol {
+      color: var(--c-text-muted);
+      padding-left: 1.5rem;
+      margin-bottom: 0.875rem;
+    }
+    .docs-content li { margin-bottom: 0.3rem; line-height: 1.65; }
+    .docs-content code {
+      font-family: var(--font-mono);
+      font-size: 0.82em;
+      background: var(--c-surface-2);
+      border: 1px solid var(--c-border);
+      padding: 0.1em 0.35em;
+      border-radius: 4px;
+      color: var(--c-info);
+    }
+    .docs-content pre {
+      background: var(--c-surface);
+      border: 1px solid var(--c-border);
+      border-radius: 10px;
+      padding: 1rem 1.125rem;
+      overflow-x: auto;
+      margin: 0.875rem 0;
+    }
+    .docs-content pre code {
+      background: none;
+      border: none;
+      padding: 0;
+      font-size: 0.8375rem;
+      color: var(--c-text);
+    }
+    .docs-content table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0;
+      font-size: 0.875rem;
+    }
+    .docs-content th, .docs-content td {
+      text-align: left;
+      padding: 0.5rem 0.875rem;
+      border-bottom: 1px solid var(--c-border);
+    }
+    .docs-content th { color: var(--c-text-muted); font-weight: 600; font-size: 0.8rem; }
+    .docs-content td { color: var(--c-text-muted); }
+
+    /* Bookmarklet button */
+    .bookmarklet-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.6rem 1.1rem;
+      background: var(--c-primary);
+      color: #000;
+      font-weight: 700;
+      font-size: 0.9rem;
+      border-radius: 8px;
+      text-decoration: none;
+      cursor: grab;
+      user-select: none;
+      transition: background 150ms;
+    }
+    .bookmarklet-btn:hover { background: var(--c-primary-hover); text-decoration: none; color: #000; }
+    .bookmarklet-hint {
+      margin-top: 0.5rem;
+      font-size: 0.8rem;
+      color: var(--c-text-muted);
+    }
+
+    /* Endpoint block */
+    .endpoint {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .method {
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 0.2em 0.5em;
+      border-radius: 4px;
+      background: rgba(245,158,11,.15);
+      color: var(--c-primary);
+    }
+    .endpoint-path {
+      font-family: var(--font-mono);
+      font-size: 0.875rem;
+      color: var(--c-text);
+    }
+
+    /* Callout boxes */
+    .callout {
+      padding: 0.875rem 1rem;
+      border-radius: 8px;
+      margin: 1rem 0;
+      font-size: 0.875rem;
+    }
+    .callout-tip  { background: rgba(245,158,11,.07); border-left: 3px solid var(--c-primary); color: var(--c-text-muted); }
+    .callout-info { background: rgba(56,189,248,.07); border-left: 3px solid var(--c-info);    color: var(--c-text-muted); }
+    .callout strong { color: var(--c-text); }
+
+    /* Responsive */
+    @media (max-width: 640px) {
+      .docs-layout  { flex-direction: column; padding: 1rem 0.75rem 3rem; }
+      .docs-sidebar { width: 100%; position: static; padding-right: 0; padding-bottom: 1rem;
+                      border-bottom: 1px solid var(--c-border); margin-bottom: 1.5rem; }
+      .docs-sidebar nav { flex-direction: row; flex-wrap: wrap; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ── Header ───────────────────────────────────────────────────────────── -->
+  <header class="site-header" role="banner">
+    <a href="/" class="site-logo" aria-label="GitSnip home">
+      <span class="logo-icon" aria-hidden="true">✂</span>
+      <span>GitSnip</span>
+    </a>
+    <nav class="site-nav" aria-label="Main navigation">
+      <a href="/docs" aria-current="page">Docs</a>
+      <a href="https://api.gitsnip.cc/docs" target="_blank" rel="noopener noreferrer">API</a>
+      <a href="https://github.com/gitsnip/gitsnip" target="_blank" rel="noopener noreferrer">GitHub</a>
+    </nav>
+  </header>
+
+  <!-- ── Docs layout ──────────────────────────────────────────────────────── -->
+  <div class="docs-layout">
+
+    <!-- ── Sidebar ──────────────────────────────────────────────────────── -->
+    <aside class="docs-sidebar" aria-label="Documentation sections">
+      <nav aria-label="Docs navigation">
+        <div class="section-label">Getting started</div>
+        <a href="#quickstart">Quick start</a>
+
+        <div class="section-label">Usage</div>
+        <a href="#web-ui">Web UI</a>
+        <a href="#url-trick">URL trick</a>
+        <a href="#bookmarklet">Bookmarklet</a>
+        <a href="#share-link">Share link</a>
+
+        <div class="section-label">Developers</div>
+        <a href="#api">API reference</a>
+        <a href="#cli">CLI <span style="font-size:.7rem;color:var(--c-text-muted)">(soon)</span></a>
+        <a href="#library">Library <span style="font-size:.7rem;color:var(--c-text-muted)">(soon)</span></a>
+
+        <div class="section-label">AI</div>
+        <a href="#ai">AI usage</a>
+
+        <div class="section-label">Help</div>
+        <a href="#faq">FAQ</a>
+      </nav>
+    </aside>
+
+    <!-- ── Content ──────────────────────────────────────────────────────── -->
+    <main class="docs-content" id="main-content">
+
+      <h1>GitSnip Documentation</h1>
+      <p>Download any GitHub subdirectory as a zip — no <code>git clone</code>, no login required.</p>
+
+      <!-- ────────────────────── QUICK START ───────────────────────────── -->
+      <h2 id="quickstart">Quick start</h2>
+      <p>Three steps, 30 seconds:</p>
+      <ol>
+        <li>Find a GitHub directory you want, e.g.<br>
+            <code>https://github.com/anthropics/claude-code/tree/main/plugins/feature-dev</code></li>
+        <li>Go to <a href="/">gitsnip.cc</a> and paste the URL.</li>
+        <li>Click <strong>↓ Download</strong> — your browser saves the zip.</li>
+      </ol>
+
+      <div class="callout callout-tip">
+        <strong>Even faster:</strong> Just replace <code>github.com</code> with
+        <code>gitsnip.cc</code> in your browser's URL bar and press Enter.
+        The download starts immediately.
+      </div>
+
+      <!-- ────────────────────── WEB UI ────────────────────────────────── -->
+      <h2 id="web-ui">Web UI</h2>
+      <p>The main page at <a href="/">gitsnip.cc</a> accepts any GitHub tree URL.</p>
+      <p>Supported URL formats:</p>
+      <pre><code>https://github.com/owner/repo/tree/branch/path/to/dir
+https://github.com/owner/repo/tree/branch          (entire repo root)
+github.com/owner/repo/tree/branch/path             (no https:// is fine)</code></pre>
+
+      <h3>Optional: GitHub Token</h3>
+      <p>Without a token, the GitHub API allows <strong>60 requests/hour per IP</strong>.
+         That's enough for most casual use. If you hit the limit, or need
+         to access private repos, add a Personal Access Token (PAT):</p>
+      <ol>
+        <li>Click <strong>⚙ Settings</strong> at the bottom of the tool card.</li>
+        <li>Paste your token (read-only <code>public_repo</code> scope is sufficient).</li>
+        <li>The token is stored in your browser's localStorage — never sent to our servers.</li>
+      </ol>
+      <p>
+        <a href="https://github.com/settings/tokens/new?scopes=public_repo&description=GitSnip"
+           target="_blank" rel="noopener noreferrer">Generate a token ↗</a>
+      </p>
+
+      <!-- ────────────────────── URL TRICK ─────────────────────────────── -->
+      <h2 id="url-trick">URL trick (fastest method)</h2>
+      <p>Replace <code>github.com</code> with <code>gitsnip.cc</code> in any GitHub tree URL:</p>
+      <pre><code>Before: https://github.com/anthropics/claude-code/tree/main/plugins
+After:  https://gitsnip.cc/anthropics/claude-code/tree/main/plugins</code></pre>
+      <p>Press Enter — the download begins immediately without any extra clicks.</p>
+
+      <!-- ────────────────────── BOOKMARKLET ───────────────────────────── -->
+      <h2 id="bookmarklet">Bookmarklet</h2>
+      <p>Drag the button below to your browser's bookmarks bar.
+         Then, on any GitHub directory page, click the bookmark to trigger an instant download.</p>
+
+      <a class="bookmarklet-btn"
+         href="javascript:window.location.href=window.location.href.replace('github.com','gitsnip.cc')"
+         title="Drag me to your bookmarks bar"
+         draggable="true"
+         role="link"
+         aria-label="GitSnip bookmarklet — drag to bookmarks bar">
+        ✂ GitSnip
+      </a>
+      <p class="bookmarklet-hint">
+        ⬆ Drag this button to your bookmarks bar. One click = instant download on any GitHub tree page.
+      </p>
+      <div class="callout callout-info">
+        <strong>Note:</strong> This is a bookmarklet — a tiny piece of JavaScript saved as a bookmark.
+        It works in Chrome, Firefox, Edge, and Safari. No extension required.
+      </div>
+
+      <!-- ────────────────────── SHARE LINK ────────────────────────────── -->
+      <h2 id="share-link">Shareable download links</h2>
+      <p>Any GitSnip URL is a permanent, shareable download link.
+         After downloading, click <strong>⎘ Copy link</strong> to get the link.
+         Anyone who opens it will immediately get the zip download.</p>
+      <pre><code>https://gitsnip.cc/anthropics/claude-code/tree/main/plugins/feature-dev</code></pre>
+      <p>This link format mirrors GitHub's tree URL — just with a different domain.</p>
+
+      <!-- ────────────────────── API ───────────────────────────────────── -->
+      <h2 id="api">API reference</h2>
+      <p>Base URL: <code>https://api.gitsnip.cc</code></p>
+
+      <h3>Authentication (optional)</h3>
+      <p>Pass your GitHub Personal Access Token to avoid rate limits:</p>
+      <pre><code>X-GitHub-Token: ghp_your_token_here</code></pre>
+
+      <h3>Download a directory</h3>
+      <div class="endpoint">
+        <span class="method">GET</span>
+        <span class="endpoint-path">/v1/download</span>
+      </div>
+      <table>
+        <thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>url</code></td><td>string (required)</td><td>URL-encoded GitHub tree URL</td></tr>
+        </tbody>
+      </table>
+      <p>Returns: <code>application/zip</code> file stream with
+         <code>Content-Disposition: attachment; filename="dirname.zip"</code></p>
+      <pre><code>curl -L "https://api.gitsnip.cc/v1/download?url=https%3A%2F%2Fgithub.com%2Fanthropics%2Fclaude-code%2Ftree%2Fmain%2Fplugins%2Ffeature-dev" \
+     -o feature-dev.zip
+
+# With token:
+curl -L -H "X-GitHub-Token: ghp_xxxx" \
+     "https://api.gitsnip.cc/v1/download?url=..." \
+     -o feature-dev.zip</code></pre>
+
+      <h3>Get directory info (no download)</h3>
+      <div class="endpoint">
+        <span class="method">GET</span>
+        <span class="endpoint-path">/v1/info</span>
+      </div>
+      <table>
+        <thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>url</code></td><td>string (required)</td><td>URL-encoded GitHub tree URL</td></tr>
+        </tbody>
+      </table>
+      <p>Returns JSON:</p>
+      <pre><code>{
+  "provider": "github",
+  "owner": "anthropics",
+  "repo": "claude-code",
+  "branch": "main",
+  "path": "plugins/feature-dev",
+  "fileCount": 5,
+  "totalSize": 12840,
+  "files": [
+    { "path": "plugins/feature-dev/README.md", "size": 1204 },
+    { "path": "plugins/feature-dev/prompt.md", "size": 11636 }
+  ]
+}</code></pre>
+
+      <h3>Error responses</h3>
+      <table>
+        <thead><tr><th>Status</th><th>Code</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><code>400</code></td><td><code>INVALID_URL</code></td><td>URL is not a valid GitHub tree URL, or path is empty</td></tr>
+          <tr><td><code>404</code></td><td><code>NOT_FOUND</code></td><td>Repository, branch, or path does not exist</td></tr>
+          <tr><td><code>413</code></td><td><code>TOO_LARGE</code></td><td>Directory exceeds size/file-count limits</td></tr>
+          <tr><td><code>429</code></td><td><code>RATE_LIMITED</code></td><td>GitHub API rate limit exceeded</td></tr>
+          <tr><td><code>502</code></td><td><code>GITHUB_ERROR</code></td><td>GitHub API returned an unexpected error</td></tr>
+        </tbody>
+      </table>
+      <pre><code>// All errors follow this format:
+{
+  "code": "RATE_LIMITED",
+  "message": "GitHub API rate limit exceeded.",
+  "hint": "Provide X-GitHub-Token to get 5,000 requests/hour."
+}</code></pre>
+
+      <!-- ────────────────────── CLI ────────────────────────────────────── -->
+      <h2 id="cli">CLI <em style="font-size:.75rem;color:var(--c-text-muted);font-weight:400">(coming in Phase 2)</em></h2>
+      <pre><code># Install
+npm install -g gitsnip
+
+# Basic usage
+gitsnip https://github.com/anthropics/claude-code/tree/main/plugins/feature-dev
+
+# Options
+gitsnip &lt;url&gt; --output ./my-dir   # extract to directory
+gitsnip &lt;url&gt; --info              # show file list without downloading
+gitsnip &lt;url&gt; --token ghp_xxxx   # use GitHub token</code></pre>
+
+      <!-- ────────────────────── LIBRARY ───────────────────────────────── -->
+      <h2 id="library">npm Library <em style="font-size:.75rem;color:var(--c-text-muted);font-weight:400">(coming in Phase 2)</em></h2>
+      <pre><code>import { snip, info } from 'gitsnip'
+
+// Download as Buffer
+const zip = await snip('https://github.com/anthropics/claude-code/tree/main/plugins/feature-dev')
+await fs.writeFile('./output.zip', zip)
+
+// Get file info
+const { fileCount, totalSize, files } = await info('https://github.com/...')
+
+// With options
+const zip = await snip({
+  url: 'https://github.com/...',
+  token: process.env.GITHUB_TOKEN,
+  exclude: ['.git', '*.test.js'],
+  onProgress: (done, total) =&gt; console.log(`${done}/${total}`)
+})</code></pre>
+
+      <!-- ────────────────────── AI ─────────────────────────────────────── -->
+      <h2 id="ai">AI usage</h2>
+      <p>GitSnip is designed to be AI-friendly. The machine-readable docs are at:</p>
+      <ul>
+        <li><a href="/llms.txt"><code>gitsnip.cc/llms.txt</code></a> — concise summary</li>
+        <li><a href="/llms-full.txt"><code>gitsnip.cc/llms-full.txt</code></a> — full API reference</li>
+      </ul>
+      <p>Example: tell Claude or ChatGPT:</p>
+      <pre><code>"Download the plugins/feature-dev directory from
+https://github.com/anthropics/claude-code
+Use the GitSnip API at https://gitsnip.cc/llms.txt"</code></pre>
+
+      <!-- ────────────────────── FAQ ────────────────────────────────────── -->
+      <h2 id="faq">FAQ</h2>
+
+      <h3>Why is the download slow?</h3>
+      <p>For web UI downloads, your browser fetches each file individually from
+         <code>raw.githubusercontent.com</code>, then zips them locally.
+         Large directories (100+ files) take longer. For best performance,
+         use the API endpoint which streams a pre-built zip.</p>
+
+      <h3>Can I download private repositories?</h3>
+      <p>Private repo support requires OAuth and is planned for Phase 3.
+         For now, only public repositories are supported.</p>
+
+      <h3>I hit the GitHub rate limit. What do I do?</h3>
+      <p>Add a GitHub Personal Access Token in the Settings panel (⚙).
+         A token increases your limit from 60 to 5,000 requests/hour.
+         <a href="https://github.com/settings/tokens/new?scopes=public_repo&description=GitSnip"
+            target="_blank" rel="noopener noreferrer">Generate one here ↗</a>
+      </p>
+
+      <h3>Is there a file size limit?</h3>
+      <p>The API endpoint has a 100 MB / 500 files limit per request.
+         Web UI downloads are limited by your browser's available memory.
+         For very large directories, use <code>git sparse-checkout</code> instead.</p>
+
+      <h3>Can I self-host GitSnip?</h3>
+      <p>Yes. GitSnip is open source (MIT). Docker support is coming in Phase 2.
+         See the <a href="https://github.com/gitsnip/gitsnip" target="_blank" rel="noopener noreferrer">GitHub repo</a>
+         for setup instructions.</p>
+
+      <h3>Is my GitHub token safe?</h3>
+      <p>For web UI use: tokens are stored in your browser's localStorage only — they never reach our servers.
+         For API use: tokens are passed via HTTPS and used only for the duration of the request.</p>
+
+    </main><!-- /docs-content -->
+  </div><!-- /docs-layout -->
+
+  <!-- ── Footer ────────────────────────────────────────────────────────────── -->
+  <footer class="site-footer" role="contentinfo">
+    <span>Made with ♥ for developers</span>
+    <nav class="footer-links" aria-label="Footer navigation">
+      <a href="/">Home</a>
+      <a href="https://api.gitsnip.cc/docs" target="_blank" rel="noopener noreferrer">API</a>
+      <a href="https://github.com/gitsnip/gitsnip" target="_blank" rel="noopener noreferrer">GitHub</a>
+      <a href="/llms.txt">llms.txt</a>
+    </nav>
+  </footer>
+
+  <!-- Highlight active sidebar link on scroll -->
+  <script>
+    const sections = document.querySelectorAll('h2[id], h3[id]')
+    const navLinks = document.querySelectorAll('.docs-sidebar a')
+    const observer = new IntersectionObserver(
+      entries => {
+        entries.forEach(e => {
+          if (e.isIntersecting) {
+            navLinks.forEach(a => {
+              a.classList.toggle('active', a.getAttribute('href') === '#' + e.target.id)
+            })
+          }
+        })
+      },
+      { rootMargin: '-20% 0px -70% 0px' }
+    )
+    sections.forEach(s => observer.observe(s))
+  </script>
+
+</body>
+</html>
