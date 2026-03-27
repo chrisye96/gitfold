@@ -64,10 +64,7 @@
   <link rel="stylesheet" href="/css/main.css" />
 
   <!-- ── JSZip (browser zip, loaded before main.js) ───────────────────── -->
-  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"
-          crossorigin="anonymous"
-          integrity="sha384-0N3L0tnWX6n2lZRuZ91VW5bfFJg6owsEScEHANAH6yjJ5GHhk6KFQVGQB1b8kZR"
-          defer></script>
+  <script src="/vendor/jszip.min.js" defer></script>
 </head>
 
 <body>
@@ -234,13 +231,21 @@
         </button>
         <div id="token-panel" class="token-panel" hidden>
           <label for="token-input" data-i18n="token.label">GitHub Token</label>
-          <input type="password"
-                 id="token-input"
-                 class="token-input"
-                 autocomplete="off"
-                 data-i18n-placeholder="token.placeholder"
-                 placeholder="ghp_xxxxxxxxxxxx  (optional)"
-                 aria-describedby="token-hint" />
+          <div class="token-input-row">
+            <input type="password"
+                   id="token-input"
+                   class="token-input"
+                   autocomplete="off"
+                   data-i18n-placeholder="token.placeholder"
+                   placeholder="ghp_xxxxxxxxxxxx  (optional)"
+                   aria-describedby="token-hint" />
+            <button id="token-clear-btn"
+                    type="button"
+                    class="btn-token-clear"
+                    data-i18n-label="token.clear"
+                    aria-label="Clear token"
+                    hidden>×</button>
+          </div>
           <p id="token-hint" class="token-hint" data-i18n="token.hint">
             Increases rate limit to 5,000 req/hour. Stored in your browser only.
             <a href="https://github.com/settings/tokens/new?scopes=public_repo&description=GitSnip"

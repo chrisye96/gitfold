@@ -41,6 +41,7 @@ const locales = {
     // ── Token panel ───────────────────────────────────────────────────
     'token.label': 'GitHub Token',
     'token.placeholder': 'ghp_xxxxxxxxxxxx  (optional)',
+    'token.clear': 'Clear saved token',
     'token.hint': 'Increases rate limit to 5,000 req/hour. Stored in your browser only.',
     'token.toggle': 'Settings',
 

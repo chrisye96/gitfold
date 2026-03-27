@@ -12,12 +12,14 @@
     "dev:web": "serve web",
     "build:worker": "pnpm --filter worker build",
     "deploy:worker": "pnpm --filter worker deploy",
-    "deploy:web": "echo 'Deploy web/ to Cloudflare Pages via git push'"
+    "deploy:web": "echo 'Deploy web/ to Cloudflare Pages via git push'",
+    "copy-vendors": "node -e \"const fs=require('fs');fs.mkdirSync('web/vendor',{recursive:true});fs.copyFileSync('node_modules/jszip/dist/jszip.min.js','web/vendor/jszip.min.js');console.log('vendors copied')\""
   },
   "engines": {
     "node": ">=18"
   },
   "devDependencies": {
+    "jszip": "^3.10.1",
     "serve": "^14.2.6"
   }
 }

@@ -50,6 +50,7 @@ const copyLinkBtn   = /** @type {HTMLButtonElement} */ (document.getElementById(
 const tokenInput    = /** @type {HTMLInputElement}  */ (document.getElementById('token-input'))
 const tokenToggle   = /** @type {HTMLButtonElement} */ (document.getElementById('token-toggle'))
 const tokenPanel    = /** @type {HTMLElement}       */ (document.getElementById('token-panel'))
+const tokenClearBtn = /** @type {HTMLButtonElement} */ (document.getElementById('token-clear-btn'))
 const detectedBox   = /** @type {HTMLElement}       */ (document.getElementById('detected-box'))
 const detectedLabel = /** @type {HTMLElement}       */ (document.getElementById('detected-label'))
 const progressBar   = /** @type {HTMLElement}       */ (document.getElementById('progress-bar'))
@@ -80,10 +81,22 @@ function getToken() {
   return tokenInput.value.trim() || localStorage.getItem('gitsnip_token') || ''
 }
 
-/** Save token to localStorage when non-empty. */
+/** Save token to localStorage when non-empty; show/hide the clear button. */
 function persistToken(value) {
-  if (value) localStorage.setItem('gitsnip_token', value)
-  else localStorage.removeItem('gitsnip_token')
+  if (value) {
+    localStorage.setItem('gitsnip_token', value)
+    tokenClearBtn.hidden = false
+  } else {
+    localStorage.removeItem('gitsnip_token')
+    tokenClearBtn.hidden = true
+  }
+}
+
+/** Clear the saved token from input and localStorage. */
+function clearToken() {
+  tokenInput.value = ''
+  persistToken('')
+  tokenInput.focus()
 }
 
 /** Check if the user prefers reduced motion. */
@@ -344,6 +357,7 @@ clearBtn.addEventListener('click', () => {
 
 tokenToggle.addEventListener('click', toggleTokenPanel)
 tokenInput.addEventListener('change', () => persistToken(tokenInput.value.trim()))
+tokenClearBtn.addEventListener('click', clearToken)
 
 // Close token panel on Escape
 tokenPanel.addEventListener('keydown', (e) => {
@@ -352,9 +366,12 @@ tokenPanel.addEventListener('keydown', (e) => {
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 
-// Restore saved token
+// Restore saved token and show clear button if one exists
 const savedToken = localStorage.getItem('gitsnip_token')
-if (savedToken) tokenInput.value = savedToken
+if (savedToken) {
+  tokenInput.value = savedToken
+  tokenClearBtn.hidden = false
+}
 
 // Check if navigated directly to a gitsnip path URL
 checkUrlPath()
