@@ -263,9 +263,10 @@ async function startDownload() {
     announce(t('loading.zipping'))
 
     zipName = zipFilename(info)
+    const sourceUrl = `https://github.com/${info.owner}/${info.repo}/tree/${info.branch}/${info.path}`
     zipBlob = await createZip(files, info.path, (pct) => {
       setProgress(85 + pct * 0.15)
-    })
+    }, sourceUrl)
 
     setProgress(100)
     setState('success', { fileCount, totalBytes })

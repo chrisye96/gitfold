@@ -32,9 +32,10 @@ api.get('/download', async (c) => {
     // 2. Fetch all file contents from raw.githubusercontent.com
     const files = await fetchAllFiles(tree, info)
 
-    // 3. Create zip
-    const name    = zipFilename(info.path, info.repo)
-    const zipData = createZip(files, info.path)
+    // 3. Create zip (include .gitsnip attribution file)
+    const name      = zipFilename(info.path, info.repo)
+    const sourceUrl = `https://github.com/${info.owner}/${info.repo}/tree/${info.branch}/${info.path}`
+    const zipData   = createZip(files, info.path, sourceUrl)
 
     // 4. Return zip response with CORS headers
     return zipResponse(zipData, name, corsHeaders())

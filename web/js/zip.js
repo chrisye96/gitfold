@@ -7,16 +7,36 @@
  */
 
 /**
+ * Build the content of the .gitsnip attribution file.
+ *
+ * @param {string} sourceUrl  - Original GitHub tree URL
+ * @returns {string}
+ */
+function attributionContent(sourceUrl) {
+  return [
+    'Downloaded with GitSnip — https://gitsnip.cc',
+    '',
+    `Source:     ${sourceUrl}`,
+    `Downloaded: ${new Date().toISOString()}`,
+    '',
+    'GitSnip lets you download any GitHub directory as a zip.',
+    'No git clone needed. Visit https://gitsnip.cc',
+  ].join('\n')
+}
+
+/**
  * Create a zip blob from an array of fetched files.
  * Strips the repo path prefix so the zip root is the target directory.
+ * Always includes a .gitsnip attribution file at the zip root.
  *
  * @param {Array<{ path: string, data: ArrayBuffer }>} files
- * @param {string} rootPath  - e.g. "plugins/feature-dev" — stripped from zip paths
+ * @param {string} rootPath   - e.g. "plugins/feature-dev" — stripped from zip paths
  * @param {(pct: number) => void} [onProgress]  - called with 0–100
+ * @param {string} [sourceUrl]  - Original GitHub URL for the attribution file
  * @returns {Promise<Blob>}
  */
-export async function createZip(files, rootPath, onProgress) {
-  // JSZip is loaded via CDN <script> tag in index.html
+export async function createZip(files, rootPath, onProgress, sourceUrl) {
+  // JSZip is loaded via <script> tag in index.html
   if (typeof JSZip === 'undefined') {
     throw new Error('JSZip is not loaded. Check your internet connection.')
   }
@@ -33,6 +53,9 @@ export async function createZip(files, rootPath, onProgress) {
     if (!zipPath) continue // skip if path becomes empty (shouldn't happen)
     zip.file(zipPath, data)
   }
+
+  // Attribution file — always added at zip root
+  zip.file('.gitsnip', attributionContent(sourceUrl || 'https://gitsnip.cc'))
 
   return zip.generateAsync(
     {
