@@ -1,0 +1,54 @@
+name: 'GitSnip'
+description: 'Download any GitHub directory as a zip or tar.gz archive'
+author: 'GitSnip'
+branding:
+  icon: 'download'
+  color: 'yellow'
+
+inputs:
+  url:
+    description: 'GitHub directory or repository URL to download'
+    required: true
+  output:
+    description: 'Output file path (default: auto-named based on directory)'
+    required: false
+    default: ''
+  format:
+    description: 'Archive format: zip or tar.gz'
+    required: false
+    default: 'zip'
+  token:
+    description: 'GitHub Personal Access Token (increases rate limit to 5,000 req/hour)'
+    required: false
+    default: ''
+
+outputs:
+  path:
+    description: 'Absolute path to the downloaded archive file'
+    value: ${{ steps.download.outputs.path }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Download with GitSnip
+      id: download
+      shell: bash
+      env:
+        GITSNIP_URL: ${{ inputs.url }}
+        GITSNIP_OUTPUT: ${{ inputs.output }}
+        GITSNIP_FORMAT: ${{ inputs.format }}
+        GITSNIP_TOKEN: ${{ inputs.token }}
+      run: |
+        set -euo pipefail
+
+        ARGS=("$GITSNIP_URL")
+        [ -n "$GITSNIP_OUTPUT" ]                && ARGS+=(--output "$GITSNIP_OUTPUT")
+        [ "$GITSNIP_FORMAT" = "tar.gz" ]        && ARGS+=(--format tar.gz)
+        [ -n "$GITSNIP_TOKEN" ]                 && ARGS+=(--token "$GITSNIP_TOKEN")
+
+        npx --yes gitsnip "${ARGS[@]}"
+
+        # Resolve output path for the action output
+        if [ -n "$GITSNIP_OUTPUT" ]; then
+          echo "path=$(realpath "$GITSNIP_OUTPUT")" >> "$GITHUB_OUTPUT"
+        fi

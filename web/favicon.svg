@@ -1,4 +1,18 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <rect width="32" height="32" rx="8" fill="#0F0F1A"/>
-  <text x="16" y="23" font-size="20" text-anchor="middle" fill="#F59E0B" font-family="system-ui,sans-serif">✂</text>
+<!--
+  GitSnip logo — source of truth for the logo shape.
+  Header <svg> in index.html / docs.html uses the same paths inline
+  (with stroke="currentColor") so CSS theming works there.
+  This file uses hardcoded colors + CSS media query for browser tab display.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+     stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+  <style>
+    path, line, polyline { stroke: #0969da; }
+    @media (prefers-color-scheme: dark) {
+      path, line, polyline { stroke: #2f81f7; }
+    }
+  </style>
+  <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+  <line x1="12" y1="11" x2="12" y2="17"/>
+  <polyline points="9 14 12 17 15 14"/>
 </svg>

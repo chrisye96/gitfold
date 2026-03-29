@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s https://api.gitsnip.cc/health)",
+      "Bash(node -e \"process.stdin.resume\\(\\);let d='''''''';process.stdin.on\\(''''data'''',c=>d+=c\\);process.stdin.on\\(''''end'''',\\(\\)=>console.log\\(JSON.parse\\(d\\)\\)\\)\")",
+      "Bash(where python:*)",
+      "Bash(where python3:*)",
+      "Read(//c/Users/**)",
+      "Bash(node cli/index.js https://github.com/facebook/react/tree/main/packages/react --token \"ghp_你的token\")",
+      "Bash(echo \"exit: $?\")"
+    ]
+  }
+}

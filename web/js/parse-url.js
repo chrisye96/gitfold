@@ -51,6 +51,7 @@ export function parseGithubUrl(url) {
 
   return {
     provider: /** @type {'github'} */ ('github'),
+    type:     /** @type {'folder'|'repo'} */ (path ? 'folder' : 'repo'),
     owner,
     repo,
     branch,
@@ -83,27 +84,38 @@ export function buildSnipUrl(info, base = 'https://gitsnip.cc') {
 }
 
 /**
- * Get a display label for repo info, e.g. "owner/repo → /path (branch)"
+ * Get a display label for repo info.
  *
- * @param {{ owner: string, repo: string, branch: string, path: string }} info
+ * @param {{ type: string, owner: string, repo: string, branch: string, path: string }} info
  * @returns {string}
  */
 export function formatRepoInfo(info) {
-  const pathLabel = info.path ? `/${info.path}` : '/'
-  return `${info.owner}/${info.repo} → ${pathLabel}  (${info.branch})`
+  if (info.type === 'repo') {
+    return `Repository · ${info.owner}/${info.repo}  (${info.branch})`
+  }
+  return `Folder · ${info.owner}/${info.repo}/${info.path}  (${info.branch})`
 }
 
 /**
  * Derive the zip filename from repo info.
- * Uses the last path segment, or the repo name if path is empty.
  *
- * @param {{ repo: string, path: string }} info
- * @returns {string}  e.g. "feature-dev.zip"
+ * @param {{ type: string, repo: string, path: string }} info
+ * @returns {string}
  */
 export function zipFilename(info) {
-  if (info.path) {
-    const last = info.path.split('/').pop()
-    return (last || info.repo) + '.zip'
-  }
-  return info.repo + '.zip'
+  if (info.type === 'repo') return `${info.repo}.zip`
+  const base = info.path.split('/').pop() || info.repo
+  return `${base} — gitsnip.cc.zip`
+}
+
+/**
+ * Build the GitHub archive download URL for a full repository.
+ *
+ * @param {{ owner: string, repo: string, branch: string }} info
+ * @param {'zip'|'tar.gz'} [format]
+ * @returns {string}
+ */
+export function buildArchiveUrl(info, format = 'zip') {
+  const ext = format === 'tar.gz' ? 'tar.gz' : 'zip'
+  return `https://github.com/${info.owner}/${info.repo}/archive/refs/heads/${info.branch}.${ext}`
 }

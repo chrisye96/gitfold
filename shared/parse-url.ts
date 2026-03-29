@@ -48,6 +48,7 @@ export function parseGithubUrl(url: string): RepoInfo | null {
 
   return {
     provider: 'github',
+    type: (path ? 'folder' : 'repo') as 'folder' | 'repo',
     owner,
     repo,
     branch,

@@ -80,17 +80,7 @@ export async function validateUrl(
     )
   }
 
-  // Block root-level download (no path specified)
-  if (!info.path) {
-    return errorResponse(
-      400,
-      'INVALID_URL',
-      'Downloading an entire repository is not supported.',
-      'Specify a subdirectory path, e.g. /tree/main/src',
-    )
-  }
-
-  // Store for downstream handlers
+  // Store for downstream handlers (repo type handled in route via redirect)
   c.set('repoInfo', info)
   return next()
 }

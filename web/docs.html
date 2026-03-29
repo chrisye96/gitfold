@@ -12,219 +12,40 @@
         content="gitsnip docs, github directory download, gitsnip api, github zip api, download github folder" />
   <link rel="canonical" href="https://gitsnip.cc/docs" />
 
-  <meta property="og:title"       content="GitSnip Docs" />
-  <meta property="og:description" content="Learn how to download any GitHub directory using GitSnip — web, API, CLI, and bookmarklet." />
-  <meta property="og:url"         content="https://gitsnip.cc/docs" />
+  <!-- ── Open Graph ──────────────────────────────────────────────────── -->
   <meta property="og:type"        content="website" />
+  <meta property="og:url"         content="https://gitsnip.cc/docs" />
+  <meta property="og:title"       content="GitSnip Docs — How to download any GitHub directory" />
+  <meta property="og:description" content="Learn how to download any GitHub directory using GitSnip — web, API, CLI, and bookmarklet." />
+  <meta property="og:image"       content="https://gitsnip.cc/og-image.png" />
+  <meta property="og:site_name"   content="GitSnip" />
 
-  <meta name="theme-color" content="#0F0F1A" />
+  <!-- ── Twitter Card ─────────────────────────────────────────────────── -->
+  <meta name="twitter:card"        content="summary_large_image" />
+  <meta name="twitter:site"        content="@gitsnip" />
+  <meta name="twitter:title"       content="GitSnip Docs — How to download any GitHub directory" />
+  <meta name="twitter:description" content="GitSnip documentation: web UI, URL trick, bookmarklet, REST API, CLI, and FAQ." />
+  <meta name="twitter:image"       content="https://gitsnip.cc/og-image.png" />
+
+  <!-- ── Theme / PWA ──────────────────────────────────────────────────── -->
+  <meta name="theme-color" content="#ffffff" />
+  <!-- Anti-FOUC: apply saved theme before first paint -->
+  <script>(function(){var t=localStorage.getItem('gitsnip-theme');if(t==='dark'||t==='light')document.documentElement.dataset.theme=t})()</script>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="icon" href="/favicon.ico" sizes="32x32" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <link rel="manifest" href="/site.webmanifest" />
 
   <!-- ── Styles ────────────────────────────────────────────────────────── -->
+  <link rel="stylesheet" href="/css/tokens.css" />
   <link rel="stylesheet" href="/css/main.css" />
-  <style>
-    /* ── Docs-specific layout ───────────────────────────────────────────── */
-    .docs-layout {
-      display: flex;
-      gap: 0;
-      max-width: 900px;
-      width: 100%;
-      margin: 0 auto;
-      padding: 2rem 1rem 4rem;
-      align-items: flex-start;
-    }
-
-    /* Sidebar */
-    .docs-sidebar {
-      width: 200px;
-      flex-shrink: 0;
-      position: sticky;
-      top: 5rem;
-      padding-right: 1.5rem;
-    }
-    .docs-sidebar nav { display: flex; flex-direction: column; gap: 0.125rem; }
-    .docs-sidebar a {
-      display: block;
-      padding: 0.3rem 0.75rem;
-      border-radius: 6px;
-      font-size: 0.8375rem;
-      color: var(--c-text-muted);
-      text-decoration: none;
-      transition: color var(--transition), background var(--transition);
-      border-left: 2px solid transparent;
-    }
-    .docs-sidebar a:hover {
-      color: var(--c-text);
-      background: var(--c-surface);
-      text-decoration: none;
-    }
-    .docs-sidebar a.active {
-      color: var(--c-primary);
-      border-left-color: var(--c-primary);
-      background: rgba(245,158,11,.06);
-    }
-    .docs-sidebar .section-label {
-      font-size: 0.7rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: var(--c-text-muted);
-      padding: 0.75rem 0.75rem 0.25rem;
-    }
-
-    /* Content */
-    .docs-content {
-      flex: 1;
-      min-width: 0;
-    }
-    .docs-content h1 {
-      font-size: 1.75rem;
-      font-weight: 800;
-      letter-spacing: -0.03em;
-      margin-bottom: 0.5rem;
-      color: var(--c-text);
-    }
-    .docs-content h2 {
-      font-size: 1.2rem;
-      font-weight: 700;
-      color: var(--c-text);
-      margin: 2.5rem 0 0.75rem;
-      padding-top: 0.5rem;
-      border-top: 1px solid var(--c-border);
-      scroll-margin-top: 5rem;
-    }
-    .docs-content h3 {
-      font-size: 1rem;
-      font-weight: 600;
-      color: var(--c-text);
-      margin: 1.5rem 0 0.5rem;
-      scroll-margin-top: 5rem;
-    }
-    .docs-content p { color: var(--c-text-muted); margin-bottom: 0.875rem; line-height: 1.7; }
-    .docs-content ul, .docs-content ol {
-      color: var(--c-text-muted);
-      padding-left: 1.5rem;
-      margin-bottom: 0.875rem;
-    }
-    .docs-content li { margin-bottom: 0.3rem; line-height: 1.65; }
-    .docs-content code {
-      font-family: var(--font-mono);
-      font-size: 0.82em;
-      background: var(--c-surface-2);
-      border: 1px solid var(--c-border);
-      padding: 0.1em 0.35em;
-      border-radius: 4px;
-      color: var(--c-info);
-    }
-    .docs-content pre {
-      background: var(--c-surface);
-      border: 1px solid var(--c-border);
-      border-radius: 10px;
-      padding: 1rem 1.125rem;
-      overflow-x: auto;
-      margin: 0.875rem 0;
-    }
-    .docs-content pre code {
-      background: none;
-      border: none;
-      padding: 0;
-      font-size: 0.8375rem;
-      color: var(--c-text);
-    }
-    .docs-content table {
-      width: 100%;
-      border-collapse: collapse;
-      margin: 1rem 0;
-      font-size: 0.875rem;
-    }
-    .docs-content th, .docs-content td {
-      text-align: left;
-      padding: 0.5rem 0.875rem;
-      border-bottom: 1px solid var(--c-border);
-    }
-    .docs-content th { color: var(--c-text-muted); font-weight: 600; font-size: 0.8rem; }
-    .docs-content td { color: var(--c-text-muted); }
-
-    /* Bookmarklet button */
-    .bookmarklet-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.6rem 1.1rem;
-      background: var(--c-primary);
-      color: #000;
-      font-weight: 700;
-      font-size: 0.9rem;
-      border-radius: 8px;
-      text-decoration: none;
-      cursor: grab;
-      user-select: none;
-      transition: background 150ms;
-    }
-    .bookmarklet-btn:hover { background: var(--c-primary-hover); text-decoration: none; color: #000; }
-    .bookmarklet-hint {
-      margin-top: 0.5rem;
-      font-size: 0.8rem;
-      color: var(--c-text-muted);
-    }
-
-    /* Endpoint block */
-    .endpoint {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      margin-bottom: 0.5rem;
-    }
-    .method {
-      font-family: var(--font-mono);
-      font-size: 0.78rem;
-      font-weight: 700;
-      padding: 0.2em 0.5em;
-      border-radius: 4px;
-      background: rgba(245,158,11,.15);
-      color: var(--c-primary);
-    }
-    .endpoint-path {
-      font-family: var(--font-mono);
-      font-size: 0.875rem;
-      color: var(--c-text);
-    }
-
-    /* Callout boxes */
-    .callout {
-      padding: 0.875rem 1rem;
-      border-radius: 8px;
-      margin: 1rem 0;
-      font-size: 0.875rem;
-    }
-    .callout-tip  { background: rgba(245,158,11,.07); border-left: 3px solid var(--c-primary); color: var(--c-text-muted); }
-    .callout-info { background: rgba(56,189,248,.07); border-left: 3px solid var(--c-info);    color: var(--c-text-muted); }
-    .callout strong { color: var(--c-text); }
-
-    /* Responsive */
-    @media (max-width: 640px) {
-      .docs-layout  { flex-direction: column; padding: 1rem 0.75rem 3rem; }
-      .docs-sidebar { width: 100%; position: static; padding-right: 0; padding-bottom: 1rem;
-                      border-bottom: 1px solid var(--c-border); margin-bottom: 1.5rem; }
-      .docs-sidebar nav { flex-direction: row; flex-wrap: wrap; }
-    }
-  </style>
+  <link rel="stylesheet" href="/css/docs.css" />
 </head>
 
 <body>
 
-  <!-- ── Header ───────────────────────────────────────────────────────────── -->
-  <header class="site-header" role="banner">
-    <a href="/" class="site-logo" aria-label="GitSnip home">
-      <span class="logo-icon" aria-hidden="true">✂</span>
-      <span>GitSnip</span>
-    </a>
-    <nav class="site-nav" aria-label="Main navigation">
-      <a href="/docs" aria-current="page">Docs</a>
-      <a href="https://api.gitsnip.cc/docs" target="_blank" rel="noopener noreferrer">API</a>
-      <a href="https://github.com/gitsnip/gitsnip" target="_blank" rel="noopener noreferrer">GitHub</a>
-    </nav>
-  </header>
+  <!-- Header: rendered by layout.js -->
+  <header class="site-header" role="banner"></header>
 
   <!-- ── Docs layout ──────────────────────────────────────────────────────── -->
   <div class="docs-layout">
@@ -243,8 +64,8 @@
 
         <div class="section-label">Developers</div>
         <a href="#api">API reference</a>
-        <a href="#cli">CLI <span style="font-size:.7rem;color:var(--c-text-muted)">(soon)</span></a>
-        <a href="#library">Library <span style="font-size:.7rem;color:var(--c-text-muted)">(soon)</span></a>
+        <a href="#cli">CLI</a>
+        <a href="#library">Library <span style="font-size:.7rem;color:var(--c-text-muted)">(coming soon)</span></a>
 
         <div class="section-label">AI</div>
         <a href="#ai">AI usage</a>
@@ -267,7 +88,7 @@
         <li>Find a GitHub directory you want, e.g.<br>
             <code>https://github.com/anthropics/claude-code/tree/main/plugins/feature-dev</code></li>
         <li>Go to <a href="/">gitsnip.cc</a> and paste the URL.</li>
-        <li>Click <strong>↓ Download</strong> — your browser saves the zip.</li>
+        <li>Click <strong>Download</strong> — your browser saves the zip.</li>
       </ol>
 
       <div class="callout callout-tip">
@@ -408,20 +229,17 @@ curl -L -H "X-GitHub-Token: ghp_xxxx" \
 }</code></pre>
 
       <!-- ────────────────────── CLI ────────────────────────────────────── -->
-      <h2 id="cli">CLI <em style="font-size:.75rem;color:var(--c-text-muted);font-weight:400">(coming in Phase 2)</em></h2>
-      <pre><code># Install
-npm install -g gitsnip
-
-# Basic usage
-gitsnip https://github.com/anthropics/claude-code/tree/main/plugins/feature-dev
+      <h2 id="cli">CLI</h2>
+      <pre><code># No install needed — run with npx
+npx gitsnip https://github.com/anthropics/claude-code/tree/main/plugins/feature-dev
 
 # Options
-gitsnip &lt;url&gt; --output ./my-dir   # extract to directory
-gitsnip &lt;url&gt; --info              # show file list without downloading
-gitsnip &lt;url&gt; --token ghp_xxxx   # use GitHub token</code></pre>
+npx gitsnip &lt;url&gt; --output archive.zip   # custom output path
+npx gitsnip &lt;url&gt; --info                 # show file list without downloading
+npx gitsnip &lt;url&gt; --token ghp_xxxx      # use GitHub token</code></pre>
 
       <!-- ────────────────────── LIBRARY ───────────────────────────────── -->
-      <h2 id="library">npm Library <em style="font-size:.75rem;color:var(--c-text-muted);font-weight:400">(coming in Phase 2)</em></h2>
+      <h2 id="library">npm Library <em style="font-size:.75rem;color:var(--c-text-muted);font-weight:400">(coming soon)</em></h2>
       <pre><code>import { snip, info } from 'gitsnip'
 
 // Download as Buffer
@@ -477,7 +295,7 @@ Use the GitSnip API at https://gitsnip.cc/llms.txt"</code></pre>
          For very large directories, use <code>git sparse-checkout</code> instead.</p>
 
       <h3>Can I self-host GitSnip?</h3>
-      <p>Yes. GitSnip is open source (MIT). Docker support is coming in Phase 2.
+      <p>Yes. GitSnip is open source (MIT) and runs on Cloudflare Workers + Pages — no Docker needed.
          See the <a href="https://github.com/gitsnip/gitsnip" target="_blank" rel="noopener noreferrer">GitHub repo</a>
          for setup instructions.</p>
 
@@ -488,19 +306,18 @@ Use the GitSnip API at https://gitsnip.cc/llms.txt"</code></pre>
     </main><!-- /docs-content -->
   </div><!-- /docs-layout -->
 
-  <!-- ── Footer ────────────────────────────────────────────────────────────── -->
-  <footer class="site-footer" role="contentinfo">
-    <span>Made with ♥ for developers</span>
-    <nav class="footer-links" aria-label="Footer navigation">
-      <a href="/">Home</a>
-      <a href="https://api.gitsnip.cc/docs" target="_blank" rel="noopener noreferrer">API</a>
-      <a href="https://github.com/gitsnip/gitsnip" target="_blank" rel="noopener noreferrer">GitHub</a>
-      <a href="/llms.txt">llms.txt</a>
-    </nav>
-  </footer>
+  <!-- Footer: rendered by layout.js -->
+  <footer class="site-footer" role="contentinfo"></footer>
 
-  <!-- Highlight active sidebar link on scroll -->
-  <script>
+  <!-- Docs entry: layout, theme, sidebar scroll-spy -->
+  <script type="module">
+    import { renderLayout } from '/js/layout.js'
+    import { initTheme } from '/js/theme.js'
+
+    renderLayout()
+    initTheme()
+
+    // ── Sidebar active section ────────────────────────────────────────────────
     const sections = document.querySelectorAll('h2[id], h3[id]')
     const navLinks = document.querySelectorAll('.docs-sidebar a')
     const observer = new IntersectionObserver(

@@ -1,0 +1,144 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   GitSnip — Design Tokens
+   GitHub-native palette. Auto light / dark via prefers-color-scheme.
+   Edit only this file to retheme the entire site.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+
+  /* ── Colors — Light Mode (GitHub Native) ────────────────────────────────── */
+  --c-primary:        #0969da;
+  --c-primary-hover:  #035cc5;
+  --c-primary-dim:    #0550ae;
+  --c-focus-ring:     rgba(9, 105, 218, 0.3);
+
+  --c-bg:             #ffffff;
+  --c-surface:        #f6f8fa;
+  --c-surface-2:      #eaeef2;
+  --c-border:         #d0d7de;
+  --c-border-focus:   #0969da;
+
+  --c-text:           #1F2328;
+  --c-text-muted:     #656d76;
+  --c-placeholder:    #8c959f;
+
+  --c-success:        #1a7f37;
+  --c-success-bg:     #dafbe1;
+  --c-error:          #cf222e;
+  --c-error-bg:       #ffebe9;
+  --c-warning:        #9a6700;
+  --c-warning-bg:     #fff8c5;
+  --c-info:           #0550ae;
+
+  /* ── Typography ─────────────────────────────────────────────────────────── */
+  --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+
+  --font-size-base: 16px;
+  --line-height:    1.5;
+
+  /* ── Border radius ───────────────────────────────────────────────────────── */
+  --radius-sm:   4px;
+  --radius:      6px;
+  --radius-lg:   8px;
+  --radius-pill: 999px;
+
+  /* ── Shadows ─────────────────────────────────────────────────────────────── */
+  --shadow-sm: 0 1px 0 rgba(27,31,36,0.04);
+  --shadow:    0 1px 3px rgba(27,31,36,0.12), 0 8px 24px rgba(66,74,83,0.12);
+  --shadow-lg: 0 8px 32px rgba(27,31,36,0.2);
+
+  /* ── Motion ──────────────────────────────────────────────────────────────── */
+  --transition: 80ms ease-in-out;
+}
+
+/* ── Dark Mode — system preference ──────────────────────────────────────────── */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --c-primary:        #2f81f7;
+    --c-primary-hover:  #388bfd;
+    --c-primary-dim:    #58a6ff;
+    --c-focus-ring:     rgba(47, 129, 247, 0.4);
+
+    --c-bg:             #0d1117;
+    --c-surface:        #161b22;
+    --c-surface-2:      #21262d;
+    --c-border:         #30363d;
+    --c-border-focus:   #58a6ff;
+
+    --c-text:           #e6edf3;
+    --c-text-muted:     #7d8590;
+    --c-placeholder:    #484f58;
+
+    --c-success:        #3fb950;
+    --c-success-bg:     rgba(46, 160, 67, 0.15);
+    --c-error:          #f85149;
+    --c-error-bg:       rgba(248, 81, 73, 0.1);
+    --c-warning:        #d29922;
+    --c-warning-bg:     rgba(187, 128, 9, 0.15);
+    --c-info:           #58a6ff;
+
+    --shadow-sm: 0 0 transparent;
+    --shadow:    0 1px 0 rgba(0,0,0,0.3);
+    --shadow-lg: 0 8px 24px rgba(0,0,0,0.4);
+  }
+}
+
+/* ── Manual overrides — higher specificity beats the media query ────────────── */
+html[data-theme="dark"] {
+  --c-primary:        #2f81f7;
+  --c-primary-hover:  #388bfd;
+  --c-primary-dim:    #58a6ff;
+  --c-focus-ring:     rgba(47, 129, 247, 0.4);
+
+  --c-bg:             #0d1117;
+  --c-surface:        #161b22;
+  --c-surface-2:      #21262d;
+  --c-border:         #30363d;
+  --c-border-focus:   #58a6ff;
+
+  --c-text:           #e6edf3;
+  --c-text-muted:     #7d8590;
+  --c-placeholder:    #484f58;
+
+  --c-success:        #3fb950;
+  --c-success-bg:     rgba(46, 160, 67, 0.15);
+  --c-error:          #f85149;
+  --c-error-bg:       rgba(248, 81, 73, 0.1);
+  --c-warning:        #d29922;
+  --c-warning-bg:     rgba(187, 128, 9, 0.15);
+  --c-info:           #58a6ff;
+
+  --shadow-sm: 0 0 transparent;
+  --shadow:    0 1px 0 rgba(0,0,0,0.3);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.4);
+}
+
+html[data-theme="light"] {
+  --c-primary:        #0969da;
+  --c-primary-hover:  #035cc5;
+  --c-primary-dim:    #0550ae;
+  --c-focus-ring:     rgba(9, 105, 218, 0.3);
+
+  --c-bg:             #ffffff;
+  --c-surface:        #f6f8fa;
+  --c-surface-2:      #eaeef2;
+  --c-border:         #d0d7de;
+  --c-border-focus:   #0969da;
+
+  --c-text:           #1F2328;
+  --c-text-muted:     #656d76;
+  --c-placeholder:    #8c959f;
+
+  --c-success:        #1a7f37;
+  --c-success-bg:     #dafbe1;
+  --c-error:          #cf222e;
+  --c-error-bg:       #ffebe9;
+  --c-warning:        #9a6700;
+  --c-warning-bg:     #fff8c5;
+  --c-info:           #0550ae;
+
+  --shadow-sm: 0 1px 0 rgba(27,31,36,0.04);
+  --shadow:    0 1px 3px rgba(27,31,36,0.12), 0 8px 24px rgba(66,74,83,0.12);
+  --shadow-lg: 0 8px 32px rgba(27,31,36,0.2);
+}

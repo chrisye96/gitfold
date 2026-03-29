@@ -7,33 +7,17 @@
 
 import { zipSync } from 'fflate'
 
-/** Build the content of the .gitsnip attribution file. */
-function attributionContent(sourceUrl: string): Uint8Array {
-  const text = [
-    'Downloaded with GitSnip — https://gitsnip.cc',
-    '',
-    `Source:     ${sourceUrl}`,
-    `Downloaded: ${new Date().toISOString()}`,
-    '',
-    'GitSnip lets you download any GitHub directory as a zip.',
-    'No git clone needed. Visit https://gitsnip.cc',
-  ].join('\n')
-  return new TextEncoder().encode(text)
-}
-
 /**
  * Create a zip archive buffer from an array of files.
- * Always includes a .gitsnip attribution file at the zip root.
+ * Strips the root path prefix so the zip root = the downloaded directory.
  *
- * @param files     - Array of { path, data } objects (paths are full repo paths)
- * @param rootPath  - e.g. "plugins/feature-dev" — stripped from zip entry paths
- * @param sourceUrl - Original GitHub tree URL, written into .gitsnip
- * @returns         - Uint8Array containing the complete zip file
+ * @param files    - Array of { path, data } objects (paths are full repo paths)
+ * @param rootPath - e.g. "plugins/feature-dev" — stripped from zip entry paths
+ * @returns        - Uint8Array containing the complete zip file
  */
 export function createZip(
   files: Array<{ path: string; data: Uint8Array }>,
   rootPath: string,
-  sourceUrl: string,
 ): Uint8Array {
   const prefix = rootPath ? rootPath + '/' : ''
 
@@ -44,16 +28,10 @@ export function createZip(
     const zipPath =
       prefix && path.startsWith(prefix) ? path.slice(prefix.length) : path
 
-    // Skip if path becomes empty (shouldn't happen in normal use)
     if (!zipPath) continue
-
     fileMap[zipPath] = data
   }
 
-  // Attribution file — always added at zip root
-  fileMap['.gitsnip'] = attributionContent(sourceUrl)
-
-  // Synchronous zip with level-6 DEFLATE compression
   return zipSync(fileMap, { level: 6 })
 }
 
@@ -83,15 +61,13 @@ export function zipResponse(
 }
 
 /**
- * Derive a user-friendly filename from a repo path.
- * Uses the last path segment, or the repo name as fallback.
+ * Derive the zip filename from a repo path.
+ * Appends " — gitsnip.cc" as attribution suffix.
  *
- * @example  zipFilename('plugins/feature-dev', 'claude-code') → 'feature-dev'
- * @example  zipFilename('', 'claude-code') → 'claude-code'
+ * @example  zipFilename('plugins/feature-dev', 'claude-code') → 'feature-dev — gitsnip.cc'
+ * @example  zipFilename('', 'claude-code') → 'claude-code — gitsnip.cc'
  */
 export function zipFilename(path: string, repoName: string): string {
-  if (path) {
-    return path.split('/').pop() ?? repoName
-  }
-  return repoName
+  const base = path ? (path.split('/').pop() ?? repoName) : repoName
+  return `${base} — gitsnip.cc`
 }

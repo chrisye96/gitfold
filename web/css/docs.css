@@ -1,0 +1,198 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   GitSnip — Docs page styles
+   Depends on tokens.css and main.css being loaded first.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Docs layout ─────────────────────────────────────────────────────────── */
+.docs-layout {
+  display: flex;
+  gap: 0;
+  max-width: 900px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 2rem 1rem 4rem;
+  align-items: flex-start;
+}
+
+/* ── Sidebar ─────────────────────────────────────────────────────────────── */
+.docs-sidebar {
+  width: 200px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 5rem;
+  padding-right: 1.5rem;
+}
+.docs-sidebar nav { display: flex; flex-direction: column; gap: 0.125rem; }
+.docs-sidebar a {
+  display: block;
+  padding: 0.3rem 0.75rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.8375rem;
+  color: var(--c-text-muted);
+  text-decoration: none;
+  transition: color var(--transition), background var(--transition);
+  border-left: 2px solid transparent;
+}
+.docs-sidebar a:hover {
+  color: var(--c-text);
+  background: var(--c-surface);
+  text-decoration: none;
+}
+.docs-sidebar a.active {
+  color: var(--c-primary);
+  border-left-color: var(--c-primary);
+  background: color-mix(in srgb, var(--c-primary) 6%, var(--c-bg));
+}
+.docs-sidebar .section-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--c-text-muted);
+  padding: 0.75rem 0.75rem 0.25rem;
+}
+
+/* ── Content ─────────────────────────────────────────────────────────────── */
+.docs-content {
+  flex: 1;
+  min-width: 0;
+}
+.docs-content h1 {
+  font-size: 1.75rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.5rem;
+  color: var(--c-text);
+}
+.docs-content h2 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--c-text);
+  margin: 2.5rem 0 0.75rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--c-border);
+  scroll-margin-top: 5rem;
+}
+.docs-content h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--c-text);
+  margin: 1.5rem 0 0.5rem;
+  scroll-margin-top: 5rem;
+}
+.docs-content p { color: var(--c-text-muted); margin-bottom: 0.875rem; line-height: 1.7; }
+.docs-content ul, .docs-content ol {
+  color: var(--c-text-muted);
+  padding-left: 1.5rem;
+  margin-bottom: 0.875rem;
+}
+.docs-content li { margin-bottom: 0.3rem; line-height: 1.65; }
+.docs-content code {
+  font-family: var(--font-mono);
+  font-size: 0.82em;
+  background: var(--c-surface-2);
+  border: 1px solid var(--c-border);
+  padding: 0.1em 0.35em;
+  border-radius: var(--radius-sm);
+  color: var(--c-info);
+}
+.docs-content pre {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius);
+  padding: 1rem 1.125rem;
+  overflow-x: auto;
+  margin: 0.875rem 0;
+}
+.docs-content pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.8375rem;
+  color: var(--c-text);
+}
+.docs-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+  font-size: 0.875rem;
+}
+.docs-content th, .docs-content td {
+  text-align: left;
+  padding: 0.5rem 0.875rem;
+  border-bottom: 1px solid var(--c-border);
+}
+.docs-content th { color: var(--c-text-muted); font-weight: 600; font-size: 0.8rem; }
+.docs-content td { color: var(--c-text-muted); }
+
+/* ── Bookmarklet button ───────────────────────────────────────────────────── */
+.bookmarklet-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: var(--c-primary);
+  color: #ffffff;
+  font-weight: 500;
+  font-size: 0.875rem;
+  border-radius: var(--radius);
+  text-decoration: none;
+  cursor: grab;
+  user-select: none;
+  transition: background var(--transition);
+}
+.bookmarklet-btn:hover { background: var(--c-primary-hover); text-decoration: none; color: #ffffff; }
+.bookmarklet-hint {
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--c-text-muted);
+}
+
+/* ── API endpoint block ───────────────────────────────────────────────────── */
+.endpoint {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+.method {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 0.2em 0.5em;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--c-primary) 12%, var(--c-bg));
+  color: var(--c-primary);
+}
+.endpoint-path {
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  color: var(--c-text);
+}
+
+/* ── Callout boxes ───────────────────────────────────────────────────────── */
+.callout {
+  padding: 0.875rem 1rem;
+  border-radius: var(--radius);
+  margin: 1rem 0;
+  font-size: 0.875rem;
+}
+.callout-tip  {
+  background: color-mix(in srgb, var(--c-primary) 6%, var(--c-bg));
+  border-left: 3px solid var(--c-primary);
+  color: var(--c-text-muted);
+}
+.callout-info {
+  background: color-mix(in srgb, var(--c-info) 6%, var(--c-bg));
+  border-left: 3px solid var(--c-info);
+  color: var(--c-text-muted);
+}
+.callout strong { color: var(--c-text); }
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .docs-layout  { flex-direction: column; padding: 1rem 0.75rem 3rem; }
+  .docs-sidebar { width: 100%; position: static; padding-right: 0; padding-bottom: 1rem;
+                  border-bottom: 1px solid var(--c-border); margin-bottom: 1.5rem; }
+  .docs-sidebar nav { flex-direction: row; flex-wrap: wrap; }
+}

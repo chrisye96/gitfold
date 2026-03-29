@@ -1,0 +1,25 @@
+{
+  "name": "gitsnip",
+  "version": "0.1.0",
+  "description": "Download any GitHub directory as a zip from the command line",
+  "type": "module",
+  "main": "./lib.js",
+  "exports": {
+    ".": "./lib.js",
+    "./cli": "./index.js"
+  },
+  "bin": {
+    "gitsnip": "./index.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": ["github", "download", "directory", "zip", "tar", "cli"],
+  "license": "MIT",
+  "homepage": "https://gitsnip.cc",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gitsnip/gitsnip",
+    "directory": "cli"
+  }
+}

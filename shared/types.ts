@@ -8,6 +8,8 @@ export type ProviderName = 'github'
 
 export interface RepoInfo {
   provider: ProviderName
+  /** 'folder' when path is non-empty; 'repo' when path is '' (full repo) */
+  type: 'folder' | 'repo'
   owner: string
   repo: string
   branch: string

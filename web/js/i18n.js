@@ -31,11 +31,14 @@ const locales = {
     // ── Parsed state ──────────────────────────────────────────────────
     'parsed.detected': 'Detected',
     'parsed.files_estimated': 'files (estimated)',
+    'parsed.meta': '{count} files · {size}',
+    'parsed.meta.over_limit': '⚠ {count} files — exceeds {limit}-file free limit',
 
     // ── Buttons ───────────────────────────────────────────────────────
-    'btn.download': '↓ Download',
-    'btn.copy_link': '⎘ Copy link',
-    'btn.copy_link.copied': '✓ Copied!',
+    'btn.download': 'Download',
+    'btn.download.repo': 'Download repository',
+    'btn.copy_link': 'Copy link',
+    'btn.copy_link.copied': 'Copied!',
     'btn.clear': 'Clear',
 
     // ── Token panel ───────────────────────────────────────────────────
@@ -52,21 +55,24 @@ const locales = {
     'loading.progress': '{done} of {total} files',
 
     // ── Pro upsell (shown during loading + after success) ─────────────
-    'pro.skip_queue': '⚡ Pro users skip queue & download instantly',
-    'pro.batch': '⚡ Batch download multiple folders at once',
-    'pro.cli': '⚡ Use CLI for automation: npx gitsnip <url>',
-    'pro.private': '⚡ Access private repositories',
+    'pro.skip_queue': 'Pro users skip queue & download instantly',
+    'pro.batch': 'Batch download multiple folders at once',
+    'pro.cli': 'Use CLI for automation: npx gitsnip <url>',
+    'pro.private': 'Access private repositories',
     'pro.upgrade': 'Upgrade to Pro',
 
     // ── Success state ─────────────────────────────────────────────────
     'success.ready': '✅ Download ready',
     'success.summary': 'Downloaded {count} files ({size}) in {seconds}s',
-    'success.download_zip': '↓ Download ZIP',
+    'success.repo_summary': 'Your browser is downloading the repository zip.',
+    'success.download_zip': 'Download ZIP',
     'success.workflow_hint': 'Use this in your workflow:',
 
     // ── Error state ───────────────────────────────────────────────────
     'error.title': 'Something went wrong',
     'error.retry': 'Try again',
+    'error.msg.FILE_LIMIT': 'This directory has {count} files (free limit: {limit}).',
+    'error.hint.FILE_LIMIT': 'Free downloads are limited to 50 files. Upgrade to Pro for larger directories.',
     'error.hint.RATE_LIMITED': 'Add a GitHub Personal Access Token to get 5,000 requests/hour.',
     'error.hint.NOT_FOUND': 'Check that the URL points to an existing directory.',
     'error.hint.UNAUTHORIZED': 'Your GitHub token may be expired or have insufficient permissions.',

@@ -1,0 +1,76 @@
+# GitSnip
+
+> Download any GitHub subdirectory as a zip — no git clone, no login.
+
+## What it does
+
+GitSnip lets you download a specific folder inside a GitHub repository as a zip file,
+without cloning the full repo. Works for public repositories.
+
+## Quickest way to use it
+
+Replace `github.com` with `gitsnip.cc` in any GitHub tree URL:
+
+    Before: https://github.com/anthropics/claude-code/tree/main/plugins
+    After:  https://gitsnip.cc/anthropics/claude-code/tree/main/plugins
+
+## REST API
+
+Base URL: `https://api.gitsnip.cc`
+
+### Download a directory as zip
+
+    GET /v1/download?url={encoded_github_tree_url}
+
+Returns: `application/zip` stream
+
+Optional header: `X-GitHub-Token: ghp_...` (raises rate limit to 5,000 req/hour)
+
+Example:
+
+    curl -L "https://api.gitsnip.cc/v1/download?url=https%3A%2F%2Fgithub.com%2Fanthropics%2Fclaude-code%2Ftree%2Fmain%2Fplugins" \
+         -o plugins.zip
+
+### Get directory metadata (no download)
+
+    GET /v1/info?url={encoded_github_tree_url}
+
+Returns JSON:
+
+    {
+      "provider": "github",
+      "owner": "anthropics",
+      "repo": "claude-code",
+      "branch": "main",
+      "path": "plugins",
+      "fileCount": 12,
+      "totalSize": 45200,
+      "files": [
+        { "path": "plugins/README.md", "size": 1204 }
+      ]
+    }
+
+## CLI
+
+    npx gitsnip https://github.com/anthropics/claude-code/tree/main/plugins
+    npx gitsnip <url> --output archive.zip
+    npx gitsnip <url> --info
+    npx gitsnip <url> --token ghp_xxxx
+
+## Error format
+
+All errors return JSON:
+
+    { "code": "RATE_LIMITED", "message": "...", "hint": "..." }
+
+Error codes: `INVALID_URL`, `NOT_FOUND`, `TOO_LARGE`, `RATE_LIMITED`, `GITHUB_ERROR`
+
+## Limits (free tier)
+
+- 50 files per web UI download
+- GitHub API rate limit: 60 req/hour without token, 5,000/hour with token
+- API: 100 MB / 500 files per request
+
+## Full docs
+
+https://gitsnip.cc/docs

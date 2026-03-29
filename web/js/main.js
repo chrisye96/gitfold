@@ -11,10 +11,13 @@
  * @module main
  */
 
-import { parseUrl, buildSnipUrl, formatRepoInfo, zipFilename } from './parse-url.js'
+import { parseUrl, buildSnipUrl, formatRepoInfo, zipFilename, buildArchiveUrl } from './parse-url.js'
 import { fetchFiles } from './github.js'
 import { createZip, downloadBlob, formatBytes } from './zip.js'
 import { t, applyI18n } from './i18n.js'
+import { mountAllAds } from './ads.js'
+import { renderLayout } from './layout.js'
+import { initTheme } from './theme.js'
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -23,6 +26,9 @@ const SITE_BASE = 'https://gitsnip.cc'
 
 // Phase 2: set > 0 to add artificial Free-tier queue delay (ms)
 const FREE_TIER_DELAY_MS = 0
+
+// Free-tier file count cap
+const FREE_FILE_LIMIT = 50
 
 // ─── State ────────────────────────────────────────────────────────────────────
 
@@ -34,6 +40,12 @@ let parsedInfo = null
 
 /** @type {Blob | null} */
 let zipBlob = null
+
+/** @type {string} — set for full-repo downloads (GitHub archive URL) */
+let archiveUrl = ''
+
+/** @type {string} — tracks the URL currently being prefetched; stale responses are ignored */
+let pendingInfoUrl = ''
 
 /** @type {string} */
 let zipName = ''
@@ -53,6 +65,7 @@ const tokenPanel    = /** @type {HTMLElement}       */ (document.getElementById(
 const tokenClearBtn = /** @type {HTMLButtonElement} */ (document.getElementById('token-clear-btn'))
 const detectedBox   = /** @type {HTMLElement}       */ (document.getElementById('detected-box'))
 const detectedLabel = /** @type {HTMLElement}       */ (document.getElementById('detected-label'))
+const detectedMeta  = /** @type {HTMLElement}       */ (document.getElementById('detected-meta'))
 const progressBar   = /** @type {HTMLElement}       */ (document.getElementById('progress-bar'))
 const progressFill  = /** @type {HTMLElement}       */ (document.getElementById('progress-fill'))
 const progressText  = /** @type {HTMLElement}       */ (document.getElementById('progress-text'))
@@ -65,7 +78,8 @@ const proPanel      = /** @type {HTMLElement}       */ (document.getElementById(
 const errorPanel    = /** @type {HTMLElement}       */ (document.getElementById('error-panel'))
 const errorMsg      = /** @type {HTMLElement}       */ (document.getElementById('error-msg'))
 const errorHint     = /** @type {HTMLElement}       */ (document.getElementById('error-hint'))
-const retryBtn      = /** @type {HTMLButtonElement} */ (document.getElementById('retry-btn'))
+const retryBtn         = /** @type {HTMLButtonElement} */ (document.getElementById('retry-btn'))
+const urlInvalidHint   = /** @type {HTMLElement}       */ (document.getElementById('url-invalid-hint'))
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -123,13 +137,16 @@ function setState(newState, data = {}) {
   appState = newState
 
   // Reset visibility
-  detectedBox.hidden   = true
-  progressBar.hidden   = true
-  proPanel.hidden      = true
-  resultPanel.hidden   = true
-  errorPanel.hidden    = true
-  clearBtn.hidden      = true
-  copyLinkBtn.disabled = true
+  detectedBox.hidden       = true
+  progressBar.hidden       = true
+  proPanel.hidden          = true
+  resultPanel.hidden       = true
+  errorPanel.hidden        = true
+  clearBtn.hidden          = true
+  copyLinkBtn.disabled     = true
+  copyLinkBtn.hidden       = true
+  urlInvalidHint.hidden    = true
+  urlInvalidHint.textContent = ''
 
   downloadBtn.disabled = newState === 'loading' || newState === 'success'
   downloadBtn.setAttribute('aria-busy', newState === 'loading' ? 'true' : 'false')
@@ -138,16 +155,22 @@ function setState(newState, data = {}) {
     downloadBtn.textContent = t('btn.download')
     urlInput.disabled = false
     urlInput.focus()
+    pendingInfoUrl = ''
+    detectedMeta.textContent = ''
+    detectedMeta.classList.remove('warn')
   }
 
   if (newState === 'parsed') {
     detectedBox.hidden  = false
     clearBtn.hidden     = false
     copyLinkBtn.disabled = false
-    downloadBtn.textContent = t('btn.download')
+    copyLinkBtn.hidden   = false
     urlInput.disabled = false
     if (parsedInfo) {
       detectedLabel.textContent = formatRepoInfo(parsedInfo)
+      downloadBtn.textContent = parsedInfo.type === 'repo'
+        ? t('btn.download.repo')
+        : t('btn.download')
     }
   }
 
@@ -169,19 +192,24 @@ function setState(newState, data = {}) {
     proPanel.hidden     = false
     clearBtn.hidden     = false
     copyLinkBtn.disabled = false
+    copyLinkBtn.hidden   = false
     urlInput.disabled   = false
 
-    const elapsed = ((Date.now() - downloadStartTime) / 1000).toFixed(1)
-    const fileCount = data.fileCount ?? 0
-    const size = formatBytes(data.totalBytes ?? 0)
-    resultSummary.textContent = t('success.summary', {
-      count: fileCount,
-      size,
-      seconds: elapsed,
-    })
-
-    // Auto-trigger the download dialog
-    if (zipBlob) downloadBlob(zipBlob, zipName)
+    if (data.isRepo) {
+      resultSummary.textContent = t('success.repo_summary')
+      // Archive download already triggered — no auto-trigger needed
+    } else {
+      const elapsed = ((Date.now() - downloadStartTime) / 1000).toFixed(1)
+      const fileCount = data.fileCount ?? 0
+      const size = formatBytes(data.totalBytes ?? 0)
+      resultSummary.textContent = t('success.summary', {
+        count: fileCount,
+        size,
+        seconds: elapsed,
+      })
+      // Auto-trigger the download dialog
+      if (zipBlob) downloadBlob(zipBlob, zipName)
+    }
 
     // Show CLI hint
     if (parsedInfo) {
@@ -209,6 +237,46 @@ function setState(newState, data = {}) {
   }
 }
 
+// ─── File tree prefetch ───────────────────────────────────────────────────────
+
+/**
+ * Prefetch /v1/info for a folder URL and show "N files · X MB" in detected-meta.
+ * Silently ignored on error; stale responses (URL changed mid-flight) are discarded.
+ */
+async function fetchAndShowInfo(info) {
+  if (info.type !== 'folder') return
+
+  const infoUrl = info.originalUrl
+  pendingInfoUrl = infoUrl
+  detectedMeta.textContent = ''
+  detectedMeta.classList.remove('warn')
+
+  try {
+    const token = getToken()
+    const headers = token ? { 'X-GitHub-Token': token } : {}
+    const res = await fetch(
+      `${API_BASE}/v1/info?url=${encodeURIComponent(info.originalUrl)}`,
+      { headers },
+    )
+    if (pendingInfoUrl !== infoUrl) return
+    if (!res.ok) return
+
+    const data = await res.json()
+    if (pendingInfoUrl !== infoUrl) return
+
+    const size = formatBytes(data.totalSize)
+    if (data.fileCount > FREE_FILE_LIMIT) {
+      detectedMeta.textContent = t('parsed.meta.over_limit', { count: data.fileCount, limit: FREE_FILE_LIMIT })
+      detectedMeta.classList.add('warn')
+    } else {
+      detectedMeta.textContent = t('parsed.meta', { count: data.fileCount, size })
+      detectedMeta.classList.remove('warn')
+    }
+  } catch {
+    // Network errors are silently swallowed — meta stays empty
+  }
+}
+
 // ─── URL handling ─────────────────────────────────────────────────────────────
 
 /** Parse the input value and update state. */
@@ -220,10 +288,14 @@ function handleUrlChange() {
   if (info) {
     parsedInfo = info
     setState('parsed')
+    fetchAndShowInfo(info)
   } else {
-    // Not a valid GitHub tree URL — keep idle, no error
+    // Not a valid GitHub tree URL — keep idle, show hint and clear button
     if (appState !== 'idle') setState('idle')
     parsedInfo = null
+    clearBtn.hidden = false
+    urlInvalidHint.textContent = 'Not a GitHub directory URL (needs /tree/branch/path)'
+    urlInvalidHint.hidden = false
   }
 }
 
@@ -236,9 +308,27 @@ async function startDownload() {
   const info = parsedInfo
   const token = getToken()
 
+  // ── Full repo download: redirect to GitHub archive, no JS zip needed ─────────
+  if (info.type === 'repo') {
+    archiveUrl = buildArchiveUrl(info)
+    zipName    = zipFilename(info)
+    downloadStartTime = Date.now()
+    zipBlob    = null
+    const a = document.createElement('a')
+    a.href = archiveUrl
+    a.target = '_blank'
+    a.rel = 'noopener noreferrer'
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    setState('success', { isRepo: true })
+    return
+  }
+
   setState('loading')
   downloadStartTime = Date.now()
   zipBlob = null
+  archiveUrl = ''
 
   try {
     // Phase 2: Free-tier artificial delay (currently 0)
@@ -257,16 +347,21 @@ async function startDownload() {
       announce(t('loading.progress', { done, total }))
     })
 
+    if (files.length > FREE_FILE_LIMIT) {
+      const err = new Error(t('error.msg.FILE_LIMIT', { count: files.length, limit: FREE_FILE_LIMIT }))
+      err.code = 'FILE_LIMIT'
+      throw err
+    }
+
     const totalBytes = files.reduce((sum, f) => sum + f.data.byteLength, 0)
 
     progressText.textContent = t('loading.zipping')
     announce(t('loading.zipping'))
 
     zipName = zipFilename(info)
-    const sourceUrl = `https://github.com/${info.owner}/${info.repo}/tree/${info.branch}/${info.path}`
     zipBlob = await createZip(files, info.path, (pct) => {
       setProgress(85 + pct * 0.15)
-    }, sourceUrl)
+    })
 
     setProgress(100)
     setState('success', { fileCount, totalBytes })
@@ -285,8 +380,27 @@ async function copyLink() {
   if (!parsedInfo) return
 
   const link = buildSnipUrl(parsedInfo, SITE_BASE)
+
+  let copied = false
   try {
     await navigator.clipboard.writeText(link)
+    copied = true
+  } catch {
+    // Fallback: temporary textarea + execCommand
+    try {
+      const ta = document.createElement('textarea')
+      ta.value = link
+      ta.style.cssText = 'position:fixed;opacity:0;pointer-events:none'
+      document.body.appendChild(ta)
+      ta.select()
+      copied = document.execCommand('copy')
+      document.body.removeChild(ta)
+    } catch {
+      prompt('Copy this link:', link)
+    }
+  }
+
+  if (copied) {
     const orig = copyLinkBtn.textContent
     copyLinkBtn.textContent = t('btn.copy_link.copied')
     copyLinkBtn.setAttribute('aria-label', t('btn.copy_link.copied'))
@@ -294,16 +408,23 @@ async function copyLink() {
       copyLinkBtn.textContent = orig
       copyLinkBtn.setAttribute('aria-label', t('btn.copy_link'))
     }, 2000)
-  } catch {
-    // Fallback for older browsers / non-HTTPS
-    prompt('Copy this link:', link)
   }
 }
 
 // ─── Re-download (after success) ─────────────────────────────────────────────
 
 function reDownload() {
-  if (zipBlob) downloadBlob(zipBlob, zipName)
+  if (zipBlob) {
+    downloadBlob(zipBlob, zipName)
+  } else if (archiveUrl) {
+    const a = document.createElement('a')
+    a.href = archiveUrl
+    a.target = '_blank'
+    a.rel = 'noopener noreferrer'
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+  }
 }
 
 // ─── Token panel ──────────────────────────────────────────────────────────────
@@ -353,6 +474,9 @@ clearBtn.addEventListener('click', () => {
   urlInput.value = ''
   parsedInfo = null
   zipBlob = null
+  archiveUrl = ''
+  urlInvalidHint.hidden = true
+  urlInvalidHint.textContent = ''
   setState('idle')
 })
 
@@ -367,6 +491,10 @@ tokenPanel.addEventListener('keydown', (e) => {
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 
+// Render shared header + footer, then init theme toggle
+renderLayout()
+initTheme()
+
 // Restore saved token and show clear button if one exists
 const savedToken = localStorage.getItem('gitsnip_token')
 if (savedToken) {
@@ -379,3 +507,6 @@ checkUrlPath()
 
 // Localize all static strings in HTML (data-i18n, data-i18n-placeholder, data-i18n-label)
 applyI18n()
+
+// Mount ads into all .ad-slot containers
+mountAllAds()

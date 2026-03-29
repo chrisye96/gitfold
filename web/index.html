@@ -29,7 +29,9 @@
   <meta name="twitter:image"       content="https://gitsnip.cc/og-image.png" />
 
   <!-- ── Theme / PWA ──────────────────────────────────────────────────── -->
-  <meta name="theme-color" content="#0F0F1A" />
+  <meta name="theme-color" content="#ffffff" />
+  <!-- Anti-FOUC: apply saved theme before first paint -->
+  <script>(function(){var t=localStorage.getItem('gitsnip-theme');if(t==='dark'||t==='light')document.documentElement.dataset.theme=t})()</script>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   <link rel="icon" href="/favicon.ico" sizes="32x32" />
   <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
@@ -61,6 +63,7 @@
   </script>
 
   <!-- ── Styles ────────────────────────────────────────────────────────── -->
+  <link rel="stylesheet" href="/css/tokens.css" />
   <link rel="stylesheet" href="/css/main.css" />
 
   <!-- ── JSZip (browser zip, loaded before main.js) ───────────────────── -->
@@ -69,23 +72,8 @@
 
 <body>
 
-  <!-- ══════════════════════ HEADER ═══════════════════════════════════════ -->
-  <header class="site-header" role="banner">
-    <a href="/" class="site-logo" aria-label="GitSnip home">
-      <span class="logo-icon" aria-hidden="true">✂</span>
-      <span>GitSnip</span>
-    </a>
-    <nav class="site-nav" aria-label="Main navigation">
-      <a href="/docs" data-i18n="nav.docs">Docs</a>
-      <a href="https://api.gitsnip.cc/docs"
-         target="_blank" rel="noopener noreferrer"
-         data-i18n="nav.api">API</a>
-      <a href="https://github.com/gitsnip/gitsnip"
-         target="_blank" rel="noopener noreferrer"
-         data-i18n="nav.github"
-         aria-label="GitSnip on GitHub (opens in new tab)">GitHub</a>
-    </nav>
-  </header>
+  <!-- Header: rendered by layout.js -->
+  <header class="site-header" role="banner"></header>
 
   <!-- ══════════════════════ MAIN ══════════════════════════════════════════ -->
   <main class="site-main" id="main-content">
@@ -116,10 +104,11 @@
             GitHub directory URL
           </label>
           <input
-            type="url"
+            type="text"
             id="url-input"
             class="url-input"
             autocomplete="off"
+            autocapitalize="off"
             autocorrect="off"
             spellcheck="false"
             data-i18n-placeholder="input.placeholder"
@@ -132,18 +121,58 @@
             type="button"
             aria-label="Download directory as zip"
             data-i18n-label="btn.download">
-            ↓ Download
+            Download
+          </button>
+          <button
+            id="token-toggle"
+            class="btn-icon"
+            type="button"
+            aria-label="Settings"
+            aria-expanded="false"
+            aria-controls="token-panel"
+            title="GitHub Token settings">
+            <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor" aria-hidden="true">
+              <path d="M8 0a8.2 8.2 0 0 1 .701.031C9.444.095 9.99.645 10.16 1.29l.288 1.107c.018.066.079.158.212.224.231.114.454.243.668.386.123.082.233.09.299.071l1.103-.303c.644-.176 1.392.021 1.82.63.27.385.506.792.704 1.218.315.675.111 1.422-.364 1.891l-.814.806c-.049.048-.098.147-.088.294.016.257.016.515 0 .772-.01.147.038.246.088.294l.814.806c.475.469.679 1.216.364 1.891a7.977 7.977 0 0 1-.704 1.217c-.428.61-1.176.807-1.82.63l-1.102-.302c-.067-.019-.177-.011-.3.071a5.909 5.909 0 0 1-.668.386c-.133.066-.194.158-.211.224l-.29 1.106c-.168.646-.715 1.196-1.458 1.26a8.006 8.006 0 0 1-1.402 0c-.743-.064-1.289-.614-1.458-1.26l-.289-1.106c-.018-.066-.079-.158-.212-.224a5.738 5.738 0 0 1-.668-.386c-.123-.082-.233-.09-.299-.071l-1.103.303c-.644.176-1.392-.021-1.82-.63a8.12 8.12 0 0 1-.704-1.218c-.315-.675-.111-1.422.363-1.891l.815-.806c.05-.048.098-.147.088-.294a6.214 6.214 0 0 1 0-.772c.01-.147-.038-.246-.088-.294l-.815-.806C.635 6.045.431 5.298.746 4.623a7.92 7.92 0 0 1 .704-1.217c.428-.61 1.176-.807 1.82-.63l1.102.302c.067.019.177.011.3-.071.214-.143.437-.272.668-.386.133-.066.194-.158.211-.224l.29-1.106C6.009.645 6.556.095 7.299.03 7.53.01 7.764 0 8 0Zm-.571 1.525c-.036.003-.108.036-.137.146l-.289 1.105c-.147.561-.549.967-.998 1.189-.273.136-.561.258-.86.361-.479.166-1.03.092-1.502-.038l-1.102-.302c-.114-.032-.192-.02-.236.043a6.45 6.45 0 0 0-.58.988c-.024.053-.004.133.061.197l.815.806c.403.399.576 1 .494 1.56a4.706 4.706 0 0 0 0 1.252c.082.56-.091 1.161-.494 1.56l-.815.806c-.065.064-.085.144-.061.197.164.354.356.685.58.988.044.063.122.075.236.043l1.102-.302c.473-.13 1.024-.204 1.502-.038a5.207 5.207 0 0 0 .86.361c.45.222.851.628.998 1.189l.289 1.105c.029.11.101.143.137.146a6.6 6.6 0 0 0 1.142 0c.036-.003.108-.036.137-.146l.289-1.105c.147-.561.549-.967.998-1.189.273-.136.561-.258.86-.361.479-.166 1.03-.092 1.502.038l1.102.302c.114.032.192.02.236-.043.224-.303.416-.634.58-.988.024-.053.004-.133-.061-.197l-.815-.806c-.403-.399-.576-1-.494-1.56a4.706 4.706 0 0 0 0-1.252c-.082-.56.091-1.161.494-1.56l.815-.806c.065-.064.085-.144.061-.197a6.45 6.45 0 0 0-.58-.988c-.044-.063-.122-.075-.236-.043l-1.102.302c-.473.13-1.024.204-1.502.038a5.207 5.207 0 0 0-.86-.361c-.45-.222-.851-.628-.998-1.189l-.289-1.105c-.029-.11-.101-.143-.137-.146a6.6 6.6 0 0 0-1.142 0ZM11 8a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM9.5 8a1.5 1.5 0 1 0-3.001.001A1.5 1.5 0 0 0 9.5 8Z"/>
+            </svg>
           </button>
         </div>
+
+        <!-- Token panel: opens directly below input row -->
+        <div id="token-panel" class="token-panel" hidden>
+          <label for="token-input" data-i18n="token.label">GitHub Token</label>
+          <div class="token-input-row">
+            <input type="password"
+                   id="token-input"
+                   class="token-input"
+                   autocomplete="new-password"
+                   data-i18n-placeholder="token.placeholder"
+                   placeholder="ghp_xxxxxxxxxxxx  (optional)"
+                   aria-describedby="token-hint" />
+            <button id="token-clear-btn"
+                    type="button"
+                    class="btn-token-clear"
+                    data-i18n-label="token.clear"
+                    aria-label="Clear token"
+                    hidden>×</button>
+          </div>
+          <p id="token-hint" class="token-hint" data-i18n="token.hint">
+            Increases rate limit to 5,000 req/hour. Stored in your browser only.
+            <a href="https://github.com/settings/tokens/new?scopes=public_repo&description=GitSnip"
+               target="_blank" rel="noopener noreferrer">Generate token ↗</a>
+          </p>
+        </div>
+
         <p id="input-hint" class="input-hint">
           Or replace <code>github.com</code> → <code>gitsnip.cc</code> in the URL bar
         </p>
+        <p id="url-invalid-hint" class="url-invalid-hint" hidden aria-live="polite"></p>
       </div>
 
       <!-- Detected info box (hidden until URL is parsed) -->
       <div id="detected-box" class="detected-box" hidden aria-live="polite">
         <span class="detected-label" data-i18n="parsed.detected">Detected:</span>
         <span id="detected-label" class="detected-value" aria-label="Detected repository info"></span>
+        <span id="detected-meta" class="detected-meta" aria-live="polite"></span>
       </div>
 
       <!-- Progress bar (hidden until loading) -->
@@ -171,6 +200,7 @@
                 class="btn-secondary"
                 type="button"
                 disabled
+                hidden
                 aria-label="Copy shareable download link"
                 data-i18n-label="btn.copy_link">⎘ Copy link</button>
       </div>
@@ -201,11 +231,14 @@
         <button id="download-zip-btn"
                 class="btn-download-zip"
                 type="button"
-                data-i18n="success.download_zip">↓ Download ZIP</button>
+                data-i18n="success.download_zip">Download ZIP</button>
         <div class="result-workflow" aria-label="CLI usage hint">
           <p class="workflow-label" data-i18n="success.workflow_hint">Use this in your workflow:</p>
           <code id="cli-hint" class="cli-hint"></code>
         </div>
+
+        <!-- Ad slot: result page (highest engagement — user just succeeded) -->
+        <div class="ad-slot ad-slot-result" data-ad-slot="result" hidden aria-label="Advertisement"></div>
       </section>
 
       <!-- Error panel -->
@@ -217,42 +250,6 @@
         <button id="retry-btn" class="btn-retry" type="button"
                 data-i18n="error.retry">Try again</button>
       </section>
-
-      <!-- Token / settings panel -->
-      <div class="token-section card-footer">
-        <button id="token-toggle"
-                class="btn-token-toggle"
-                type="button"
-                aria-expanded="false"
-                aria-controls="token-panel">
-          <span aria-hidden="true">⚙</span>
-          <span data-i18n="token.toggle">Settings</span>
-          <span class="arrow" aria-hidden="true">›</span>
-        </button>
-        <div id="token-panel" class="token-panel" hidden>
-          <label for="token-input" data-i18n="token.label">GitHub Token</label>
-          <div class="token-input-row">
-            <input type="password"
-                   id="token-input"
-                   class="token-input"
-                   autocomplete="off"
-                   data-i18n-placeholder="token.placeholder"
-                   placeholder="ghp_xxxxxxxxxxxx  (optional)"
-                   aria-describedby="token-hint" />
-            <button id="token-clear-btn"
-                    type="button"
-                    class="btn-token-clear"
-                    data-i18n-label="token.clear"
-                    aria-label="Clear token"
-                    hidden>×</button>
-          </div>
-          <p id="token-hint" class="token-hint" data-i18n="token.hint">
-            Increases rate limit to 5,000 req/hour. Stored in your browser only.
-            <a href="https://github.com/settings/tokens/new?scopes=public_repo&description=GitSnip"
-               target="_blank" rel="noopener noreferrer">Generate token ↗</a>
-          </p>
-        </div>
-      </div>
 
     </section><!-- /tool-card -->
 
@@ -275,16 +272,11 @@
 
   </main><!-- /site-main -->
 
-  <!-- ══════════════════════ FOOTER ════════════════════════════════════════ -->
-  <footer class="site-footer" role="contentinfo">
-    <span data-i18n="footer.made_with">Made with ♥ for developers</span>
-    <nav class="footer-links" aria-label="Footer navigation">
-      <a href="/docs">Docs</a>
-      <a href="https://api.gitsnip.cc/docs" target="_blank" rel="noopener noreferrer">API</a>
-      <a href="https://github.com/gitsnip/gitsnip" target="_blank" rel="noopener noreferrer">GitHub</a>
-      <a href="/llms.txt">llms.txt</a>
-    </nav>
-  </footer>
+  <!-- Ad slot: footer (always visible, non-intrusive) -->
+  <div class="ad-slot ad-slot-footer" data-ad-slot="footer" hidden aria-label="Advertisement"></div>
+
+  <!-- Footer: rendered by layout.js -->
+  <footer class="site-footer" role="contentinfo"></footer>
 
   <!-- ── App entry point ──────────────────────────────────────────────────── -->
   <script type="module" src="/js/main.js"></script>

@@ -15,6 +15,7 @@ import { Hono } from 'hono'
 import type { Env } from '../types.js'
 import { fetchTree, fetchAllFiles, buildInfo } from '../services/github.js'
 import { createZip, zipResponse, zipFilename } from '../services/zip.js'
+import { tarGzResponse } from '../services/tar.js'
 import { corsHeaders } from '../middleware/security.js'
 
 const api = new Hono<{ Bindings: Env; Variables: { repoInfo: import('../types.js').RepoInfo } }>()
@@ -24,6 +25,16 @@ const api = new Hono<{ Bindings: Env; Variables: { repoInfo: import('../types.js
 api.get('/download', async (c) => {
   const info  = c.get('repoInfo')
   const token = c.req.header('X-GitHub-Token') ?? c.env.GITHUB_TOKEN
+  const fmt   = c.req.query('format')
+  const useTarGz = fmt === 'tar.gz' || fmt === 'tgz'
+
+  // Full-repo download: redirect to GitHub archive (zero-cost, no bandwidth)
+  if (info.type === 'repo') {
+    const ext = useTarGz ? 'tar.gz' : 'zip'
+    const archiveUrl =
+      `https://github.com/${info.owner}/${info.repo}/archive/refs/heads/${info.branch}.${ext}`
+    return c.redirect(archiveUrl, 302)
+  }
 
   try {
     // 1. Fetch file tree (KV-cached)
@@ -32,16 +43,14 @@ api.get('/download', async (c) => {
     // 2. Fetch all file contents from raw.githubusercontent.com
     const files = await fetchAllFiles(tree, info)
 
-    // 3. Create zip (include .gitsnip attribution file)
-    const name      = zipFilename(info.path, info.repo)
-    const sourceUrl = `https://github.com/${info.owner}/${info.repo}/tree/${info.branch}/${info.path}`
-    const zipData   = createZip(files, info.path, sourceUrl)
-
-    // 4. Return zip response with CORS headers
-    return zipResponse(zipData, name, corsHeaders())
+    // 3. Build and return archive with CORS headers
+    const name = zipFilename(info.path, info.repo)
+    if (useTarGz) {
+      return tarGzResponse(files, info.path, name, corsHeaders())
+    }
+    return zipResponse(createZip(files, info.path), name, corsHeaders())
 
   } catch (err) {
-    // Services throw Response objects for known errors
     if (err instanceof Response) return err
     console.error('[gitsnip] Unexpected error in /download:', err)
     return Response.json(

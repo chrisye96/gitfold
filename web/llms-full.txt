@@ -1,0 +1,173 @@
+# GitSnip — Full API Reference
+
+> Download any GitHub subdirectory as a zip — no git clone, no login.
+> Web: https://gitsnip.cc  |  API: https://api.gitsnip.cc  |  Docs: https://gitsnip.cc/docs
+
+---
+
+## URL formats accepted
+
+Any of these work everywhere (web UI, API, CLI):
+
+    https://github.com/owner/repo/tree/branch/path/to/dir   (subdirectory)
+    https://github.com/owner/repo/tree/branch               (entire repo root)
+    github.com/owner/repo/tree/branch/path                  (no protocol OK)
+    https://gitsnip.cc/owner/repo/tree/branch/path          (gitsnip URL)
+
+GitSnip URLs are identical to GitHub tree URLs with the domain swapped.
+
+---
+
+## REST API
+
+Base URL: `https://api.gitsnip.cc`
+
+All endpoints:
+- Accept optional `X-GitHub-Token` header for higher rate limits
+- Return CORS headers (`Access-Control-Allow-Origin: *`)
+- Return errors as JSON with `code`, `message`, and `hint` fields
+
+---
+
+### GET /v1/download
+
+Download a GitHub directory as an archive.
+
+**Query parameters**
+
+| Parameter | Type   | Required | Description                          |
+|-----------|--------|----------|--------------------------------------|
+| url       | string | yes      | URL-encoded GitHub tree URL          |
+| format    | string | no       | `zip` (default) or `tar.gz` / `tgz` |
+
+**Headers**
+
+| Header          | Description                                     |
+|-----------------|-------------------------------------------------|
+| X-GitHub-Token  | GitHub PAT — raises rate limit to 5,000 req/hr |
+
+**Response**
+
+- `200 OK` — `application/zip` or `application/gzip` stream
+- `Content-Disposition: attachment; filename="dirname.zip"`
+- For full-repo downloads: `302` redirect to GitHub's archive CDN (zero-latency)
+
+**Examples**
+
+Download a subdirectory:
+
+    curl -L "https://api.gitsnip.cc/v1/download?url=https%3A%2F%2Fgithub.com%2Fanthropics%2Fclaude-code%2Ftree%2Fmain%2Fplugins" \
+         -o plugins.zip
+
+With a GitHub token:
+
+    curl -L \
+         -H "X-GitHub-Token: ghp_xxxxxxxxxxxx" \
+         "https://api.gitsnip.cc/v1/download?url=https%3A%2F%2Fgithub.com%2Fanthropics%2Fclaude-code%2Ftree%2Fmain%2Fplugins" \
+         -o plugins.zip
+
+Download as tar.gz:
+
+    curl -L "https://api.gitsnip.cc/v1/download?url=...&format=tar.gz" -o archive.tar.gz
+
+---
+
+### GET /v1/info
+
+Get metadata about a directory without downloading it.
+
+**Query parameters**
+
+| Parameter | Type   | Required | Description                 |
+|-----------|--------|----------|-----------------------------|
+| url       | string | yes      | URL-encoded GitHub tree URL |
+
+**Response**
+
+    {
+      "provider": "github",
+      "owner":    "anthropics",
+      "repo":     "claude-code",
+      "branch":   "main",
+      "path":     "plugins",
+      "fileCount": 12,
+      "totalSize": 45200,
+      "files": [
+        { "path": "plugins/README.md",        "size": 1204  },
+        { "path": "plugins/feature-dev/prompt.md", "size": 11636 }
+      ]
+    }
+
+**Example**
+
+    curl "https://api.gitsnip.cc/v1/info?url=https%3A%2F%2Fgithub.com%2Fanthropics%2Fclaude-code%2Ftree%2Fmain%2Fplugins"
+
+---
+
+### GET /health
+
+Health check.
+
+    { "ok": true, "service": "gitsnip-worker", "version": "1.0.0", "timestamp": "..." }
+
+---
+
+## Error responses
+
+All errors return JSON:
+
+    {
+      "code":    "RATE_LIMITED",
+      "message": "GitHub API rate limit exceeded.",
+      "hint":    "Provide X-GitHub-Token to get 5,000 requests/hour."
+    }
+
+| Status | Code           | Meaning                                         |
+|--------|----------------|-------------------------------------------------|
+| 400    | INVALID_URL    | Not a valid GitHub tree URL, or path is empty   |
+| 404    | NOT_FOUND      | Repo, branch, or path does not exist on GitHub  |
+| 413    | TOO_LARGE      | Directory exceeds size or file-count limits     |
+| 429    | RATE_LIMITED   | GitHub API rate limit hit                       |
+| 502    | GITHUB_ERROR   | GitHub API returned an unexpected error         |
+| 500    | INTERNAL_ERROR | Unexpected server error                         |
+
+---
+
+## CLI
+
+    # No install needed
+    npx gitsnip <url>
+
+    # Options
+    npx gitsnip <url>                          # download zip to current directory
+    npx gitsnip <url> --output ./archive.zip   # custom output path
+    npx gitsnip <url> --info                   # list files, no download
+    npx gitsnip <url> --token ghp_xxxx         # use GitHub token
+    npx gitsnip <url> --format tar.gz          # download as tar.gz
+
+---
+
+## Rate limits
+
+| Mode              | Requests/hour |
+|-------------------|--------------|
+| No token          | 60           |
+| With GitHub token | 5,000        |
+
+Web UI free tier: 50 files per download.
+API: 100 MB / 500 files per request.
+
+---
+
+## Web UI
+
+https://gitsnip.cc — paste any GitHub tree URL, click Download.
+
+Bookmarklet: drag `javascript:window.location.href=window.location.href.replace('github.com','gitsnip.cc')` to bookmarks bar for one-click downloads on GitHub.
+
+---
+
+## Source code
+
+https://github.com/gitsnip/gitsnip (MIT license)
+Runs on Cloudflare Workers + Pages.
