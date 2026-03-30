@@ -32,7 +32,7 @@ const locales = {
     'btn.downloading': 'Downloading…',
 
     // ── Token panel ───────────────────────────────────────────────────
-    'token.toggle': 'Need higher rate limits? Add a GitHub Token',
+    'token.toggle': 'Need higher limits? Add GitHub Token or upgrade to Pro',
     'token.placeholder': 'ghp_xxxxxxxxxxxx  (optional)',
     'token.clear': 'Clear saved token',
     'token.hint': 'Increases rate limit to 5,000 req/hour. Stored in your browser only.',

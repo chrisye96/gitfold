@@ -6,11 +6,25 @@
  * @module github
  */
 
+import { getSubToken, isProUser } from './subscription.js'
+
 const GITHUB_API = 'https://api.github.com'
 const RAW_BASE = 'https://raw.githubusercontent.com'
 
-// Max parallel file fetches to avoid browser connection limits
-const FETCH_CONCURRENCY = 6
+// ─── Tier-based concurrency & throttling ────────────────────────────────────
+
+function getTierConfig() {
+  if (isProUser()) return { concurrency: 8, delayMs: 0 }
+  // Token user gets slightly better throughput
+  const hasToken = !!localStorage.getItem('gitsnip_token')
+  if (hasToken) return { concurrency: 3, delayMs: 100 }
+  return { concurrency: 2, delayMs: 200 }
+}
+
+/** Sleep for a given number of milliseconds. */
+function sleep(ms) {
+  return ms > 0 ? new Promise(r => setTimeout(r, ms)) : Promise.resolve()
+}
 
 /**
  * Build GitHub API request headers.
@@ -154,6 +168,7 @@ export async function fetchFiles(info, token, onProgress) {
   const tree = await fetchTree(info, token)
   const total = tree.length
   let done = 0
+  const { concurrency, delayMs } = getTierConfig()
 
   /** @type {Array<{ path: string, data: ArrayBuffer }>} */
   const results = new Array(total)
@@ -176,10 +191,11 @@ export async function fetchFiles(info, token, onProgress) {
     onProgress?.(done, total)
   }
 
-  // Process in concurrent batches
-  for (let i = 0; i < total; i += FETCH_CONCURRENCY) {
-    const batch = tree.slice(i, i + FETCH_CONCURRENCY)
+  // Process in concurrent batches with tier-based throttling
+  for (let i = 0; i < total; i += concurrency) {
+    const batch = tree.slice(i, i + concurrency)
     await Promise.all(batch.map((entry, j) => fetchOne(entry, i + j)))
+    if (delayMs > 0 && i + concurrency < total) await sleep(delayMs)
   }
 
   return results

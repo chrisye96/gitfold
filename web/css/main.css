@@ -508,6 +508,116 @@ html[data-theme="dark"] .tool-power .bookmarklet-btn img { filter: invert(1); }
   padding-top: 1rem;
 }
 
+/* ── Upgrade modal (triggered when file count exceeds tier limit) ─────────── */
+.upgrade-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.upgrade-modal {
+  background: var(--c-bg);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  width: 90%;
+  max-width: 420px;
+  position: relative;
+}
+
+.upgrade-modal-close {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  cursor: pointer;
+  color: var(--c-text-muted);
+  line-height: 1;
+}
+
+.upgrade-modal h3 {
+  font-size: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.upgrade-modal-count {
+  color: var(--c-text-muted);
+  margin-bottom: 1rem;
+}
+
+.upgrade-modal-tiers {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.upgrade-modal-tier {
+  flex: 1;
+  padding: 0.75rem;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius);
+  text-align: center;
+  background: var(--c-surface);
+}
+
+.upgrade-modal-tier strong {
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.upgrade-modal-tier span {
+  font-size: 0.875rem;
+  color: var(--c-text-muted);
+}
+
+.upgrade-modal-tier--pro {
+  border-color: var(--c-primary);
+  background: var(--c-surface-2);
+}
+
+.upgrade-modal-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.upgrade-modal-actions .btn {
+  display: block;
+  text-align: center;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius);
+  font-weight: 600;
+  font-size: 0.9375rem;
+  text-decoration: none;
+  cursor: pointer;
+  border: 1px solid var(--c-border);
+  font-family: var(--font-body);
+  transition: background var(--transition), border-color var(--transition);
+}
+
+.upgrade-modal-actions .btn--secondary {
+  background: var(--c-surface);
+  color: var(--c-text);
+}
+.upgrade-modal-actions .btn--secondary:hover {
+  background: var(--c-surface-2);
+}
+
+.upgrade-modal-actions .btn--primary {
+  background: var(--c-primary);
+  color: #fff;
+  border-color: var(--c-primary);
+}
+.upgrade-modal-actions .btn--primary:hover {
+  background: var(--c-primary-hover);
+}
+
 /* ── Responsive ─────────────────────────────────────────────────────────────── */
 @media (max-width: 520px) {
   .site-header  { padding: 0.875rem 1rem; }
