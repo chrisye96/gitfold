@@ -5,9 +5,9 @@ compatibility_flags = ["nodejs_compat"]
 
 # Routes
 # Uncomment after domain is set up:
-# routes = [
-#   { pattern = "api.gitsnip.cc/*", zone_name = "gitsnip.cc" }
-# ]
+routes = [
+  { pattern = "api.gitsnip.cc/*", zone_name = "gitsnip.cc" }
+]
 
 # KV namespace for caching GitHub tree responses
 [[kv_namespaces]]
@@ -37,6 +37,28 @@ MAX_SIZE_MB = "100"
 FREE_FILE_LIMIT = "50"
 TOKEN_FILE_LIMIT = "200"
 PRO_FILE_LIMIT = "1000"
+POWER_FILE_LIMIT = "5000"
+
+# ─── D1 Database (Phase 2) ──────────────────────────────
+[[d1_databases]]
+binding = "DB"
+database_name = "gitsnip-db"
+database_id = "<replace-with-real-id>"
+migrations_dir = "src/db/migrations"
+
+# ─── R2 Bucket for ZIP caching (Phase 2) ───────────────
+[[r2_buckets]]
+binding = "R2_CACHE"
+bucket_name = "gitsnip-cache"
+
+# ─── Analytics Engine (Phase 2) ────────────────────────
+[[analytics_engine_datasets]]
+binding = "ANALYTICS"
+dataset = "gitsnip_usage"
+
+# ─── Cron Trigger: clean up old R2 ZIP caches daily ────
+[triggers]
+crons = ["0 3 * * *"]
 
 # Secrets (set via: wrangler secret put <NAME>)
 # GITHUB_TOKEN = "..."
@@ -44,3 +66,7 @@ PRO_FILE_LIMIT = "1000"
 # STRIPE_WEBHOOK_SECRET = "..."
 # STRIPE_PRO_PRICE_ID = "..."
 # STRIPE_POWER_PRICE_ID = "..."
+# GITHUB_CLIENT_ID = "..."
+# GITHUB_CLIENT_SECRET = "..."
+# JWT_SECRET = "..."
+# TOKEN_ENCRYPTION_KEY = "..."
