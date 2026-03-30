@@ -10,6 +10,8 @@
         content="GitSnip documentation: web UI, URL trick, bookmarklet, REST API reference, CLI, and FAQ. Download any GitHub subdirectory as a zip." />
   <meta name="keywords"
         content="gitsnip docs, github directory download, gitsnip api, github zip api, download github folder" />
+  <meta name="author" content="GitSnip" />
+  <meta name="robots" content="index, follow" />
   <link rel="canonical" href="https://gitsnip.cc/docs" />
 
   <!-- ── Open Graph ──────────────────────────────────────────────────── -->
@@ -17,24 +19,50 @@
   <meta property="og:url"         content="https://gitsnip.cc/docs" />
   <meta property="og:title"       content="GitSnip Docs — How to download any GitHub directory" />
   <meta property="og:description" content="Learn how to download any GitHub directory using GitSnip — web, API, CLI, and bookmarklet." />
-  <meta property="og:image"       content="https://gitsnip.cc/og-image.png" />
+  <meta property="og:image"       content="https://gitsnip.cc/img/og_image.png" />
+  <meta property="og:image:type"  content="image/png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height"content="630" />
   <meta property="og:site_name"   content="GitSnip" />
+  <meta property="og:locale"      content="en_US" />
 
   <!-- ── Twitter Card ─────────────────────────────────────────────────── -->
   <meta name="twitter:card"        content="summary_large_image" />
   <meta name="twitter:site"        content="@gitsnip" />
   <meta name="twitter:title"       content="GitSnip Docs — How to download any GitHub directory" />
   <meta name="twitter:description" content="GitSnip documentation: web UI, URL trick, bookmarklet, REST API, CLI, and FAQ." />
-  <meta name="twitter:image"       content="https://gitsnip.cc/og-image.png" />
+  <meta name="twitter:image"       content="https://gitsnip.cc/img/og_image.png" />
 
   <!-- ── Theme / PWA ──────────────────────────────────────────────────── -->
-  <meta name="theme-color" content="#ffffff" />
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#0f0f1a"  media="(prefers-color-scheme: dark)" />
   <!-- Anti-FOUC: apply saved theme before first paint -->
   <script>(function(){var t=localStorage.getItem('gitsnip-theme');if(t==='dark'||t==='light')document.documentElement.dataset.theme=t})()</script>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-  <link rel="icon" href="/favicon.ico" sizes="32x32" />
-  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <link rel="icon" href="/img/favicon.ico" sizes="32x32" />
+  <link rel="icon" href="/img/favicon-96x96.png" sizes="96x96" type="image/png" />
+  <link rel="apple-touch-icon" href="/img/apple-touch-icon.png" />
   <link rel="manifest" href="/site.webmanifest" />
+
+  <!-- ── Structured data (JSON-LD) ────────────────────────────────────── -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "headline": "GitSnip Documentation — How to download any GitHub directory",
+    "description": "Complete guide to downloading GitHub subdirectories as zip files using GitSnip: web UI, URL trick, REST API, CLI, and bookmarklet.",
+    "url": "https://gitsnip.cc/docs",
+    "author": { "@type": "Organization", "name": "GitSnip", "url": "https://gitsnip.cc" },
+    "publisher": { "@type": "Organization", "name": "GitSnip", "url": "https://gitsnip.cc" },
+    "breadcrumb": {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Home",          "item": "https://gitsnip.cc/" },
+        { "@type": "ListItem", "position": 2, "name": "Documentation", "item": "https://gitsnip.cc/docs" }
+      ]
+    }
+  }
+  </script>
 
   <!-- ── Styles ────────────────────────────────────────────────────────── -->
   <link rel="stylesheet" href="/css/tokens.css" />
@@ -50,29 +78,9 @@
   <!-- ── Docs layout ──────────────────────────────────────────────────────── -->
   <div class="docs-layout">
 
-    <!-- ── Sidebar ──────────────────────────────────────────────────────── -->
+    <!-- ── Sidebar (auto-generated from h2[data-nav-section]) ──────────── -->
     <aside class="docs-sidebar" aria-label="Documentation sections">
-      <nav aria-label="Docs navigation">
-        <div class="section-label">Getting started</div>
-        <a href="#quickstart">Quick start</a>
-
-        <div class="section-label">Usage</div>
-        <a href="#web-ui">Web UI</a>
-        <a href="#url-trick">URL trick</a>
-        <a href="#bookmarklet">Bookmarklet</a>
-        <a href="#share-link">Share link</a>
-
-        <div class="section-label">Developers</div>
-        <a href="#api">API reference</a>
-        <a href="#cli">CLI</a>
-        <a href="#library">Library <span style="font-size:.7rem;color:var(--c-text-muted)">(coming soon)</span></a>
-
-        <div class="section-label">AI</div>
-        <a href="#ai">AI usage</a>
-
-        <div class="section-label">Help</div>
-        <a href="#faq">FAQ</a>
-      </nav>
+      <nav id="docs-nav" aria-label="Docs navigation"></nav>
     </aside>
 
     <!-- ── Content ──────────────────────────────────────────────────────── -->
@@ -82,7 +90,7 @@
       <p>Download any GitHub subdirectory as a zip — no <code>git clone</code>, no login required.</p>
 
       <!-- ────────────────────── QUICK START ───────────────────────────── -->
-      <h2 id="quickstart">Quick start</h2>
+      <h2 id="quickstart" data-nav-section="Getting started">Quick start</h2>
       <p>Three steps, 30 seconds:</p>
       <ol>
         <li>Find a GitHub directory you want, e.g.<br>
@@ -98,7 +106,7 @@
       </div>
 
       <!-- ────────────────────── WEB UI ────────────────────────────────── -->
-      <h2 id="web-ui">Web UI</h2>
+      <h2 id="web-ui" data-nav-section="Usage">Web UI</h2>
       <p>The main page at <a href="/">gitsnip.cc</a> accepts any GitHub tree URL.</p>
       <p>Supported URL formats:</p>
       <pre><code>https://github.com/owner/repo/tree/branch/path/to/dir
@@ -120,14 +128,14 @@ github.com/owner/repo/tree/branch/path             (no https:// is fine)</code><
       </p>
 
       <!-- ────────────────────── URL TRICK ─────────────────────────────── -->
-      <h2 id="url-trick">URL trick (fastest method)</h2>
+      <h2 id="url-trick" data-nav-section="Usage">URL trick</h2>
       <p>Replace <code>github.com</code> with <code>gitsnip.cc</code> in any GitHub tree URL:</p>
       <pre><code>Before: https://github.com/anthropics/claude-code/tree/main/plugins
 After:  https://gitsnip.cc/anthropics/claude-code/tree/main/plugins</code></pre>
       <p>Press Enter — the download begins immediately without any extra clicks.</p>
 
       <!-- ────────────────────── BOOKMARKLET ───────────────────────────── -->
-      <h2 id="bookmarklet">Bookmarklet</h2>
+      <h2 id="bookmarklet" data-nav-section="Usage">Bookmarklet</h2>
       <p>Drag the button below to your browser's bookmarks bar.
          Then, on any GitHub directory page, click the bookmark to trigger an instant download.</p>
 
@@ -137,7 +145,7 @@ After:  https://gitsnip.cc/anthropics/claude-code/tree/main/plugins</code></pre>
          draggable="true"
          role="link"
          aria-label="GitSnip bookmarklet — drag to bookmarks bar">
-        ✂ GitSnip
+         <img src="/img/gitsnip.svg" width="17" height="17" alt="" style="vertical-align:-2px;margin-right:4px" />GitSnip
       </a>
       <p class="bookmarklet-hint">
         ⬆ Drag this button to your bookmarks bar. One click = instant download on any GitHub tree page.
@@ -148,7 +156,7 @@ After:  https://gitsnip.cc/anthropics/claude-code/tree/main/plugins</code></pre>
       </div>
 
       <!-- ────────────────────── SHARE LINK ────────────────────────────── -->
-      <h2 id="share-link">Shareable download links</h2>
+      <h2 id="share-link" data-nav-section="Usage">Share link</h2>
       <p>Any GitSnip URL is a permanent, shareable download link.
          After downloading, click <strong>⎘ Copy link</strong> to get the link.
          Anyone who opens it will immediately get the zip download.</p>
@@ -156,7 +164,7 @@ After:  https://gitsnip.cc/anthropics/claude-code/tree/main/plugins</code></pre>
       <p>This link format mirrors GitHub's tree URL — just with a different domain.</p>
 
       <!-- ────────────────────── API ───────────────────────────────────── -->
-      <h2 id="api">API reference</h2>
+      <h2 id="api" data-nav-section="Developers">API reference</h2>
       <p>Base URL: <code>https://api.gitsnip.cc</code></p>
 
       <h3>Authentication (optional)</h3>
@@ -229,7 +237,7 @@ curl -L -H "X-GitHub-Token: ghp_xxxx" \
 }</code></pre>
 
       <!-- ────────────────────── CLI ────────────────────────────────────── -->
-      <h2 id="cli">CLI</h2>
+      <h2 id="cli" data-nav-section="Developers">CLI</h2>
       <pre><code># No install needed — run with npx
 npx gitsnip https://github.com/anthropics/claude-code/tree/main/plugins/feature-dev
 
@@ -239,26 +247,17 @@ npx gitsnip &lt;url&gt; --info                 # show file list without download
 npx gitsnip &lt;url&gt; --token ghp_xxxx      # use GitHub token</code></pre>
 
       <!-- ────────────────────── LIBRARY ───────────────────────────────── -->
-      <h2 id="library">npm Library <em style="font-size:.75rem;color:var(--c-text-muted);font-weight:400">(coming soon)</em></h2>
-      <pre><code>import { snip, info } from 'gitsnip'
+      <h2 id="library" data-nav-section="Developers" data-nav-suffix="(coming soon)">Library</h2>
+      <p>A programmatic Node.js library is planned. In the meantime, you can use the
+         <a href="#cli">CLI</a> or call the <a href="#api">REST API</a> directly.</p>
+      <pre><code># Preview of planned API (not yet published):
+import { snip, info } from 'gitsnip'
 
-// Download as Buffer
-const zip = await snip('https://github.com/anthropics/claude-code/tree/main/plugins/feature-dev')
-await fs.writeFile('./output.zip', zip)
-
-// Get file info
-const { fileCount, totalSize, files } = await info('https://github.com/...')
-
-// With options
-const zip = await snip({
-  url: 'https://github.com/...',
-  token: process.env.GITHUB_TOKEN,
-  exclude: ['.git', '*.test.js'],
-  onProgress: (done, total) =&gt; console.log(`${done}/${total}`)
-})</code></pre>
+const zip = await snip('https://github.com/owner/repo/tree/main/path')
+const meta = await info('https://github.com/owner/repo/tree/main/path')</code></pre>
 
       <!-- ────────────────────── AI ─────────────────────────────────────── -->
-      <h2 id="ai">AI usage</h2>
+      <h2 id="ai" data-nav-section="AI">AI usage</h2>
       <p>GitSnip is designed to be AI-friendly. The machine-readable docs are at:</p>
       <ul>
         <li><a href="/llms.txt"><code>gitsnip.cc/llms.txt</code></a> — concise summary</li>
@@ -270,7 +269,7 @@ https://github.com/anthropics/claude-code
 Use the GitSnip API at https://gitsnip.cc/llms.txt"</code></pre>
 
       <!-- ────────────────────── FAQ ────────────────────────────────────── -->
-      <h2 id="faq">FAQ</h2>
+      <h2 id="faq" data-nav-section="Help">FAQ</h2>
 
       <h3>Why is the download slow?</h3>
       <p>For web UI downloads, your browser fetches each file individually from
@@ -279,8 +278,8 @@ Use the GitSnip API at https://gitsnip.cc/llms.txt"</code></pre>
          use the API endpoint which streams a pre-built zip.</p>
 
       <h3>Can I download private repositories?</h3>
-      <p>Private repo support requires OAuth and is planned for Phase 3.
-         For now, only public repositories are supported.</p>
+      <p>Not yet — only public repositories are supported right now.
+         Private repo support is on the roadmap.</p>
 
       <h3>I hit the GitHub rate limit. What do I do?</h3>
       <p>Add a GitHub Personal Access Token in the Settings panel (⚙).
@@ -295,9 +294,10 @@ Use the GitSnip API at https://gitsnip.cc/llms.txt"</code></pre>
          For very large directories, use <code>git sparse-checkout</code> instead.</p>
 
       <h3>Can I self-host GitSnip?</h3>
-      <p>Yes. GitSnip is open source (MIT) and runs on Cloudflare Workers + Pages — no Docker needed.
-         See the <a href="https://github.com/gitsnip/gitsnip" target="_blank" rel="noopener noreferrer">GitHub repo</a>
-         for setup instructions.</p>
+      <p>Yes. GitSnip is open source (MIT) and runs on Cloudflare Workers + Pages.
+         See the <a href="https://github.com/chrisye96/gitsnip" target="_blank" rel="noopener noreferrer">GitHub repo</a>
+         for setup instructions. The hosted version at gitsnip.cc includes
+         optimizations like caching and priority processing that are not part of the open-source release.</p>
 
       <h3>Is my GitHub token safe?</h3>
       <p>For web UI use: tokens are stored in your browser's localStorage only — they never reach our servers.
@@ -317,9 +317,33 @@ Use the GitSnip API at https://gitsnip.cc/llms.txt"</code></pre>
     renderLayout()
     initTheme()
 
-    // ── Sidebar active section ────────────────────────────────────────────────
-    const sections = document.querySelectorAll('h2[id], h3[id]')
-    const navLinks = document.querySelectorAll('.docs-sidebar a')
+    // ── Auto-build sidebar from h2[data-nav-section] ──────────────────────────
+    const nav = document.getElementById('docs-nav')
+    let currentSection = ''
+    document.querySelectorAll('#main-content h2[data-nav-section]').forEach(h2 => {
+      const section = h2.dataset.navSection
+      if (section !== currentSection) {
+        const label = document.createElement('div')
+        label.className = 'section-label'
+        label.textContent = section
+        nav.appendChild(label)
+        currentSection = section
+      }
+      const a = document.createElement('a')
+      a.href = '#' + h2.id
+      a.textContent = h2.textContent
+      if (h2.dataset.navSuffix) {
+        const span = document.createElement('span')
+        span.style.cssText = 'font-size:.7rem;color:var(--c-text-muted)'
+        span.textContent = ' ' + h2.dataset.navSuffix
+        a.appendChild(span)
+      }
+      nav.appendChild(a)
+    })
+
+    // ── Sidebar active section (scroll spy) ───────────────────────────────────
+    const sections = document.querySelectorAll('#main-content h2[id]')
+    const navLinks = nav.querySelectorAll('a')
     const observer = new IntersectionObserver(
       entries => {
         entries.forEach(e => {

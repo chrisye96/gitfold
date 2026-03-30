@@ -11,6 +11,7 @@
   <meta name="keywords"
         content="github download folder, download github directory, github subdirectory download, git sparse checkout, github zip download, gitsnip" />
   <meta name="author" content="GitSnip" />
+  <meta name="robots" content="index, follow" />
   <link rel="canonical" href="https://gitsnip.cc/" />
 
   <!-- ── Open Graph (Facebook / LinkedIn) ────────────────────────────── -->
@@ -18,23 +19,29 @@
   <meta property="og:url"         content="https://gitsnip.cc/" />
   <meta property="og:title"       content="GitSnip — Download any GitHub directory instantly" />
   <meta property="og:description" content="Download any GitHub subdirectory as a zip. No git clone. Just replace github.com → gitsnip.cc in the URL." />
-  <meta property="og:image"       content="https://gitsnip.cc/og-image.png" />
+  <meta property="og:image"       content="https://gitsnip.cc/img/og_image.png" />
+  <meta property="og:image:type"  content="image/png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height"content="630" />
   <meta property="og:site_name"   content="GitSnip" />
+  <meta property="og:locale"      content="en_US" />
 
   <!-- ── Twitter Card ─────────────────────────────────────────────────── -->
   <meta name="twitter:card"        content="summary_large_image" />
   <meta name="twitter:site"        content="@gitsnip" />
   <meta name="twitter:title"       content="GitSnip — Download any GitHub directory instantly" />
   <meta name="twitter:description" content="Paste a GitHub tree URL → get a zip. Or just replace github.com → gitsnip.cc. Free, no login." />
-  <meta name="twitter:image"       content="https://gitsnip.cc/og-image.png" />
+  <meta name="twitter:image"       content="https://gitsnip.cc/img/og_image.png" />
 
   <!-- ── Theme / PWA ──────────────────────────────────────────────────── -->
-  <meta name="theme-color" content="#ffffff" />
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#0f0f1a"  media="(prefers-color-scheme: dark)" />
   <!-- Anti-FOUC: apply saved theme before first paint -->
   <script>(function(){var t=localStorage.getItem('gitsnip-theme');if(t==='dark'||t==='light')document.documentElement.dataset.theme=t})()</script>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-  <link rel="icon" href="/favicon.ico" sizes="32x32" />
-  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <link rel="icon" href="/img/favicon.ico" sizes="32x32" />
+  <link rel="icon" href="/img/favicon-96x96.png" sizes="96x96" type="image/png" />
+  <link rel="apple-touch-icon" href="/img/apple-touch-icon.png" />
   <link rel="manifest" href="/site.webmanifest" />
 
   <!-- ── Structured data (JSON-LD) ────────────────────────────────────── -->
@@ -97,7 +104,7 @@
              aria-label="GitSnip download tool"
              role="region">
 
-      <!-- URL input -->
+      <!-- ── Primary: URL input + Get Files ── -->
       <div class="input-area">
         <div class="input-row">
           <label for="url-input" class="sr-only" data-i18n="input.label">
@@ -113,33 +120,36 @@
             spellcheck="false"
             data-i18n-placeholder="input.placeholder"
             placeholder="https://github.com/owner/repo/tree/branch/path"
-            aria-describedby="input-hint"
           />
           <button
             id="download-btn"
             class="btn-download"
             type="button"
-            aria-label="Download directory as zip"
-            data-i18n-label="btn.download">
-            Download
-          </button>
-          <button
-            id="token-toggle"
-            class="btn-icon"
-            type="button"
-            aria-label="Settings"
-            aria-expanded="false"
-            aria-controls="token-panel"
-            title="GitHub Token settings">
-            <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor" aria-hidden="true">
-              <path d="M8 0a8.2 8.2 0 0 1 .701.031C9.444.095 9.99.645 10.16 1.29l.288 1.107c.018.066.079.158.212.224.231.114.454.243.668.386.123.082.233.09.299.071l1.103-.303c.644-.176 1.392.021 1.82.63.27.385.506.792.704 1.218.315.675.111 1.422-.364 1.891l-.814.806c-.049.048-.098.147-.088.294.016.257.016.515 0 .772-.01.147.038.246.088.294l.814.806c.475.469.679 1.216.364 1.891a7.977 7.977 0 0 1-.704 1.217c-.428.61-1.176.807-1.82.63l-1.102-.302c-.067-.019-.177-.011-.3.071a5.909 5.909 0 0 1-.668.386c-.133.066-.194.158-.211.224l-.29 1.106c-.168.646-.715 1.196-1.458 1.26a8.006 8.006 0 0 1-1.402 0c-.743-.064-1.289-.614-1.458-1.26l-.289-1.106c-.018-.066-.079-.158-.212-.224a5.738 5.738 0 0 1-.668-.386c-.123-.082-.233-.09-.299-.071l-1.103.303c-.644.176-1.392-.021-1.82-.63a8.12 8.12 0 0 1-.704-1.218c-.315-.675-.111-1.422.363-1.891l.815-.806c.05-.048.098-.147.088-.294a6.214 6.214 0 0 1 0-.772c.01-.147-.038-.246-.088-.294l-.815-.806C.635 6.045.431 5.298.746 4.623a7.92 7.92 0 0 1 .704-1.217c.428-.61 1.176-.807 1.82-.63l1.102.302c.067.019.177.011.3-.071.214-.143.437-.272.668-.386.133-.066.194-.158.211-.224l.29-1.106C6.009.645 6.556.095 7.299.03 7.53.01 7.764 0 8 0Zm-.571 1.525c-.036.003-.108.036-.137.146l-.289 1.105c-.147.561-.549.967-.998 1.189-.273.136-.561.258-.86.361-.479.166-1.03.092-1.502-.038l-1.102-.302c-.114-.032-.192-.02-.236.043a6.45 6.45 0 0 0-.58.988c-.024.053-.004.133.061.197l.815.806c.403.399.576 1 .494 1.56a4.706 4.706 0 0 0 0 1.252c.082.56-.091 1.161-.494 1.56l-.815.806c-.065.064-.085.144-.061.197.164.354.356.685.58.988.044.063.122.075.236.043l1.102-.302c.473-.13 1.024-.204 1.502-.038a5.207 5.207 0 0 0 .86.361c.45.222.851.628.998 1.189l.289 1.105c.029.11.101.143.137.146a6.6 6.6 0 0 0 1.142 0c.036-.003.108-.036.137-.146l.289-1.105c.147-.561.549-.967.998-1.189.273-.136.561-.258.86-.361.479-.166 1.03-.092 1.502.038l1.102.302c.114.032.192.02.236-.043.224-.303.416-.634.58-.988.024-.053.004-.133-.061-.197l-.815-.806c-.403-.399-.576-1-.494-1.56a4.706 4.706 0 0 0 0-1.252c-.082-.56.091-1.161.494-1.56l.815-.806c.065-.064.085-.144.061-.197a6.45 6.45 0 0 0-.58-.988c-.044-.063-.122-.075-.236-.043l-1.102.302c-.473.13-1.024.204-1.502.038a5.207 5.207 0 0 0-.86-.361c-.45-.222-.851-.628-.998-1.189l-.289-1.105c-.029-.11-.101-.143-.137-.146a6.6 6.6 0 0 0-1.142 0ZM11 8a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM9.5 8a1.5 1.5 0 1 0-3.001.001A1.5 1.5 0 0 0 9.5 8Z"/>
-            </svg>
+            disabled
+            data-i18n="btn.download">
+            Get Files
           </button>
         </div>
 
-        <!-- Token panel: opens directly below input row -->
+        <!-- Single inline feedback zone (all states render here) -->
+        <div id="feedback" class="feedback" hidden aria-live="polite">
+          <span id="feedback-icon" class="feedback-icon" aria-hidden="true"></span>
+          <span id="feedback-msg" class="feedback-msg"></span>
+          <button id="feedback-action" class="feedback-action" type="button" hidden></button>
+        </div>
+      </div>
+
+      <!-- ── Token: collapsed by default ── -->
+      <div class="tool-token">
+        <button id="token-toggle"
+                class="token-toggle-link"
+                type="button"
+                aria-expanded="false"
+                aria-controls="token-panel"
+                data-i18n="token.toggle">
+          Need higher rate limits? Add a GitHub Token
+        </button>
         <div id="token-panel" class="token-panel" hidden>
-          <label for="token-input" data-i18n="token.label">GitHub Token</label>
           <div class="token-input-row">
             <input type="password"
                    id="token-input"
@@ -155,120 +165,44 @@
                     aria-label="Clear token"
                     hidden>×</button>
           </div>
-          <p id="token-hint" class="token-hint" data-i18n="token.hint">
+          <p id="token-hint" class="token-hint">
             Increases rate limit to 5,000 req/hour. Stored in your browser only.
             <a href="https://github.com/settings/tokens/new?scopes=public_repo&description=GitSnip"
                target="_blank" rel="noopener noreferrer">Generate token ↗</a>
           </p>
         </div>
+      </div>
 
-        <p id="input-hint" class="input-hint">
-          Or replace <code>github.com</code> → <code>gitsnip.cc</code> in the URL bar
+      <!-- ── Alternative: URL tip ── -->
+      <div class="tool-alternative">
+        <p class="alt-tip">
+          <span class="alt-tip-label">Tip</span>
+          Replace <code>github.com</code> →
+          <button id="copy-domain" class="copy-domain" type="button"
+                  aria-label="Copy gitsnip.cc to clipboard">
+            <code>gitsnip.cc</code>
+          </button>
+          in the URL bar
         </p>
-        <p id="url-invalid-hint" class="url-invalid-hint" hidden aria-live="polite"></p>
+        <p id="converted-url" class="converted-url" hidden></p>
       </div>
 
-      <!-- Detected info box (hidden until URL is parsed) -->
-      <div id="detected-box" class="detected-box" hidden aria-live="polite">
-        <span class="detected-label" data-i18n="parsed.detected">Detected:</span>
-        <span id="detected-label" class="detected-value" aria-label="Detected repository info"></span>
-        <span id="detected-meta" class="detected-meta" aria-live="polite"></span>
+      <!-- ── Power: Bookmarklet ── -->
+      <div class="tool-power">
+        <a class="bookmarklet-btn"
+           href="javascript:window.location.href=window.location.href.replace('github.com','gitsnip.cc')"
+           title="Drag this to your bookmarks bar, then click it on any GitHub folder page"
+           draggable="true"
+           role="link"
+           aria-label="GitSnip bookmarklet — drag to bookmarks bar">
+          <img src="/img/gitsnip.svg" width="17" height="17" alt="" class="bookmarklet-icon" />GitSnip
+        </a>
+        <p class="bookmarklet-hint">
+          One-click download on GitHub — drag to your bookmarks bar
+        </p>
       </div>
-
-      <!-- Progress bar (hidden until loading) -->
-      <div id="progress-bar" class="progress-area" hidden role="region" aria-label="Download progress">
-        <div class="progress-bar">
-          <div id="progress-fill"
-               class="progress-fill"
-               role="progressbar"
-               aria-valuemin="0"
-               aria-valuemax="100"
-               aria-valuenow="0"
-               aria-label="Download progress"></div>
-        </div>
-        <p id="progress-text" class="progress-text" aria-live="polite"></p>
-      </div>
-
-      <!-- Action buttons -->
-      <div class="action-row">
-        <button id="clear-btn"
-                class="btn-secondary"
-                type="button"
-                hidden
-                data-i18n="btn.clear">Clear</button>
-        <button id="copy-link-btn"
-                class="btn-secondary"
-                type="button"
-                disabled
-                hidden
-                aria-label="Copy shareable download link"
-                data-i18n-label="btn.copy_link">⎘ Copy link</button>
-      </div>
-
-      <!-- Pro upsell (shown during loading + after success) -->
-      <aside id="pro-panel" class="pro-panel" hidden aria-label="Pro features">
-        <p class="pro-panel-title">Upgrade to Pro</p>
-        <ul class="pro-features" role="list">
-          <li><span class="icon" aria-hidden="true">⚡</span>
-              <span data-i18n="pro.skip_queue">Skip queue &amp; download instantly</span></li>
-          <li><span class="icon" aria-hidden="true">⚡</span>
-              <span data-i18n="pro.batch">Batch download multiple folders at once</span></li>
-          <li><span class="icon" aria-hidden="true">⚡</span>
-              <span data-i18n="pro.cli">CLI automation: <code>npx gitsnip &lt;url&gt;</code></span></li>
-          <li><span class="icon" aria-hidden="true">⚡</span>
-              <span data-i18n="pro.private">Access private repositories</span></li>
-        </ul>
-        <button class="btn-pro" type="button"
-                onclick="alert('Pro plan coming soon! Follow @gitsnip for updates.')"
-                data-i18n="pro.upgrade">Upgrade to Pro</button>
-      </aside>
-
-      <!-- Success panel -->
-      <section id="result-panel" class="result-panel" hidden
-               aria-live="polite" aria-label="Download result">
-        <p class="result-title" data-i18n="success.ready">✅ Download ready</p>
-        <p id="result-summary" class="result-summary"></p>
-        <button id="download-zip-btn"
-                class="btn-download-zip"
-                type="button"
-                data-i18n="success.download_zip">Download ZIP</button>
-        <div class="result-workflow" aria-label="CLI usage hint">
-          <p class="workflow-label" data-i18n="success.workflow_hint">Use this in your workflow:</p>
-          <code id="cli-hint" class="cli-hint"></code>
-        </div>
-
-        <!-- Ad slot: result page (highest engagement — user just succeeded) -->
-        <div class="ad-slot ad-slot-result" data-ad-slot="result" hidden aria-label="Advertisement"></div>
-      </section>
-
-      <!-- Error panel -->
-      <section id="error-panel" class="error-panel" hidden
-               role="alert" aria-live="assertive">
-        <p class="error-title" data-i18n="error.title">Something went wrong</p>
-        <p id="error-msg"  class="error-msg"></p>
-        <p id="error-hint" class="error-hint"></p>
-        <button id="retry-btn" class="btn-retry" type="button"
-                data-i18n="error.retry">Try again</button>
-      </section>
 
     </section><!-- /tool-card -->
-
-    <!-- ── URL trick explainer ────────────────────────────────────────────── -->
-    <section class="url-trick" aria-labelledby="trick-title">
-      <h2 class="url-trick-title" id="trick-title">The fastest way</h2>
-      <div class="url-trick-demo" role="img"
-           aria-label="Replace github.com with gitsnip.cc in the URL bar">
-        <div class="before">
-          https://<span class="highlight">github.com</span>/anthropics/claude-code/tree/main/plugins
-        </div>
-        <div>
-          <span class="arrow">↓</span> replace in address bar
-        </div>
-        <div class="after">
-          https://<span class="highlight">gitsnip.cc</span>/anthropics/claude-code/tree/main/plugins
-        </div>
-      </div>
-    </section>
 
   </main><!-- /site-main -->
 

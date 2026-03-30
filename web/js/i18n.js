@@ -20,71 +20,41 @@ const locales = {
     'app.title': 'GitSnip',
     'app.tagline': 'Download any GitHub directory. Instantly.',
     'nav.docs': 'Docs',
-    'nav.api': 'API',
     'nav.github': 'GitHub',
 
-    // ── Input / idle state ────────────────────────────────────────────
+    // ── Input ─────────────────────────────────────────────────────────
     'input.label': 'GitHub directory URL',
     'input.placeholder': 'https://github.com/owner/repo/tree/branch/path',
-    'input.hint': 'Or replace github.com → gitsnip.cc in your browser URL bar',
-
-    // ── Parsed state ──────────────────────────────────────────────────
-    'parsed.detected': 'Detected',
-    'parsed.files_estimated': 'files (estimated)',
-    'parsed.meta': '{count} files · {size}',
-    'parsed.meta.over_limit': '⚠ {count} files — exceeds {limit}-file free limit',
 
     // ── Buttons ───────────────────────────────────────────────────────
-    'btn.download': 'Download',
-    'btn.download.repo': 'Download repository',
-    'btn.copy_link': 'Copy link',
-    'btn.copy_link.copied': 'Copied!',
-    'btn.clear': 'Clear',
+    'btn.download': 'Get Files',
+    'btn.download.repo': 'Get Repository',
+    'btn.downloading': 'Downloading…',
 
     // ── Token panel ───────────────────────────────────────────────────
-    'token.label': 'GitHub Token',
+    'token.toggle': 'Need higher rate limits? Add a GitHub Token',
     'token.placeholder': 'ghp_xxxxxxxxxxxx  (optional)',
     'token.clear': 'Clear saved token',
     'token.hint': 'Increases rate limit to 5,000 req/hour. Stored in your browser only.',
-    'token.toggle': 'Settings',
 
-    // ── Loading state ─────────────────────────────────────────────────
-    'loading.preparing': 'Preparing download…',
-    'loading.fetching': 'Fetching files…',
-    'loading.zipping': 'Zipping…',
-    'loading.progress': '{done} of {total} files',
-
-    // ── Pro upsell (shown during loading + after success) ─────────────
-    'pro.skip_queue': 'Pro users skip queue & download instantly',
-    'pro.batch': 'Batch download multiple folders at once',
-    'pro.cli': 'Use CLI for automation: npx gitsnip <url>',
-    'pro.private': 'Access private repositories',
-    'pro.upgrade': 'Upgrade to Pro',
-
-    // ── Success state ─────────────────────────────────────────────────
-    'success.ready': '✅ Download ready',
-    'success.summary': 'Downloaded {count} files ({size}) in {seconds}s',
-    'success.repo_summary': 'Your browser is downloading the repository zip.',
-    'success.download_zip': 'Download ZIP',
-    'success.workflow_hint': 'Use this in your workflow:',
-
-    // ── Error state ───────────────────────────────────────────────────
-    'error.title': 'Something went wrong',
-    'error.retry': 'Try again',
-    'error.msg.FILE_LIMIT': 'This directory has {count} files (free limit: {limit}).',
-    'error.hint.FILE_LIMIT': 'Free downloads are limited to 50 files. Upgrade to Pro for larger directories.',
-    'error.hint.RATE_LIMITED': 'Add a GitHub Personal Access Token to get 5,000 requests/hour.',
-    'error.hint.NOT_FOUND': 'Check that the URL points to an existing directory.',
-    'error.hint.UNAUTHORIZED': 'Your GitHub token may be expired or have insufficient permissions.',
-    'error.hint.TOO_LARGE': 'This directory is too large. Try a smaller subdirectory.',
-    'error.hint.GITHUB_ERROR': 'GitHub may be experiencing issues. Try again in a moment.',
-    'error.hint.default': 'Check the URL and try again.',
+    // ── Inline feedback ───────────────────────────────────────────────
+    'feedback.valid': '{info}',
+    'feedback.invalid': 'Not a valid GitHub directory URL',
+    'feedback.downloading': 'Downloading…',
+    'feedback.success': 'Download started',
+    'feedback.rate_limited': 'Rate limit exceeded',
+    'feedback.not_found': 'Repository or directory not found',
+    'feedback.unauthorized': 'Token expired or invalid',
+    'feedback.file_limit': 'Too many files (free limit: {limit})',
+    'feedback.network': 'Network error',
+    'feedback.default_error': 'Something went wrong',
+    'feedback.action.add_token': 'Add GitHub Token',
+    'feedback.action.update_token': 'Update Token',
+    'feedback.action.retry': 'Try again',
 
     // ── Footer ────────────────────────────────────────────────────────
-    'footer.made_with': 'Made with ♥ for developers',
     'footer.github': 'GitHub',
     'footer.docs': 'Docs',
-    'footer.api': 'API',
   },
 }
 

@@ -2,12 +2,16 @@
   "name": "GitSnip",
   "short_name": "GitSnip",
   "description": "Download any GitHub directory as a zip — instantly",
+  "lang": "en",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0F0F1A",
-  "theme_color": "#0F0F1A",
+  "theme_color": "#ffffff",
+  "background_color": "#ffffff",
+  "categories": ["developer-tools", "utilities"],
   "icons": [
-    { "src": "/favicon.svg", "type": "image/svg+xml", "sizes": "any" },
-    { "src": "/apple-touch-icon.png", "type": "image/png", "sizes": "180x180" }
+    { "src": "/favicon.svg",                     "type": "image/svg+xml", "sizes": "any",     "purpose": "any" },
+    { "src": "/img/apple-touch-icon.png",         "type": "image/png",     "sizes": "180x180", "purpose": "any" },
+    { "src": "/img/web-app-manifest-192x192.png", "type": "image/png",     "sizes": "192x192", "purpose": "any maskable" },
+    { "src": "/img/web-app-manifest-512x512.png", "type": "image/png",     "sizes": "512x512", "purpose": "any maskable" }
   ]
 }

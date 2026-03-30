@@ -67,7 +67,7 @@
     --c-border-focus:   #58a6ff;
 
     --c-text:           #e6edf3;
-    --c-text-muted:     #7d8590;
+    --c-text-muted:     #9ba3ab;
     --c-placeholder:    #484f58;
 
     --c-success:        #3fb950;
@@ -98,7 +98,7 @@ html[data-theme="dark"] {
   --c-border-focus:   #58a6ff;
 
   --c-text:           #e6edf3;
-  --c-text-muted:     #7d8590;
+  --c-text-muted:     #9ba3ab;
   --c-placeholder:    #484f58;
 
   --c-success:        #3fb950;

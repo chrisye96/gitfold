@@ -169,5 +169,5 @@ Bookmarklet: drag `javascript:window.location.href=window.location.href.replace(
 
 ## Source code
 
-https://github.com/gitsnip/gitsnip (MIT license)
+https://github.com/chrisye96/gitsnip (MIT license)
 Runs on Cloudflare Workers + Pages.

@@ -125,27 +125,38 @@
 .docs-content th { color: var(--c-text-muted); font-weight: 600; font-size: 0.8rem; }
 .docs-content td { color: var(--c-text-muted); }
 
-/* ── Bookmarklet button ───────────────────────────────────────────────────── */
+/* ── Bookmarklet (docs only) ──────────────────────────────────────────────── */
 .bookmarklet-btn {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 1rem;
-  background: var(--c-primary);
-  color: #ffffff;
+  background: var(--c-surface-2);
+  color: var(--c-text);
   font-weight: 500;
   font-size: 0.875rem;
+  border: 1px solid var(--c-border);
   border-radius: var(--radius);
   text-decoration: none;
   cursor: grab;
   user-select: none;
-  transition: background var(--transition);
+  transition: background var(--transition), border-color var(--transition);
 }
-.bookmarklet-btn:hover { background: var(--c-primary-hover); text-decoration: none; color: #ffffff; }
+.bookmarklet-btn:hover {
+  background: var(--c-bg);
+  border-color: var(--c-text-muted);
+  text-decoration: none;
+  color: var(--c-text);
+}
 .bookmarklet-hint {
-  margin-top: 0.5rem;
+  margin-top: 0.75rem;
   font-size: 0.8rem;
   color: var(--c-text-muted);
+  line-height: 1.5;
+}
+html[data-theme="dark"] .bookmarklet-btn img { filter: invert(1); }
+@media (prefers-color-scheme: dark) {
+  html:not([data-theme="light"]) .bookmarklet-btn img { filter: invert(1); }
 }
 
 /* ── API endpoint block ───────────────────────────────────────────────────── */
@@ -191,8 +202,48 @@
 
 /* ── Responsive ──────────────────────────────────────────────────────────── */
 @media (max-width: 640px) {
-  .docs-layout  { flex-direction: column; padding: 1rem 0.75rem 3rem; }
-  .docs-sidebar { width: 100%; position: static; padding-right: 0; padding-bottom: 1rem;
-                  border-bottom: 1px solid var(--c-border); margin-bottom: 1.5rem; }
-  .docs-sidebar nav { flex-direction: row; flex-wrap: wrap; }
+  .docs-layout { flex-direction: column; padding: 1rem 0.75rem 3rem; }
+
+  /* Mobile nav: horizontal scrollable tab strip, sticky below the site header */
+  .docs-sidebar {
+    width: 100%;
+    position: sticky;
+    top: 57px; /* match .site-header height */
+    z-index: 50;
+    padding-right: 0;
+    padding-bottom: 0;
+    background: color-mix(in srgb, var(--c-bg) 96%, transparent);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--c-border);
+    margin-bottom: 1.5rem;
+  }
+  /* Hide section group labels — too noisy in a horizontal strip */
+  .docs-sidebar .section-label { display: none; }
+
+  .docs-sidebar nav {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 0;
+    padding: 0 0.5rem;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .docs-sidebar nav::-webkit-scrollbar { display: none; }
+
+  .docs-sidebar a {
+    white-space: nowrap;
+    border-left: none;
+    border-bottom: 2px solid transparent;
+    border-radius: 0;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8125rem;
+  }
+  .docs-sidebar a:hover { background: transparent; }
+  .docs-sidebar a.active {
+    border-left-color: transparent;
+    border-bottom-color: var(--c-primary);
+    background: transparent;
+  }
 }
