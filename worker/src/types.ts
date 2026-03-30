@@ -68,5 +68,26 @@ export interface SessionUser {
   tier: Tier
 }
 
+/** Team record from D1 */
+export interface Team {
+  id: string
+  name: string
+  owner_id: string
+  created_at: number
+}
+
+/** Team member record from D1 */
+export interface TeamMember {
+  id: string
+  team_id: string
+  user_id: string | null
+  email: string
+  role: 'owner' | 'member'
+  status: 'invited' | 'active' | 'removed'
+  invite_token: string | null
+  joined_at: number | null
+  created_at: number
+}
+
 /** Re-export shared types for convenience */
 export type { RepoInfo, TreeEntry, SnipInfo, GitSnipError } from '../../shared/types.js'

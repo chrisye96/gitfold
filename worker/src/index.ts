@@ -10,12 +10,14 @@
  */
 
 import { Hono } from 'hono'
+import type { Context } from 'hono'
 import type { Env, Tier, SessionUser } from './types.js'
 import { validateUrl, resolveTier, corsHeaders } from './middleware/security.js'
 import { sessionMiddleware } from './middleware/session.js'
 import apiRoutes from './routes/api.js'
 import billingRoutes from './routes/billing.js'
 import authRoutes from './routes/auth.js'
+import teamRoutes from './routes/team.js'
 
 const app = new Hono<{
   Bindings: Env
@@ -64,6 +66,58 @@ app.route('/v1', authRoutes)
 
 app.route('/api/v1', billingRoutes)
 app.route('/v1', billingRoutes)
+
+// ─── Team routes (Phase 3 — Power tier) ─────────────────────────────────────
+
+app.route('/api/v1', teamRoutes)
+app.route('/v1', teamRoutes)
+
+// ─── GET /v1/download/result — retrieve SSE job zip (no URL validation needed) ─
+
+async function downloadResultHandler(c: Context<{ Bindings: Env; Variables: { repoInfo: import('./types.js').RepoInfo; tier: Tier; fileLimit: number; sessionUser?: SessionUser } }>) {
+  const jobId = c.req.query('jobId')
+  if (!jobId) {
+    return Response.json(
+      { code: 'MISSING_PARAM', message: 'Missing jobId query parameter.' },
+      { status: 400, headers: corsHeaders(c.req.header('Origin')) },
+    )
+  }
+
+  const [zipData, filename] = await Promise.all([
+    c.env.GITSNIP_CACHE.get(`job:${jobId}`, 'arrayBuffer'),
+    c.env.GITSNIP_CACHE.get(`job:${jobId}:name`, 'text'),
+  ])
+
+  if (!zipData) {
+    return Response.json(
+      { code: 'JOB_EXPIRED', message: 'Job not found or expired (5-minute window).' },
+      { status: 404, headers: corsHeaders(c.req.header('Origin')) },
+    )
+  }
+
+  c.executionCtx.waitUntil(Promise.all([
+    c.env.GITSNIP_CACHE.delete(`job:${jobId}`),
+    c.env.GITSNIP_CACHE.delete(`job:${jobId}:name`),
+  ]))
+
+  const safeName = filename
+    ? (filename.endsWith('.zip') ? filename : filename + '.zip')
+    : 'download.zip'
+
+  return new Response(zipData, {
+    status: 200,
+    headers: {
+      'Content-Type': 'application/zip',
+      'Content-Disposition': `attachment; filename="${safeName}"`,
+      'Content-Length': String(zipData.byteLength),
+      'Cache-Control': 'no-store',
+      ...corsHeaders(c.req.header('Origin')),
+    },
+  })
+}
+
+app.get('/v1/download/result', downloadResultHandler)
+app.get('/api/v1/download/result', downloadResultHandler)
 
 // ─── v1 routes (with URL validation + tier resolution middleware) ─────────────
 

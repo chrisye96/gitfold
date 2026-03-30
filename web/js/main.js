@@ -18,6 +18,7 @@ import { renderLayout } from './layout.js'
 import { initTheme } from './theme.js'
 import { getSubToken, getFileLimit, isProUser, handleCheckoutReturn, verifySubscription } from './subscription.js'
 import { checkSession, handleAuthReturn, isAuthenticated, startGitHubLogin, getCachedSession } from './auth.js'
+import { saveToHistory, getHistory, renderHistory } from './history.js'
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -53,6 +54,9 @@ const tokenPanel     = /** @type {HTMLElement}       */ (document.getElementById
 const tokenInput     = /** @type {HTMLInputElement}  */ (document.getElementById('token-input'))
 const tokenClearBtn  = /** @type {HTMLButtonElement} */ (document.getElementById('token-clear-btn'))
 const statusRegion   = /** @type {HTMLElement}       */ (document.getElementById('status-region'))
+const historySection = /** @type {HTMLElement}       */ (document.getElementById('history-section'))
+const historyBody    = /** @type {HTMLElement}       */ (document.getElementById('history-body'))
+const historyToggle  = /** @type {HTMLButtonElement} */ (document.getElementById('history-toggle'))
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -83,6 +87,29 @@ function clearToken() {
   tokenInput.value = ''
   persistToken('')
   tokenInput.focus()
+}
+
+// ─── History panel ────────────────────────────────────────────────────────────
+
+function refreshHistory() {
+  const entries = getHistory()
+  if (entries.length === 0) {
+    historySection.hidden = true
+    return
+  }
+  historySection.hidden = false
+  renderHistory(historyBody, (entry) => {
+    urlInput.value = entry.url
+    handleUrlChange()
+    urlInput.focus()
+  }, refreshHistory)
+}
+
+function toggleHistoryBody() {
+  const isExpanded = historyToggle.getAttribute('aria-expanded') === 'true'
+  historyBody.hidden = isExpanded
+  historyToggle.setAttribute('aria-expanded', String(!isExpanded))
+  historyToggle.textContent = isExpanded ? 'Show' : 'Hide'
 }
 
 // ─── Feedback system ─────────────────────────────────────────────────────────
@@ -229,6 +256,8 @@ async function startDownload() {
     document.body.removeChild(a)
 
     showFeedback('success', t('feedback.success'))
+    saveToHistory(info, { url: urlInput.value.trim(), fileCount: 0, totalSize: 0, zipName: info.repo })
+    refreshHistory()
     resetButton()
     successTimer = setTimeout(() => {
       if (parsedInfo) {
@@ -251,7 +280,50 @@ async function startDownload() {
   const fileLimit = getFileLimit(hasToken)
 
   try {
-    // ── Step 1: Pre-check — fetch tree to get file count before downloading ──
+    // ── Step 1: Try SSE server-side download (Pro/Power users) ──
+    // For authenticated/pro users we can use the worker's SSE endpoint which
+    // streams progress and builds the zip server-side (faster, uses R2 cache).
+    if (isProUser()) {
+      showFeedback('loading', t('feedback.checking'), {
+        label: t('feedback.action.cancel'), handler: cancelDownload,
+      })
+      try {
+        const sseOk = await downloadViaSSE(info, token)
+        if (sseOk) {
+          showFeedback('success', t('feedback.success'))
+          saveToHistory(info, { url: urlInput.value.trim(), fileCount: 0, totalSize: 0, zipName: zipFilename(info) })
+          refreshHistory()
+          successTimer = setTimeout(() => {
+            if (parsedInfo) showFeedback('valid', formatRepoInfo(parsedInfo))
+          }, 2000)
+          return
+        }
+        // SSE too_large or network error → fall through to client-side
+      } catch (err) {
+        if (err.name === 'AbortError') {
+          showFeedback('error', t('feedback.cancelled'))
+          return
+        }
+        // SSE error with a code — show it
+        if (err.code) {
+          const errorMap = {
+            TOO_MANY_FILES: {
+              msg: err.message,
+              action: { label: 'Upgrade', handler() { window.location.href = '/pricing' } },
+            },
+            RATE_LIMITED: {
+              msg: t('feedback.rate_limited'),
+              action: { label: t('feedback.action.add_token'), handler() { tokenPanel.hidden = false; tokenInput.focus() } },
+            },
+          }
+          const entry = errorMap[err.code]
+          if (entry) { showFeedback('error', entry.msg, entry.action); return }
+        }
+        // Unknown SSE error → fall through to client-side
+      }
+    }
+
+    // ── Step 2: Pre-check — fetch tree to get file count before downloading ──
     showFeedback('loading', t('feedback.checking'), {
       label: t('feedback.action.cancel'), handler: cancelDownload,
     })
@@ -274,7 +346,7 @@ async function startDownload() {
       label: t('feedback.action.cancel'), handler: cancelDownload,
     })
 
-    // ── Step 2: Download file contents ──
+    // ── Step 3: Download file contents ──
     await downloadFilesFromTree(tree, info, signal)
 
   } catch (err) {
@@ -370,9 +442,103 @@ async function downloadFilesFromTree(tree, info, signal, originalCount) {
   showFeedback('success', isPartial
     ? `Downloaded ${total} files (partial).`
     : t('feedback.success'))
+
+  // Save to download history
+  const totalSize = results.reduce((s, f) => s + (f.data?.byteLength || 0), 0)
+  saveToHistory(info, {
+    url: urlInput.value.trim(),
+    fileCount: total,
+    totalSize,
+    zipName,
+  })
+  refreshHistory()
+
   successTimer = setTimeout(() => {
     if (parsedInfo) showFeedback('valid', formatRepoInfo(parsedInfo))
   }, 2000)
+}
+
+// ─── SSE progress download ────────────────────────────────────────────────────
+
+/**
+ * Download a folder via the worker's SSE progress endpoint.
+ * Falls back to client-side download on error.
+ *
+ * @param {{ owner:string, repo:string, branch:string, path:string }} info
+ * @param {string} token - GitHub PAT (may be empty)
+ * @returns {Promise<boolean>} true = SSE succeeded; false = should fall back
+ */
+async function downloadViaSSE(info, token) {
+  const subToken = getSubToken()
+  const githubUrl = urlInput.value.trim()
+  const headers = {}
+  if (token) headers['X-GitHub-Token'] = token
+  if (subToken) headers['X-Sub-Token'] = subToken
+
+  let res
+  try {
+    res = await fetch(
+      `${API_BASE}/v1/download/progress?url=${encodeURIComponent(githubUrl)}`,
+      { headers, credentials: 'include', signal: downloadController?.signal },
+    )
+  } catch (err) {
+    if (err.name === 'AbortError') throw err
+    return false  // network error — fall back
+  }
+
+  if (!res.ok || !res.body) return false
+
+  const reader = res.body.getReader()
+  const decoder = new TextDecoder()
+  let buffer = ''
+
+  while (true) {
+    const { value, done } = await reader.read()
+    if (done) break
+    buffer += decoder.decode(value, { stream: true })
+
+    // Parse SSE events (each ends with \n\n)
+    let sep
+    while ((sep = buffer.indexOf('\n\n')) !== -1) {
+      const chunk = buffer.slice(0, sep)
+      buffer = buffer.slice(sep + 2)
+
+      // Extract data line
+      const dataLine = chunk.split('\n').find(l => l.startsWith('data: '))
+      if (!dataLine) continue
+      let event
+      try { event = JSON.parse(dataLine.slice(6)) } catch { continue }
+
+      if (event.type === 'tree') {
+        showFeedback('loading',
+          t('feedback.file_count', { count: event.count, size: formatBytes(event.size) }),
+          { label: t('feedback.action.cancel'), handler: cancelDownload })
+      } else if (event.type === 'progress') {
+        showFeedback('loading',
+          t('feedback.downloading_progress', { done: event.done, total: event.total }),
+          { label: t('feedback.action.cancel'), handler: cancelDownload })
+      } else if (event.type === 'zipping') {
+        showFeedback('loading', 'Creating zip…')
+      } else if (event.type === 'done') {
+        // Trigger download of the completed zip
+        const a = document.createElement('a')
+        a.href = `${API_BASE}/v1/download/result?jobId=${encodeURIComponent(event.jobId)}`
+        a.download = event.filename ? (event.filename.endsWith('.zip') ? event.filename : event.filename + '.zip') : 'download.zip'
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        return true
+      } else if (event.type === 'too_large') {
+        return false  // fall back to client-side
+      } else if (event.type === 'error') {
+        const err = new Error(event.message || t('feedback.default_error'))
+        err.code = event.code || 'INTERNAL_ERROR'
+        throw err
+      }
+    }
+  }
+
+  return false
 }
 
 // ─── Upgrade modal ──────────────────────────────────────────────────────────
@@ -533,6 +699,8 @@ tokenPanel.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') { tokenPanel.hidden = true; tokenToggle.setAttribute('aria-expanded', 'false'); tokenToggle.focus() }
 })
 
+historyToggle.addEventListener('click', toggleHistoryBody)
+
 // ─── Init ────────────────────────────────────────────────────────────────────
 
 renderLayout()
@@ -548,6 +716,7 @@ if (savedToken) {
 checkUrlPath()
 applyI18n()
 mountAllAds()
+refreshHistory()
 
 // Handle auth return (OAuth callback)
 const authResult = handleAuthReturn()

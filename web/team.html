@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Team — GitSnip</title>
+  <meta name="description" content="Manage your GitSnip team. Invite members and share Power tier access." />
+  <meta name="robots" content="noindex" />
+  <link rel="canonical" href="https://gitsnip.cc/team" />
+
+  <!-- ── Theme / PWA ──────────────────────────────────────────────────────── -->
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#0f0f1a"  media="(prefers-color-scheme: dark)" />
+  <script>(function(){var t=localStorage.getItem('gitsnip-theme');if(t==='dark'||t==='light')document.documentElement.dataset.theme=t})()</script>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="icon" href="/img/favicon.ico" sizes="32x32" />
+  <link rel="apple-touch-icon" href="/img/apple-touch-icon.png" />
+
+  <!-- ── Styles ────────────────────────────────────────────────────────────── -->
+  <link rel="stylesheet" href="/css/tokens.css" />
+  <link rel="stylesheet" href="/css/main.css" />
+</head>
+
+<body>
+
+  <!-- Header: rendered by layout.js -->
+  <header class="site-header" role="banner"></header>
+
+  <main class="site-main site-main--narrow" id="main-content">
+
+    <!-- Visually-hidden live region for screen reader announcements -->
+    <div id="status-region" aria-live="polite" aria-atomic="true"
+         class="sr-only" role="status"></div>
+
+    <div id="team-main" class="team-loading">Loading…</div>
+
+  </main>
+
+  <!-- Footer: rendered by layout.js -->
+  <footer class="site-footer" role="contentinfo"></footer>
+
+  <script type="module" src="/js/team.js"></script>
+
+</body>
+</html>

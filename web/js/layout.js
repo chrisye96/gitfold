@@ -18,6 +18,7 @@ function currentPage() {
   const p = window.location.pathname
   if (p === '/docs' || p === '/docs.html' || p.startsWith('/docs#')) return 'docs'
   if (p === '/pricing' || p === '/pricing.html') return 'pricing'
+  if (p === '/team' || p === '/team.html') return 'team'
   return 'home'
 }
 
@@ -33,6 +34,7 @@ function headerHTML(page) {
   </a>
   <nav class="site-nav" aria-label="Main navigation">
     <a href="/docs"${ariaCurrent('docs')} data-i18n="nav.docs">Docs</a>
+    <a href="/pricing"${ariaCurrent('pricing')}>Pricing</a>
     <a href="https://github.com/chrisye96/gitsnip"
        target="_blank" rel="noopener noreferrer"
        data-i18n="nav.github"
@@ -68,16 +70,14 @@ function headerHTML(page) {
 // ─── Footer ───────────────────────────────────────────────────────────────────
 
 function footerHTML(page) {
-  const navLink = page === 'home'
-    ? '<a href="/docs">Docs</a>'
-    : '<a href="/">Home</a>'
-
   return `
   <p class="footer-tagline">Built for developers who hate git clone.</p>
   <nav class="footer-links" aria-label="Footer navigation">
-    ${navLink}
-    <a href="https://github.com/chrisye96/gitsnip" target="_blank" rel="noopener noreferrer">GitHub</a>
+    ${page !== 'home' ? '<a href="/">Home</a>' : ''}
+    ${page !== 'docs' ? '<a href="/docs">Docs</a>' : ''}
     <a href="/pricing">Pricing</a>
+    <a href="/team">Team</a>
+    <a href="https://github.com/chrisye96/gitsnip" target="_blank" rel="noopener noreferrer">GitHub</a>
   </nav>
   <p>If this tool saved you time, consider <a href="https://github.com/sponsors/chrisye96"
      target="_blank" rel="noopener noreferrer"

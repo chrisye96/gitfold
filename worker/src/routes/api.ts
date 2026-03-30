@@ -185,4 +185,113 @@ api.get('/info', async (c) => {
   }
 })
 
+// ─── GET /v1/download/progress (SSE) ─────────────────────────────────────────
+//
+// Streams Server-Sent Events while fetching files + building the zip.
+// Stores the finished zip in KV (key: job:{uuid}, TTL: 300s).
+// Final event: { type: "done", jobId, filename }
+// Clients then retrieve the zip via GET /v1/download/result?jobId=...
+
+api.get('/download/progress', async (c) => {
+  const info       = c.get('repoInfo')
+  const sessionUser = c.get('sessionUser')
+  let token = c.req.header('X-GitHub-Token')
+  if (!token && sessionUser && c.env.TOKEN_ENCRYPTION_KEY) {
+    token = await getUserOAuthToken(c.env.DB, sessionUser.userId, c.env.TOKEN_ENCRYPTION_KEY) ?? undefined
+  }
+  token = token ?? c.env.GITHUB_TOKEN
+
+  if (info.type === 'repo') {
+    return Response.json(
+      { code: 'UNSUPPORTED', message: 'SSE progress is only available for subdirectory downloads.' },
+      { status: 400, headers: corsHeaders(c.req.header('Origin')) },
+    )
+  }
+
+  const encoder = new TextEncoder()
+  const { readable, writable } = new TransformStream<Uint8Array, Uint8Array>()
+  const writer = writable.getWriter()
+
+  function send(data: object) {
+    writer.write(encoder.encode(`data: ${JSON.stringify(data)}\n\n`))
+  }
+
+  c.executionCtx.waitUntil((async () => {
+    try {
+      // 1. Fetch file tree
+      const tree = await fetchTree(info, token, c.env.GITSNIP_CACHE)
+      const totalSize = tree.reduce((s, e) => s + (e.size ?? 0), 0)
+      send({ type: 'tree', count: tree.length, size: totalSize, limit: c.get('fileLimit') ?? 50 })
+
+      // 2. Check tier limits
+      const limitCheck = checkLimits(tree.length, totalSize, c.get('fileLimit'))
+      if (!limitCheck.ok) {
+        const body = await limitCheck.response.clone().json() as { code: string; message: string }
+        send({ type: 'error', code: body.code, message: body.message })
+        writer.close()
+        return
+      }
+
+      // 3. Fetch files with per-file progress events
+      const total = tree.length
+      let done = 0
+      const files: Array<{ path: string; data: Uint8Array }> = new Array(total)
+      const BATCH = 8
+
+      for (let i = 0; i < total; i += BATCH) {
+        const batch = tree.slice(i, i + BATCH)
+        await Promise.all(batch.map(async (entry, j) => {
+          const url = `https://raw.githubusercontent.com/${info.owner}/${info.repo}/${info.branch}/${entry.path}`
+          const res = await fetch(url)
+          if (!res.ok) throw new Error(`Failed to fetch ${entry.path}: HTTP ${res.status}`)
+          const buf = await res.arrayBuffer()
+          files[i + j] = { path: entry.path, data: new Uint8Array(buf) }
+          done++
+          send({ type: 'progress', done, total, path: entry.path })
+        }))
+      }
+
+      // 4. Build zip
+      send({ type: 'zipping' })
+      const zipData = createZip(files, info.path)
+
+      // 5. Store in KV (max 25 MB; skip if too large)
+      const filename = zipFilename(info.path, info.repo)
+      if (zipData.byteLength <= 24 * 1024 * 1024) {
+        const jobId = crypto.randomUUID()
+        await c.env.GITSNIP_CACHE.put(
+          `job:${jobId}`,
+          zipData,
+          { expirationTtl: 300 },
+        )
+        // Store filename separately
+        await c.env.GITSNIP_CACHE.put(
+          `job:${jobId}:name`,
+          filename,
+          { expirationTtl: 300 },
+        )
+        send({ type: 'done', jobId, filename })
+      } else {
+        // Too large for KV — tell client to fall back to direct mode
+        send({ type: 'too_large', message: 'Zip too large for streaming; use direct download.' })
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Unknown error'
+      send({ type: 'error', code: 'INTERNAL_ERROR', message: msg })
+    } finally {
+      writer.close()
+    }
+  })())
+
+  return new Response(readable, {
+    status: 200,
+    headers: {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'X-Accel-Buffering': 'no',
+      ...corsHeaders(c.req.header('Origin')),
+    },
+  })
+})
+
 export default api
