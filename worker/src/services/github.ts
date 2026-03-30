@@ -7,7 +7,7 @@
 
 import type { KVNamespace } from '@cloudflare/workers-types'
 import type { RepoInfo, TreeEntry } from '../types.js'
-import { checkLimits, errorResponse } from '../middleware/security.js'
+import { errorResponse } from '../middleware/security.js'
 
 const GITHUB_API = 'https://api.github.com'
 const RAW_BASE   = 'https://raw.githubusercontent.com'
@@ -129,12 +129,7 @@ export async function fetchTree(
     )
   }
 
-  // Check limits before caching
-  const totalSize = entries.reduce((s, e) => s + (e.size ?? 0), 0)
-  const limitResult = checkLimits(entries.length, totalSize)
-  if (!limitResult.ok) throw limitResult.response
-
-  // Cache the result
+  // Cache the result (limit checks are done in route handler, not here)
   await kv.put(cacheKey, JSON.stringify(entries), { expirationTtl: CACHE_TTL })
 
   return entries

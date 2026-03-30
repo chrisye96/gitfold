@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>GitSnip — Pricing</title>
+  <meta name="description" content="GitSnip pricing plans. Download GitHub directories without hitting limits." />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://gitsnip.cc/pricing" />
+
+  <!-- ── Theme / PWA ──────────────────────────────────────────────────── -->
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#0f0f1a"  media="(prefers-color-scheme: dark)" />
+  <script>(function(){var t=localStorage.getItem('gitsnip-theme');if(t==='dark'||t==='light')document.documentElement.dataset.theme=t})()</script>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="icon" href="/img/favicon.ico" sizes="32x32" />
+  <link rel="apple-touch-icon" href="/img/apple-touch-icon.png" />
+
+  <!-- ── Styles ────────────────────────────────────────────────────────── -->
+  <link rel="stylesheet" href="/css/tokens.css" />
+  <link rel="stylesheet" href="/css/main.css" />
+  <link rel="stylesheet" href="/css/pricing.css" />
+</head>
+<body>
+  <!-- Header: rendered by layout.js -->
+  <header class="site-header" role="banner"></header>
+
+  <main class="pricing-page">
+    <section class="pricing-hero">
+      <h1>Download GitHub folders &mdash; without hitting limits.</h1>
+      <p class="pricing-subtitle">Use your own GitHub quota, or upgrade for the best experience.</p>
+    </section>
+
+    <!-- ── Pricing cards (4 columns) ─────────────────────────────────── -->
+    <div class="pricing-grid pricing-grid--4">
+
+      <!-- Free — No Token -->
+      <div class="pricing-card">
+        <div class="pricing-card-header">
+          <h2>Free</h2>
+          <p class="pricing-label">No token</p>
+          <div class="pricing-price">$0</div>
+          <p class="pricing-period">forever</p>
+        </div>
+        <ul class="pricing-features">
+          <li>Up to <strong>50 files</strong> per download</li>
+          <li>Shared GitHub limit (60 req/hr)</li>
+          <li>May hit rate limits at peak</li>
+          <li>ZIP &amp; tar.gz formats</li>
+        </ul>
+        <p class="pricing-best-for">Best for: small folders, one-off downloads</p>
+        <a href="/" class="pricing-cta pricing-cta--secondary">Get started</a>
+      </div>
+
+      <!-- Free — With Token -->
+      <div class="pricing-card pricing-card--recommended">
+        <div class="pricing-badge">Recommended</div>
+        <div class="pricing-card-header">
+          <h2>Free + Token</h2>
+          <p class="pricing-label">With GitHub token</p>
+          <div class="pricing-price">$0</div>
+          <p class="pricing-period">forever</p>
+        </div>
+        <ul class="pricing-features">
+          <li>Up to <strong>200 files</strong> per download</li>
+          <li>Your own quota (5,000 req/hr)</li>
+          <li>Faster, more stable downloads</li>
+          <li>No shared rate limits</li>
+        </ul>
+        <p class="pricing-best-for">Best for: regular use, medium folders</p>
+        <a href="/" class="pricing-cta pricing-cta--secondary">Add token (free)</a>
+      </div>
+
+      <!-- Pro -->
+      <div class="pricing-card pricing-card--featured">
+        <div class="pricing-badge">Best experience</div>
+        <div class="pricing-card-header">
+          <h2>Pro</h2>
+          <p class="pricing-label">It just works</p>
+          <div class="pricing-price">$7<span>/mo</span></div>
+          <p class="pricing-period">or ~$49/year</p>
+        </div>
+        <ul class="pricing-features">
+          <li>Up to <strong>1,000 files</strong> per download</li>
+          <li><strong>No token required</strong></li>
+          <li>No speed limits</li>
+          <li>Auto retry &amp; fallback</li>
+          <li>Priority queue</li>
+          <li>Fair use (~10k files/day)</li>
+        </ul>
+        <p class="pricing-best-for">Best for: heavy usage, large folders</p>
+        <button class="pricing-cta pricing-cta--primary" data-tier="pro">
+          Download everything &rarr;
+        </button>
+      </div>
+
+      <!-- Power -->
+      <div class="pricing-card">
+        <div class="pricing-card-header">
+          <h2>Power</h2>
+          <p class="pricing-label">Maximum performance</p>
+          <div class="pricing-price">$19<span>/mo</span></div>
+          <p class="pricing-period">&nbsp;</p>
+        </div>
+        <ul class="pricing-features">
+          <li>Up to <strong>5,000 files</strong> per download</li>
+          <li>Higher concurrency (10&ndash;20)</li>
+          <li>Higher queue priority</li>
+          <li>Team sharing (coming soon)</li>
+          <li>Fair use (~50k files/day)</li>
+        </ul>
+        <p class="pricing-best-for">Best for: teams, power users</p>
+        <button class="pricing-cta pricing-cta--primary" data-tier="power">
+          Skip all limits &rarr;
+        </button>
+      </div>
+    </div>
+
+    <!-- ── How it works ──────────────────────────────────────────────── -->
+    <section class="pricing-how-it-works">
+      <h2>How it works</h2>
+      <p>GitSnip uses the GitHub API to fetch files. Your experience depends on how you authenticate:</p>
+      <div class="how-grid">
+        <div class="how-card">
+          <h3>Without a token</h3>
+          <ul>
+            <li>Shared limit: <strong>60 requests/hour</strong></li>
+            <li>May fail or slow down during peak</li>
+            <li>Good for quick, small downloads</li>
+          </ul>
+        </div>
+        <div class="how-card">
+          <h3>With a token</h3>
+          <ul>
+            <li>Your own limit: <strong>5,000 requests/hour</strong></li>
+            <li>Much more reliable</li>
+            <li>Free to set up</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── FAQ ──────────────────────────────────────────────────────────── -->
+    <section class="pricing-faq">
+      <h2>Questions?</h2>
+      <dl>
+        <dt>Why do I need a GitHub Token?</dt>
+        <dd>To avoid shared rate limits and unlock your own API quota. It's free and takes 30 seconds to set up.</dd>
+
+        <dt>Is my token safe?</dt>
+        <dd>Yes. Stored locally in your browser. Never sent to our servers.</dd>
+
+        <dt>Why is download speed limited?</dt>
+        <dd>To keep the service stable for everyone. Add a token or upgrade for faster downloads.</dd>
+
+        <dt>Can I cancel anytime?</dt>
+        <dd>Yes. Cancel with one click, no questions asked. You keep access until the end of your billing period.</dd>
+
+        <dt>What payment methods do you accept?</dt>
+        <dd>We use Stripe for payments. All major credit cards, Apple Pay, and Google Pay are supported.</dd>
+      </dl>
+    </section>
+
+    <!-- ── Checkout email modal (hidden by default) ────────────────────── -->
+    <div id="checkout-modal" class="checkout-modal-overlay" hidden>
+      <div class="checkout-modal">
+        <button class="checkout-modal-close" aria-label="Close">&times;</button>
+        <h3>Enter your email</h3>
+        <p>We'll send your subscription details to this email.</p>
+        <form id="checkout-form">
+          <input type="email" id="checkout-email" placeholder="you@example.com" required autocomplete="email" />
+          <input type="hidden" id="checkout-tier" value="pro" />
+          <button type="submit" class="pricing-cta pricing-cta--primary">Continue to payment</button>
+        </form>
+        <p class="checkout-note">Powered by Stripe. We never store your card details.</p>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer: rendered by layout.js -->
+  <footer class="site-footer" role="contentinfo"></footer>
+
+  <script type="module">
+    import { renderLayout } from '/js/layout.js'
+    import { initTheme } from '/js/theme.js'
+    import { applyI18n } from '/js/i18n.js'
+    import { startCheckout, handleCheckoutReturn, isProUser } from '/js/subscription.js'
+
+    const API_BASE = 'https://api.gitsnip.cc'
+
+    renderLayout()
+    initTheme()
+    applyI18n()
+
+    // Handle checkout success return
+    const status = await handleCheckoutReturn(API_BASE)
+    if (status?.active) {
+      showSuccessBanner(status.tier)
+    }
+
+    // If already pro, show status
+    if (isProUser()) {
+      document.querySelectorAll('[data-tier]').forEach(btn => {
+        btn.textContent = 'Current plan'
+        btn.disabled = true
+      })
+    }
+
+    // Upgrade buttons → open email modal
+    const modal = document.getElementById('checkout-modal')
+    const tierInput = document.getElementById('checkout-tier')
+
+    document.querySelectorAll('[data-tier]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        tierInput.value = btn.dataset.tier
+        modal.hidden = false
+      })
+    })
+
+    modal.querySelector('.checkout-modal-close').addEventListener('click', () => {
+      modal.hidden = true
+    })
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) modal.hidden = true
+    })
+
+    // Checkout form submission
+    document.getElementById('checkout-form').addEventListener('submit', async (e) => {
+      e.preventDefault()
+      const email = document.getElementById('checkout-email').value.trim()
+      const tier = tierInput.value
+      const btn = e.target.querySelector('button[type="submit"]')
+      btn.disabled = true
+      btn.textContent = 'Redirecting...'
+      try {
+        await startCheckout(email, tier, API_BASE)
+      } catch (err) {
+        btn.disabled = false
+        btn.textContent = 'Continue to payment'
+        alert('Something went wrong. Please try again.')
+      }
+    })
+
+    function showSuccessBanner(tier) {
+      const banner = document.createElement('div')
+      banner.className = 'pricing-success-banner'
+      banner.textContent = `You're now on the ${tier.charAt(0).toUpperCase() + tier.slice(1)} plan!`
+      document.querySelector('.pricing-hero').after(banner)
+    }
+  </script>
+</body>
+</html>

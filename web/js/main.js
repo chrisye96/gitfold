@@ -16,11 +16,12 @@ import { t, applyI18n } from './i18n.js'
 import { mountAllAds } from './ads.js'
 import { renderLayout } from './layout.js'
 import { initTheme } from './theme.js'
+import { getSubToken, getFileLimit, isProUser, handleCheckoutReturn, verifySubscription } from './subscription.js'
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
 const SITE_BASE = 'https://gitsnip.cc'
-const FREE_FILE_LIMIT = 50
+const API_BASE = 'https://api.gitsnip.cc'
 
 // ─── State ────────────────────────────────────────────────────────────────────
 
@@ -206,13 +207,19 @@ async function startDownload() {
   urlInput.disabled = true
   showFeedback('loading', t('feedback.downloading'))
 
+  const hasToken = !!token
+  const fileLimit = getFileLimit(hasToken)
+
   try {
     const files = await fetchFiles(info, token, () => {})
 
-    if (files.length > FREE_FILE_LIMIT) {
-      const err = new Error(t('feedback.file_limit', { limit: FREE_FILE_LIMIT }))
-      err.code = 'FILE_LIMIT'
-      throw err
+    // Check against tier-based file limit
+    if (files.length > fileLimit) {
+      showUpgradeModal(files.length, fileLimit, hasToken, () => {
+        // User chose to download partial (up to limit)
+        downloadPartial(files.slice(0, fileLimit), info)
+      })
+      return
     }
 
     const zipName = zipFilename(info)
@@ -248,8 +255,11 @@ async function startDownload() {
           handler() { tokenPanel.hidden = false; tokenToggle.setAttribute('aria-expanded', 'true'); tokenInput.focus() },
         },
       },
-      FILE_LIMIT: {
-        msg: t('feedback.file_limit', { limit: FREE_FILE_LIMIT }),
+      TOO_MANY_FILES: {
+        msg: err.message || `Too many files (limit: ${fileLimit}).`,
+        action: isProUser()
+          ? { label: t('feedback.action.retry'), handler: startDownload }
+          : { label: 'Get full folder', handler() { window.location.href = '/pricing' } },
       },
       default: {
         msg: err.message || t('feedback.default_error'),
@@ -265,6 +275,100 @@ async function startDownload() {
     urlInput.disabled = false
     resetButton()
   }
+}
+
+// ─── Partial download helper ────────────────────────────────────────────────
+
+async function downloadPartial(files, info) {
+  try {
+    const zipName = zipFilename(info)
+    const zipBlob = await createZip(files, info.path, () => {})
+    downloadBlob(zipBlob, zipName)
+    showFeedback('success', `Downloaded ${files.length} files (partial).`)
+    successTimer = setTimeout(() => {
+      if (parsedInfo) showFeedback('valid', formatRepoInfo(parsedInfo))
+    }, 2000)
+  } catch (err) {
+    showFeedback('error', err.message || 'Download failed.')
+  } finally {
+    isDownloading = false
+    urlInput.disabled = false
+    resetButton()
+  }
+}
+
+// ─── Upgrade modal ──────────────────────────────────────────────────────────
+
+function showUpgradeModal(fileCount, limit, hasToken, onPartialDownload) {
+  // Remove existing modal if any
+  document.getElementById('upgrade-modal')?.remove()
+
+  const modal = document.createElement('div')
+  modal.id = 'upgrade-modal'
+  modal.className = 'upgrade-modal-overlay'
+  modal.innerHTML = `
+    <div class="upgrade-modal">
+      <button class="upgrade-modal-close" aria-label="Close">&times;</button>
+      <h3>Large folder detected (${fileCount} files)</h3>
+      <p class="upgrade-modal-count">Free${hasToken ? ' + token' : ''}: up to ${limit} files</p>
+      <div class="upgrade-modal-tiers">
+        <div class="upgrade-modal-tier">
+          <strong>${hasToken ? 'With token' : 'Free'}</strong>
+          <span>Up to ${limit} files</span>
+        </div>
+        <div class="upgrade-modal-tier upgrade-modal-tier--pro">
+          <strong>Pro</strong>
+          <span>Up to 1,000 files</span>
+        </div>
+      </div>
+      <div class="upgrade-modal-actions">
+        <button class="btn btn--secondary" data-action="partial">
+          Download ${Math.min(fileCount, limit)} files
+        </button>
+        ${!hasToken ? `<button class="btn btn--secondary" data-action="token">
+          Add Token for full access
+        </button>` : ''}
+        <a href="/pricing" class="btn btn--primary">
+          Get full folder &rarr;
+        </a>
+      </div>
+    </div>
+  `
+
+  document.body.appendChild(modal)
+
+  // Close button
+  modal.querySelector('.upgrade-modal-close').addEventListener('click', () => {
+    modal.remove()
+    isDownloading = false
+    urlInput.disabled = false
+    resetButton()
+    if (parsedInfo) showFeedback('valid', formatRepoInfo(parsedInfo))
+  })
+
+  // Partial download
+  modal.querySelector('[data-action="partial"]')?.addEventListener('click', () => {
+    modal.remove()
+    onPartialDownload()
+  })
+
+  // Add token
+  modal.querySelector('[data-action="token"]')?.addEventListener('click', () => {
+    modal.remove()
+    isDownloading = false
+    urlInput.disabled = false
+    resetButton()
+    tokenPanel.hidden = false
+    tokenToggle.setAttribute('aria-expanded', 'true')
+    tokenInput.focus()
+  })
+
+  // Click overlay to close
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      modal.querySelector('.upgrade-modal-close').click()
+    }
+  })
 }
 
 // ─── Token panel ─────────────────────────────────────────────────────────────
@@ -357,3 +461,9 @@ if (savedToken) {
 checkUrlPath()
 applyI18n()
 mountAllAds()
+
+// Check for checkout return and verify subscription status
+handleCheckoutReturn(API_BASE)
+if (getSubToken()) {
+  verifySubscription(API_BASE)
+}

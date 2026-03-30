@@ -12,14 +12,15 @@
  */
 
 import type { Context, Next } from 'hono'
-import type { Env, RepoInfo } from '../types.js'
+import type { Env, RepoInfo, Tier } from '../types.js'
 import { parseGithubUrl } from '@shared/parse-url.js'
+import { getFileLimit } from '../services/subscription.js'
 
 // ─── Limits ──────────────────────────────────────────────────────────────────
 
 export const LIMITS = {
-  /** Maximum number of files per request */
-  maxFiles: 500,
+  /** Hard ceiling regardless of tier */
+  maxFiles: 5000,
   /** Maximum total uncompressed size in bytes (100 MB) */
   maxBytes: 100 * 1024 * 1024,
   /** Maximum single file size in bytes (50 MB) */
@@ -86,21 +87,42 @@ export async function validateUrl(
 }
 
 /**
+ * Middleware: resolve the user's tier and file limit from subscription state.
+ * Attaches tier + fileLimit to context for downstream handlers.
+ */
+export async function resolveTier(
+  c: Context<{ Bindings: Env; Variables: { tier: Tier; fileLimit: number } }>,
+  next: Next,
+) {
+  const { tier, limit } = await getFileLimit(c.req.raw, c.env)
+  c.set('tier', tier)
+  c.set('fileLimit', limit)
+  return next()
+}
+
+/**
  * Enforce file count and size limits.
  * Call after the file tree has been fetched and stored in context.
+ *
+ * @param tierFileLimit - dynamic limit based on user's tier (pass from context)
  */
 export function checkLimits(
   fileCount: number,
   totalBytes: number,
+  tierFileLimit?: number,
 ): { ok: true } | { ok: false; response: Response } {
-  if (fileCount > LIMITS.maxFiles) {
+  const effectiveLimit = tierFileLimit ?? LIMITS.maxFiles
+
+  if (fileCount > effectiveLimit) {
     return {
       ok: false,
       response: errorResponse(
         413,
         'TOO_MANY_FILES',
-        `Directory contains ${fileCount} files (limit: ${LIMITS.maxFiles}).`,
-        'Try a smaller subdirectory, or use git sparse-checkout for large repos.',
+        `Directory contains ${fileCount} files (limit: ${effectiveLimit}).`,
+        effectiveLimit < LIMITS.maxFiles
+          ? 'Upgrade your plan for higher limits, or try a smaller subdirectory.'
+          : 'Try a smaller subdirectory, or use git sparse-checkout for large repos.',
       ),
     }
   }
@@ -128,7 +150,7 @@ export function corsHeaders(): HeadersInit {
   return {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, X-GitHub-Token',
+    'Access-Control-Allow-Headers': 'Content-Type, X-GitHub-Token, X-Sub-Token',
     'Access-Control-Max-Age': '86400',
   }
 }

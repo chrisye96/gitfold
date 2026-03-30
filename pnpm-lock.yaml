@@ -15,6 +15,8 @@ importers:
         specifier: ^14.2.6
         version: 14.2.6
 
+  cli: {}
+
   worker:
     dependencies:
       fflate:

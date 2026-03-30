@@ -17,6 +17,7 @@
 function currentPage() {
   const p = window.location.pathname
   if (p === '/docs' || p === '/docs.html' || p.startsWith('/docs#')) return 'docs'
+  if (p === '/pricing' || p === '/pricing.html') return 'pricing'
   return 'home'
 }
 
@@ -75,6 +76,7 @@ function footerHTML(page) {
   <nav class="footer-links" aria-label="Footer navigation">
     ${navLink}
     <a href="https://github.com/chrisye96/gitsnip" target="_blank" rel="noopener noreferrer">GitHub</a>
+    <a href="/pricing">Pricing</a>
   </nav>
   <p>If this tool saved you time, consider <a href="https://github.com/sponsors/chrisye96"
      target="_blank" rel="noopener noreferrer"

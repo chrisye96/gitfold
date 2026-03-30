@@ -12,13 +12,16 @@
  */
 
 import { Hono } from 'hono'
-import type { Env } from '../types.js'
+import type { Env, Tier } from '../types.js'
 import { fetchTree, fetchAllFiles, buildInfo } from '../services/github.js'
 import { createZip, zipResponse, zipFilename } from '../services/zip.js'
 import { tarGzResponse } from '../services/tar.js'
-import { corsHeaders } from '../middleware/security.js'
+import { corsHeaders, checkLimits } from '../middleware/security.js'
 
-const api = new Hono<{ Bindings: Env; Variables: { repoInfo: import('../types.js').RepoInfo } }>()
+const api = new Hono<{
+  Bindings: Env
+  Variables: { repoInfo: import('../types.js').RepoInfo; tier: Tier; fileLimit: number }
+}>()
 
 // ─── GET /v1/download ─────────────────────────────────────────────────────────
 
@@ -40,7 +43,12 @@ api.get('/download', async (c) => {
     // 1. Fetch file tree (KV-cached)
     const tree = await fetchTree(info, token, c.env.GITSNIP_CACHE)
 
-    // 2. Fetch all file contents from raw.githubusercontent.com
+    // 2. Check tier-based limits
+    const totalSize = tree.reduce((s, e) => s + (e.size ?? 0), 0)
+    const limitCheck = checkLimits(tree.length, totalSize, c.get('fileLimit'))
+    if (!limitCheck.ok) return limitCheck.response
+
+    // 3. Fetch all file contents from raw.githubusercontent.com
     const files = await fetchAllFiles(tree, info)
 
     // 3. Build and return archive with CORS headers
@@ -69,7 +77,11 @@ api.get('/info', async (c) => {
   try {
     const tree   = await fetchTree(info, token, c.env.GITSNIP_CACHE)
     const result = buildInfo(tree, info)
-    return Response.json(result, { headers: corsHeaders() })
+    // Include tier info in response so frontend knows the user's limit
+    return Response.json(
+      { ...result, tier: c.get('tier') ?? 'free', fileLimit: c.get('fileLimit') ?? 50 },
+      { headers: corsHeaders() },
+    )
 
   } catch (err) {
     if (err instanceof Response) {
