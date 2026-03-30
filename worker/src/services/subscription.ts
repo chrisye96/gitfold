@@ -106,7 +106,7 @@ function isActive(record: SubRecord): boolean {
 
 function tierLimit(tier: Tier, env: Env): number {
   if (tier === 'pro') return parseInt(env.PRO_FILE_LIMIT ?? '1000', 10)
-  if (tier === 'power') return parseInt(env.PRO_FILE_LIMIT ?? '5000', 10)
+  if (tier === 'power') return parseInt(env.POWER_FILE_LIMIT ?? '5000', 10)
   return parseInt(env.FREE_FILE_LIMIT ?? '50', 10)
 }
 

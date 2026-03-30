@@ -39,7 +39,7 @@ billing.post('/checkout', async (c) => {
       {
         email,
         tier,
-        successUrl: `https://gitsnip.cc/pricing?checkout=success`,
+        successUrl: `https://gitsnip.cc/pricing?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
         cancelUrl: `https://gitsnip.cc/pricing?checkout=cancelled`,
       },
       c.env,
@@ -74,6 +74,32 @@ billing.post('/webhook/stripe', async (c) => {
     console.error('[billing] webhook processing error:', err)
     return errorResponse(500, 'WEBHOOK_ERROR', 'Failed to process webhook event.')
   }
+})
+
+// ─── GET /sub/claim ──────────────────────────────────────────────────────
+
+billing.get('/sub/claim', async (c) => {
+  const sessionId = c.req.query('session_id')
+  if (!sessionId) {
+    return errorResponse(400, 'INVALID_REQUEST', 'Missing session_id parameter.')
+  }
+
+  const mapping = await c.env.GITSNIP_SUBS.get<{ token: string; email: string }>(
+    `session:${sessionId}`,
+    'json',
+  )
+
+  if (!mapping) {
+    return Response.json(
+      { ok: false, message: 'Session not found or expired. It may take a moment — please refresh.' },
+      { headers: corsHeaders() },
+    )
+  }
+
+  return Response.json(
+    { ok: true, token: mapping.token, email: mapping.email },
+    { headers: corsHeaders() },
+  )
 })
 
 // ─── GET /sub/status ─────────────────────────────────────────────────────────

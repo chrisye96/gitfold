@@ -10,13 +10,14 @@
  */
 
 import { parseUrl, buildSnipUrl, formatRepoInfo, zipFilename, buildArchiveUrl } from './parse-url.js'
-import { fetchFiles } from './github.js'
+import { fetchTree, fetchDefaultBranch, getTierConfig, getRawUrl } from './github.js'
 import { createZip, downloadBlob, formatBytes } from './zip.js'
 import { t, applyI18n } from './i18n.js'
 import { mountAllAds } from './ads.js'
 import { renderLayout } from './layout.js'
 import { initTheme } from './theme.js'
 import { getSubToken, getFileLimit, isProUser, handleCheckoutReturn, verifySubscription } from './subscription.js'
+import { checkSession, handleAuthReturn, isAuthenticated, startGitHubLogin, getCachedSession } from './auth.js'
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -33,6 +34,9 @@ let isDownloading = false
 
 /** @type {number} */
 let successTimer = 0
+
+/** @type {AbortController | null} */
+let downloadController = null
 
 // ─── DOM refs ─────────────────────────────────────────────────────────────────
 
@@ -85,7 +89,7 @@ function clearToken() {
 
 /**
  * Show inline feedback below the input.
- * @param {'valid'|'error'|'loading'|'success'} type
+ * @param {'valid'|'error'|'loading'|'success'|'warning'} type
  * @param {string} msg
  * @param {{ label: string, handler: () => void }} [action]
  */
@@ -98,6 +102,8 @@ function showFeedback(type, msg, action) {
     feedbackIcon.innerHTML = '<span class="spinner"></span>'
   } else if (type === 'error') {
     feedbackIcon.textContent = '\u2716'
+  } else if (type === 'warning') {
+    feedbackIcon.textContent = '\u26A0'
   } else {
     feedbackIcon.textContent = '\u2714'
   }
@@ -162,7 +168,11 @@ function handleUrlChange() {
   if (info) {
     parsedInfo = info
     resetButton()
-    showFeedback('valid', formatRepoInfo(info))
+    if (info.type === 'repo') {
+      showFeedback('warning', t('feedback.repo_warning'))
+    } else {
+      showFeedback('valid', formatRepoInfo(info))
+    }
     convertedUrlEl.textContent = buildSnipUrl(info, SITE_BASE)
     convertedUrlEl.hidden = false
   } else {
@@ -177,14 +187,38 @@ function handleUrlChange() {
 
 // ─── Download flow ───────────────────────────────────────────────────────────
 
+/** Cancel the current download. */
+function cancelDownload() {
+  if (downloadController) {
+    downloadController.abort()
+    downloadController = null
+  }
+}
+
 async function startDownload() {
   if (!parsedInfo || isDownloading) return
 
   const info = parsedInfo
   const token = getToken()
 
-  // ── Full repo: redirect to GitHub archive ──
+  // ── Full repo: resolve default branch if needed, then redirect to GitHub archive ──
   if (info.type === 'repo') {
+    // If branch is unknown (bare repo URL), resolve it first
+    if (!info.branch) {
+      setButtonLoading()
+      showFeedback('loading', t('feedback.checking'))
+      try {
+        info.branch = await fetchDefaultBranch(info, token)
+        parsedInfo = info
+      } catch (err) {
+        showFeedback('error', err.message || t('feedback.default_error'), {
+          label: t('feedback.action.retry'), handler: startDownload,
+        })
+        resetButton()
+        return
+      }
+    }
+
     const archiveUrl = buildArchiveUrl(info)
     const a = document.createElement('a')
     a.href = archiveUrl
@@ -195,46 +229,60 @@ async function startDownload() {
     document.body.removeChild(a)
 
     showFeedback('success', t('feedback.success'))
+    resetButton()
     successTimer = setTimeout(() => {
-      if (parsedInfo) showFeedback('valid', formatRepoInfo(parsedInfo))
+      if (parsedInfo) {
+        showFeedback(parsedInfo.type === 'repo' ? 'warning' : 'valid',
+          parsedInfo.type === 'repo' ? t('feedback.repo_warning') : formatRepoInfo(parsedInfo))
+      }
     }, 2000)
     return
   }
 
   // ── Folder download ──
   isDownloading = true
+  downloadController = new AbortController()
+  const { signal } = downloadController
+
   setButtonLoading()
   urlInput.disabled = true
-  showFeedback('loading', t('feedback.downloading'))
 
   const hasToken = !!token
   const fileLimit = getFileLimit(hasToken)
 
   try {
-    const files = await fetchFiles(info, token, () => {})
+    // ── Step 1: Pre-check — fetch tree to get file count before downloading ──
+    showFeedback('loading', t('feedback.checking'), {
+      label: t('feedback.action.cancel'), handler: cancelDownload,
+    })
 
-    // Check against tier-based file limit
-    if (files.length > fileLimit) {
-      showUpgradeModal(files.length, fileLimit, hasToken, () => {
-        // User chose to download partial (up to limit)
-        downloadPartial(files.slice(0, fileLimit), info)
+    const tree = await fetchTree(info, token, { signal })
+    const fileCount = tree.length
+    const totalSize = tree.reduce((sum, f) => sum + (f.size || 0), 0)
+
+    // Check against tier-based file limit BEFORE downloading
+    if (fileCount > fileLimit) {
+      showUpgradeModal(fileCount, fileLimit, hasToken, () => {
+        // User chose to download partial — re-enter with slice
+        downloadFilesFromTree(tree.slice(0, fileLimit), info, signal, fileCount)
       })
       return
     }
 
-    const zipName = zipFilename(info)
-    const zipBlob = await createZip(files, info.path, () => {})
+    // Show file count to user
+    showFeedback('valid', t('feedback.file_count', { count: fileCount, size: formatBytes(totalSize) }), {
+      label: t('feedback.action.cancel'), handler: cancelDownload,
+    })
 
-    // Trigger browser download
-    downloadBlob(zipBlob, zipName)
-
-    // Show success, auto-dismiss after 2s
-    showFeedback('success', t('feedback.success'))
-    successTimer = setTimeout(() => {
-      if (parsedInfo) showFeedback('valid', formatRepoInfo(parsedInfo))
-    }, 2000)
+    // ── Step 2: Download file contents ──
+    await downloadFilesFromTree(tree, info, signal)
 
   } catch (err) {
+    if (err.name === 'AbortError') {
+      showFeedback('error', t('feedback.cancelled'))
+      return
+    }
+
     const code = err.code || 'default'
     const errorMap = {
       RATE_LIMITED: {
@@ -272,29 +320,59 @@ async function startDownload() {
 
   } finally {
     isDownloading = false
+    downloadController = null
     urlInput.disabled = false
     resetButton()
   }
 }
 
-// ─── Partial download helper ────────────────────────────────────────────────
+/**
+ * Download files from an already-fetched tree, zip, and trigger browser download.
+ * @param {Array<{ path: string, size: number, sha: string }>} tree
+ * @param {{ owner: string, repo: string, branch: string, path: string }} info
+ * @param {AbortSignal} signal
+ * @param {number} [originalCount] - Original total file count (if partial download)
+ */
+async function downloadFilesFromTree(tree, info, signal, originalCount) {
+  const { concurrency, delayMs } = getTierConfig()
+  const total = tree.length
+  let done = 0
 
-async function downloadPartial(files, info) {
-  try {
-    const zipName = zipFilename(info)
-    const zipBlob = await createZip(files, info.path, () => {})
-    downloadBlob(zipBlob, zipName)
-    showFeedback('success', `Downloaded ${files.length} files (partial).`)
-    successTimer = setTimeout(() => {
-      if (parsedInfo) showFeedback('valid', formatRepoInfo(parsedInfo))
-    }, 2000)
-  } catch (err) {
-    showFeedback('error', err.message || 'Download failed.')
-  } finally {
-    isDownloading = false
-    urlInput.disabled = false
-    resetButton()
+  /** @type {Array<{ path: string, data: ArrayBuffer }>} */
+  const results = new Array(total)
+
+  for (let i = 0; i < total; i += concurrency) {
+    const batch = tree.slice(i, i + concurrency)
+    await Promise.all(batch.map(async (entry, j) => {
+      const url = getRawUrl(entry.path, info)
+      const res = await fetch(url, { signal })
+      if (!res.ok) {
+        const err = new Error(`Failed to fetch ${entry.path} (HTTP ${res.status})`)
+        err.code = 'FETCH_ERROR'
+        throw err
+      }
+      results[i + j] = { path: entry.path, data: await res.arrayBuffer() }
+      done++
+      showFeedback('loading', t('feedback.downloading_progress', { done, total }), {
+        label: t('feedback.action.cancel'), handler: cancelDownload,
+      })
+    }))
+    if (delayMs > 0 && i + concurrency < total) {
+      await new Promise(r => setTimeout(r, delayMs))
+    }
   }
+
+  const zipName = zipFilename(info)
+  const zipBlob = await createZip(results, info.path, () => {})
+  downloadBlob(zipBlob, zipName)
+
+  const isPartial = originalCount != null && originalCount > total
+  showFeedback('success', isPartial
+    ? `Downloaded ${total} files (partial).`
+    : t('feedback.success'))
+  successTimer = setTimeout(() => {
+    if (parsedInfo) showFeedback('valid', formatRepoInfo(parsedInfo))
+  }, 2000)
 }
 
 // ─── Upgrade modal ──────────────────────────────────────────────────────────
@@ -325,8 +403,11 @@ function showUpgradeModal(fileCount, limit, hasToken, onPartialDownload) {
         <button class="btn btn--secondary" data-action="partial">
           Download ${Math.min(fileCount, limit)} files
         </button>
-        ${!hasToken ? `<button class="btn btn--secondary" data-action="token">
-          Add Token for full access
+        ${!hasToken && !isAuthenticated() ? `<button class="btn btn--secondary" data-action="github-login">
+          Sign in with GitHub
+        </button>
+        <button class="btn btn--secondary btn--text" data-action="token">
+          or paste token manually
         </button>` : ''}
         <a href="/pricing" class="btn btn--primary">
           Get full folder &rarr;
@@ -352,7 +433,13 @@ function showUpgradeModal(fileCount, limit, hasToken, onPartialDownload) {
     onPartialDownload()
   })
 
-  // Add token
+  // GitHub login (OAuth)
+  modal.querySelector('[data-action="github-login"]')?.addEventListener('click', () => {
+    modal.remove()
+    startGitHubLogin(API_BASE)
+  })
+
+  // Add token manually
   modal.querySelector('[data-action="token"]')?.addEventListener('click', () => {
     modal.remove()
     isDownloading = false
@@ -462,8 +549,49 @@ checkUrlPath()
 applyI18n()
 mountAllAds()
 
+// Handle auth return (OAuth callback)
+const authResult = handleAuthReturn()
+if (authResult?.success) {
+  // Refresh session after OAuth login
+  checkSession(API_BASE).then(updateUserUI)
+}
+
 // Check for checkout return and verify subscription status
 handleCheckoutReturn(API_BASE)
 if (getSubToken()) {
   verifySubscription(API_BASE)
+}
+
+// Check existing session (async, non-blocking)
+checkSession(API_BASE).then(updateUserUI)
+
+/**
+ * Update UI elements based on session state.
+ * @param {object|null} session
+ */
+function updateUserUI(session) {
+  const userMenu = document.getElementById('user-menu')
+  if (!userMenu) return
+
+  if (!session?.authenticated) {
+    userMenu.hidden = true
+    return
+  }
+
+  // Show user menu with avatar + login
+  userMenu.hidden = false
+  userMenu.innerHTML = `
+    <span class="user-menu-info" title="${session.email || ''}">
+      <span class="user-menu-login">${session.githubLogin}</span>
+    </span>
+    <button id="logout-btn" class="btn-text user-menu-logout" type="button">Sign out</button>
+  `
+
+  // Attach logout handler
+  document.getElementById('logout-btn')?.addEventListener('click', async () => {
+    const { logout } = await import('./auth.js')
+    await logout(API_BASE)
+    userMenu.hidden = true
+    window.location.reload()
+  })
 }

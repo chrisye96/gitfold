@@ -1,11 +1,15 @@
 /**
- * GitSnip — Subscription State Management (Phase 1)
+ * GitSnip — Subscription State Management (Phase 1 + Phase 2)
  *
  * Manages subscription token in localStorage and provides
  * tier-aware file limits for the download flow.
  *
+ * Phase 2: also checks OAuth session tier from auth.js.
+ *
  * @module subscription
  */
+
+import { getCachedSession } from './auth.js'
 
 const SUB_TOKEN_KEY = 'gitsnip_sub_token'
 const SUB_STATUS_KEY = 'gitsnip_sub_status'
@@ -84,9 +88,15 @@ export async function verifySubscription(apiBase) {
 
 /**
  * Check if the current user is a Pro (or higher) subscriber.
- * Uses cached status only — call verifySubscription() first if needed.
+ * Checks both KV sub-token status and OAuth session tier.
  */
 export function isProUser() {
+  // Check OAuth session first (Phase 2)
+  const session = getCachedSession()
+  if (session?.authenticated && (session.tier === 'pro' || session.tier === 'power')) {
+    return true
+  }
+  // Fall back to KV-based status (Phase 1)
   const status = getCachedStatus()
   return status?.active && (status.tier === 'pro' || status.tier === 'power')
 }
@@ -97,10 +107,21 @@ export function isProUser() {
  * @returns {number}
  */
 export function getFileLimit(hasGithubToken = false) {
+  // Check OAuth session tier first (Phase 2)
+  const session = getCachedSession()
+  if (session?.authenticated && session.tier in TIER_LIMITS) {
+    return TIER_LIMITS[session.tier]
+  }
+
+  // Fall back to KV-based status (Phase 1)
   const status = getCachedStatus()
   if (status?.active && status.tier in TIER_LIMITS) {
     return TIER_LIMITS[status.tier]
   }
+
+  // OAuth-authenticated users count as having a token
+  if (session?.authenticated) return TIER_LIMITS.token
+
   return hasGithubToken ? TIER_LIMITS.token : TIER_LIMITS.free
 }
 
@@ -110,6 +131,11 @@ export function getFileLimit(hasGithubToken = false) {
  * @returns {string}
  */
 export function getCurrentTier(hasGithubToken = false) {
+  // Check OAuth session tier first (Phase 2)
+  const session = getCachedSession()
+  if (session?.authenticated && session.tier !== 'free') return session.tier
+
+  // Fall back to KV-based status (Phase 1)
   const status = getCachedStatus()
   if (status?.active && status.tier !== 'free') return status.tier
   return 'free'
@@ -142,16 +168,35 @@ export async function startCheckout(email, tier, apiBase) {
 /**
  * Handle checkout success redirect.
  * Call on page load to detect ?checkout=success in the URL.
+ * Claims the subscription token using the Stripe session ID.
  *
  * @param {string} apiBase
+ * @returns {Promise<{ tier: string, active: boolean } | undefined>}
  */
 export async function handleCheckoutReturn(apiBase) {
   const params = new URLSearchParams(window.location.search)
   if (params.get('checkout') !== 'success') return
 
+  const sessionId = params.get('session_id')
+
   // Clean the URL
   const clean = window.location.pathname
   window.history.replaceState({}, '', clean)
+
+  // Claim subscription token from the server
+  if (sessionId) {
+    try {
+      const res = await fetch(`${apiBase}/v1/sub/claim?session_id=${encodeURIComponent(sessionId)}`)
+      if (res.ok) {
+        const data = await res.json()
+        if (data.ok && data.token) {
+          setSubToken(data.token)
+        }
+      }
+    } catch {
+      // Claim failed — user can retry via status check
+    }
+  }
 
   // Verify subscription status
   const status = await verifySubscription(apiBase)

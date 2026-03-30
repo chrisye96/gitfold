@@ -37,25 +37,46 @@ export function parseGithubUrl(url) {
   // Accept both github.com and gitsnip.cc URLs
   if (u.hostname !== 'github.com' && u.hostname !== 'gitsnip.cc') return null
 
-  // Pattern: /owner/repo/tree/branch[/path]
-  const match = u.pathname.match(/^\/([^/]+)\/([^/]+)\/tree\/([^/]+)(?:\/(.+))?$/)
+  // Pattern 1: /owner/repo/tree/branch[/path]
+  const treeMatch = u.pathname.match(/^\/([^/]+)\/([^/]+)\/tree\/([^/]+)(?:\/(.+))?$/)
+
+  // Pattern 2: /owner/repo (bare repo URL, no branch)
+  const repoMatch = !treeMatch && u.pathname.match(/^\/([^/]+)\/([^/]+)\/?$/)
+
+  const match = treeMatch || repoMatch
   if (!match) return null
 
-  const [, owner, repo, branch, rawPath = ''] = match
-  const path = rawPath.replace(/\/+$/, '') // strip trailing slashes
+  const owner = match[1]
+  const repo  = match[2]
 
-  if (!owner || !repo || !branch) return null
+  if (!owner || !repo) return null
 
   // Reject obvious non-repo segments
   if (owner === 'login' || owner === 'settings' || owner === 'explore') return null
 
+  if (treeMatch) {
+    const branch  = treeMatch[3]
+    const rawPath = treeMatch[4] || ''
+    const path    = rawPath.replace(/\/+$/, '')
+    return {
+      provider: /** @type {'github'} */ ('github'),
+      type:     /** @type {'folder'|'repo'} */ (path ? 'folder' : 'repo'),
+      owner,
+      repo,
+      branch,
+      path,
+      originalUrl: url,
+    }
+  }
+
+  // Bare repo URL — branch unknown, will be resolved at download time
   return {
     provider: /** @type {'github'} */ ('github'),
-    type:     /** @type {'folder'|'repo'} */ (path ? 'folder' : 'repo'),
+    type:     /** @type {'repo'} */ ('repo'),
     owner,
     repo,
-    branch,
-    path,
+    branch: '',
+    path: '',
     originalUrl: url,
   }
 }
@@ -91,7 +112,8 @@ export function buildSnipUrl(info, base = 'https://gitsnip.cc') {
  */
 export function formatRepoInfo(info) {
   if (info.type === 'repo') {
-    return `Repository · ${info.owner}/${info.repo}  (${info.branch})`
+    const branchHint = info.branch ? `  (${info.branch})` : ''
+    return `Repository · ${info.owner}/${info.repo}${branchHint}`
   }
   return `Folder · ${info.owner}/${info.repo}/${info.path}  (${info.branch})`
 }

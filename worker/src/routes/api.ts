@@ -12,22 +12,36 @@
  */
 
 import { Hono } from 'hono'
-import type { Env, Tier } from '../types.js'
+import type { Env, Tier, SessionUser } from '../types.js'
 import { fetchTree, fetchAllFiles, buildInfo } from '../services/github.js'
 import { createZip, zipResponse, zipFilename } from '../services/zip.js'
 import { tarGzResponse } from '../services/tar.js'
 import { corsHeaders, checkLimits } from '../middleware/security.js'
+import { zipCacheKey, getZipFromR2, saveZipToR2, fetchCommitSha } from '../services/cache.js'
+import { trackDownload } from '../services/analytics.js'
+import { getUserOAuthToken } from '../services/auth.js'
 
 const api = new Hono<{
   Bindings: Env
-  Variables: { repoInfo: import('../types.js').RepoInfo; tier: Tier; fileLimit: number }
+  Variables: {
+    repoInfo: import('../types.js').RepoInfo
+    tier: Tier
+    fileLimit: number
+    sessionUser?: SessionUser
+  }
 }>()
 
 // ─── GET /v1/download ─────────────────────────────────────────────────────────
 
 api.get('/download', async (c) => {
   const info  = c.get('repoInfo')
-  const token = c.req.header('X-GitHub-Token') ?? c.env.GITHUB_TOKEN
+  const sessionUser = c.get('sessionUser')
+  let token = c.req.header('X-GitHub-Token')
+  // If no explicit token header, try the session user's stored OAuth token
+  if (!token && sessionUser && c.env.TOKEN_ENCRYPTION_KEY) {
+    token = await getUserOAuthToken(c.env.DB, sessionUser.userId, c.env.TOKEN_ENCRYPTION_KEY) ?? undefined
+  }
+  token = token ?? c.env.GITHUB_TOKEN
   const fmt   = c.req.query('format')
   const useTarGz = fmt === 'tar.gz' || fmt === 'tgz'
 
@@ -39,24 +53,93 @@ api.get('/download', async (c) => {
     return c.redirect(archiveUrl, 302)
   }
 
+  const startTime = Date.now()
+  const userId = sessionUser?.userId ?? 'anon'
+
   try {
-    // 1. Fetch file tree (KV-cached)
+    // 0. Resolve commit SHA once (reused for cache check + cache save)
+    let commitSha: string | null = null
+    if (!useTarGz) {
+      commitSha = await fetchCommitSha(info, token)
+    }
+
+    // 1. Try R2 ZIP cache (only for zip format, and only if commit SHA was resolved)
+    //    Note: we still need to check file limits, so fetch tree first for limit check
+    //    R2 cache is only used when the user's tier allows the full directory.
+
+    // 2. Fetch file tree (KV-cached)
     const tree = await fetchTree(info, token, c.env.GITSNIP_CACHE)
 
-    // 2. Check tier-based limits
+    // 3. Check tier-based limits
     const totalSize = tree.reduce((s, e) => s + (e.size ?? 0), 0)
     const limitCheck = checkLimits(tree.length, totalSize, c.get('fileLimit'))
     if (!limitCheck.ok) return limitCheck.response
 
-    // 3. Fetch all file contents from raw.githubusercontent.com
+    // 4. Try R2 cache (only after limit check passes)
+    if (commitSha) {
+      const cacheKey = zipCacheKey(info, commitSha)
+      const cached = await getZipFromR2(c.env, cacheKey)
+      if (cached) {
+        const name = zipFilename(info.path, info.repo)
+        const safeName = name.endsWith('.zip') ? name : name + '.zip'
+
+        trackDownload(c.env, {
+          userId,
+          tier: c.get('tier') ?? 'free',
+          owner: info.owner,
+          repo: info.repo,
+          path: info.path,
+          fileCount: tree.length,
+          totalBytes: cached.size,
+          durationMs: Date.now() - startTime,
+          cacheHit: true,
+        })
+
+        return new Response(cached.body, {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/zip',
+            'Content-Disposition': `attachment; filename="${safeName}"`,
+            'Content-Length': String(cached.size),
+            'Cache-Control': 'no-store',
+            'X-Cache': 'HIT',
+            ...corsHeaders(),
+          },
+        })
+      }
+    }
+
+    // 5. Fetch all file contents from raw.githubusercontent.com
     const files = await fetchAllFiles(tree, info)
 
-    // 3. Build and return archive with CORS headers
+    // 6. Build archive
     const name = zipFilename(info.path, info.repo)
     if (useTarGz) {
       return tarGzResponse(files, info.path, name, corsHeaders())
     }
-    return zipResponse(createZip(files, info.path), name, corsHeaders())
+
+    const zipData = createZip(files, info.path)
+
+    // 7. Save ZIP to R2 cache (async, don't block response)
+    if (commitSha) {
+      const cacheKey = zipCacheKey(info, commitSha)
+      c.executionCtx.waitUntil(saveZipToR2(c.env, cacheKey, zipData))
+    }
+
+    // 8. Track download
+    trackDownload(c.env, {
+      userId,
+      tier: c.get('tier') ?? 'free',
+      owner: info.owner,
+      repo: info.repo,
+      path: info.path,
+      fileCount: tree.length,
+      totalBytes: zipData.byteLength,
+      durationMs: Date.now() - startTime,
+      cacheHit: false,
+    })
+
+    return zipResponse(zipData, name, corsHeaders())
 
   } catch (err) {
     if (err instanceof Response) return err
@@ -72,7 +155,12 @@ api.get('/download', async (c) => {
 
 api.get('/info', async (c) => {
   const info  = c.get('repoInfo')
-  const token = c.req.header('X-GitHub-Token') ?? c.env.GITHUB_TOKEN
+  const sessionUser = c.get('sessionUser')
+  let token = c.req.header('X-GitHub-Token')
+  if (!token && sessionUser && c.env.TOKEN_ENCRYPTION_KEY) {
+    token = await getUserOAuthToken(c.env.DB, sessionUser.userId, c.env.TOKEN_ENCRYPTION_KEY) ?? undefined
+  }
+  token = token ?? c.env.GITHUB_TOKEN
 
   try {
     const tree   = await fetchTree(info, token, c.env.GITSNIP_CACHE)

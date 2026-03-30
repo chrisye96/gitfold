@@ -34,25 +34,46 @@ export function parseGithubUrl(url: string): RepoInfo | null {
 
   if (u.hostname !== 'github.com' && u.hostname !== 'gitsnip.cc') return null
 
-  // Pattern: /owner/repo/tree/branch[/path]
-  const match = u.pathname.match(/^\/([^/]+)\/([^/]+)\/tree\/([^/]+)(?:\/(.+))?$/)
+  // Pattern 1: /owner/repo/tree/branch[/path]
+  const treeMatch = u.pathname.match(/^\/([^/]+)\/([^/]+)\/tree\/([^/]+)(?:\/(.+))?$/)
+
+  // Pattern 2: /owner/repo (bare repo URL, no branch)
+  const repoMatch = !treeMatch && u.pathname.match(/^\/([^/]+)\/([^/]+)\/?$/)
+
+  const match = treeMatch || repoMatch
   if (!match) return null
 
-  const [, owner, repo, branch, rawPath = ''] = match
-  const path = rawPath.replace(/\/+$/, '') // strip trailing slashes
+  const owner = match[1]
+  const repo  = match[2]
 
-  if (!owner || !repo || !branch) return null
+  if (!owner || !repo) return null
 
   // Reject obvious non-repo segments
   if (owner === 'login' || owner === 'settings' || owner === 'explore') return null
 
+  if (treeMatch) {
+    const branch  = treeMatch[3]
+    const rawPath = treeMatch[4] || ''
+    const path    = rawPath.replace(/\/+$/, '')
+    return {
+      provider: 'github',
+      type: (path ? 'folder' : 'repo') as 'folder' | 'repo',
+      owner,
+      repo,
+      branch,
+      path,
+      originalUrl: url,
+    }
+  }
+
+  // Bare repo URL — branch unknown, will be resolved at download time
   return {
     provider: 'github',
-    type: (path ? 'folder' : 'repo') as 'folder' | 'repo',
+    type: 'repo' as const,
     owner,
     repo,
-    branch,
-    path,
+    branch: '',
+    path: '',
     originalUrl: url,
   }
 }

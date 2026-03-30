@@ -227,6 +227,9 @@ html[data-theme="dark"] .site-logo .logo-icon {
 .feedback[data-type="loading"] .feedback-icon { color: var(--c-text-muted); }
 .feedback[data-type="loading"] .feedback-msg  { color: var(--c-text-muted); }
 
+.feedback[data-type="warning"] .feedback-icon { color: var(--c-warning); }
+.feedback[data-type="warning"] .feedback-msg  { color: var(--c-warning); }
+
 .feedback-action {
   background: none;
   border: none;
@@ -616,6 +619,44 @@ html[data-theme="dark"] .tool-power .bookmarklet-btn img { filter: invert(1); }
 }
 .upgrade-modal-actions .btn--primary:hover {
   background: var(--c-primary-hover);
+}
+
+/* ── User menu (Phase 2 — OAuth) ─────────────────────────────────────────── */
+.user-menu {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  color: var(--c-text-muted);
+}
+.user-menu-login {
+  font-weight: 500;
+  color: var(--c-text);
+}
+.user-menu-logout {
+  background: none;
+  border: none;
+  color: var(--c-text-muted);
+  font-size: 0.75rem;
+  cursor: pointer;
+  padding: 0.2rem 0.4rem;
+  border-radius: var(--radius-sm);
+  transition: color var(--transition);
+}
+.user-menu-logout:hover {
+  color: var(--c-text);
+}
+.btn--text {
+  background: none;
+  border: none;
+  color: var(--c-text-muted);
+  font-size: 0.8125rem;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0.3rem 0;
+}
+.btn--text:hover {
+  color: var(--c-text);
 }
 
 /* ── Responsive ─────────────────────────────────────────────────────────────── */

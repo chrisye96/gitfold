@@ -37,6 +37,7 @@ function headerHTML(page) {
        target="_blank" rel="noopener noreferrer"
        data-i18n="nav.github"
        aria-label="GitSnip on GitHub (opens in new tab)">GitHub</a>
+    <span id="user-menu" class="user-menu" hidden></span>
     <button id="theme-toggle" class="btn-theme-toggle" type="button" aria-label="Switch to light mode">
       <!-- IoSunnyOutline — shown when preference = light -->
       <svg id="icon-sun" viewBox="0 0 512 512" width="18" height="18" fill="none" stroke="currentColor" stroke-width="32" stroke-linecap="round" stroke-miterlimit="10" aria-hidden="true" hidden>

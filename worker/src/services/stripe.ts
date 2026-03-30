@@ -142,6 +142,7 @@ export async function processWebhookEvent(
 
   switch (event.type) {
     case 'checkout.session.completed': {
+      const sessionId = obj['id'] as string
       const email = obj['customer_email'] as string
       const customerId = obj['customer'] as string
       const subId = obj['subscription'] as string
@@ -156,12 +157,12 @@ export async function processWebhookEvent(
       }
       await saveSub(env.GITSNIP_SUBS, token, record)
 
-      // Store token→email mapping so we can return it on success redirect
-      await env.GITSNIP_SUBS.put(
-        `checkout:${subId}`,
-        JSON.stringify({ token, email }),
-        { expirationTtl: 3600 },
-      )
+      const claimData = JSON.stringify({ token, email })
+      // Store mappings for token claim (by session ID and subscription ID)
+      await Promise.all([
+        env.GITSNIP_SUBS.put(`checkout:${subId}`, claimData, { expirationTtl: 3600 }),
+        env.GITSNIP_SUBS.put(`session:${sessionId}`, claimData, { expirationTtl: 3600 }),
+      ])
       break
     }
 

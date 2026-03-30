@@ -167,9 +167,15 @@ After:  https://gitsnip.cc/anthropics/claude-code/tree/main/plugins</code></pre>
       <h2 id="api" data-nav-section="Developers">API reference</h2>
       <p>Base URL: <code>https://api.gitsnip.cc</code></p>
 
-      <h3>Authentication (optional)</h3>
-      <p>Pass your GitHub Personal Access Token to avoid rate limits:</p>
+      <h3>Authentication</h3>
+      <p>Two ways to authenticate:</p>
+      <ul>
+        <li><strong>Sign in with GitHub</strong> (recommended) — click your profile in the top-right corner. Your OAuth token is used automatically on every request, no copy-paste needed.</li>
+        <li><strong>GitHub Personal Access Token (PAT)</strong> — pass it as a header for direct API calls:</li>
+      </ul>
       <pre><code>X-GitHub-Token: ghp_your_token_here</code></pre>
+      <p>Both methods raise the GitHub API rate limit from 60 to 5,000 requests/hour and unlock
+         the 200-file limit (Token tier).</p>
 
       <h3>Download a directory</h3>
       <div class="endpoint">
@@ -180,14 +186,19 @@ After:  https://gitsnip.cc/anthropics/claude-code/tree/main/plugins</code></pre>
         <thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
         <tbody>
           <tr><td><code>url</code></td><td>string (required)</td><td>URL-encoded GitHub tree URL</td></tr>
+          <tr><td><code>format</code></td><td>string (optional)</td><td><code>zip</code> (default) or <code>tar.gz</code> / <code>tgz</code></td></tr>
         </tbody>
       </table>
-      <p>Returns: <code>application/zip</code> file stream with
-         <code>Content-Disposition: attachment; filename="dirname.zip"</code></p>
-      <pre><code>curl -L "https://api.gitsnip.cc/v1/download?url=https%3A%2F%2Fgithub.com%2Fanthropics%2Fclaude-code%2Ftree%2Fmain%2Fplugins%2Ffeature-dev" \
+      <p>Returns: <code>application/zip</code> or <code>application/gzip</code> stream.
+         Full-repo URLs (no path) return a <code>302</code> redirect to GitHub's archive CDN.</p>
+      <pre><code># Download a subdirectory as zip
+curl -L "https://api.gitsnip.cc/v1/download?url=https%3A%2F%2Fgithub.com%2Fanthropics%2Fclaude-code%2Ftree%2Fmain%2Fplugins%2Ffeature-dev" \
      -o feature-dev.zip
 
-# With token:
+# Download as tar.gz
+curl -L "https://api.gitsnip.cc/v1/download?url=...&format=tar.gz" -o archive.tar.gz
+
+# With GitHub token (higher rate limit)
 curl -L -H "X-GitHub-Token: ghp_xxxx" \
      "https://api.gitsnip.cc/v1/download?url=..." \
      -o feature-dev.zip</code></pre>
@@ -218,22 +229,34 @@ curl -L -H "X-GitHub-Token: ghp_xxxx" \
   ]
 }</code></pre>
 
+      <h3>Tier limits</h3>
+      <table>
+        <thead><tr><th>Tier</th><th>Max files</th><th>How to unlock</th></tr></thead>
+        <tbody>
+          <tr><td>Free</td><td>50</td><td>Default</td></tr>
+          <tr><td>Token</td><td>200</td><td>GitHub PAT header or sign in with GitHub</td></tr>
+          <tr><td>Pro</td><td>1,000</td><td><a href="/pricing">Subscribe</a></td></tr>
+          <tr><td>Power</td><td>5,000</td><td><a href="/pricing">Subscribe</a></td></tr>
+        </tbody>
+      </table>
+
       <h3>Error responses</h3>
       <table>
         <thead><tr><th>Status</th><th>Code</th><th>Meaning</th></tr></thead>
         <tbody>
           <tr><td><code>400</code></td><td><code>INVALID_URL</code></td><td>URL is not a valid GitHub tree URL, or path is empty</td></tr>
           <tr><td><code>404</code></td><td><code>NOT_FOUND</code></td><td>Repository, branch, or path does not exist</td></tr>
-          <tr><td><code>413</code></td><td><code>TOO_LARGE</code></td><td>Directory exceeds size/file-count limits</td></tr>
+          <tr><td><code>413</code></td><td><code>TOO_MANY_FILES</code></td><td>Directory exceeds tier file-count limit</td></tr>
+          <tr><td><code>413</code></td><td><code>TOO_LARGE</code></td><td>Directory exceeds 100 MB size limit</td></tr>
           <tr><td><code>429</code></td><td><code>RATE_LIMITED</code></td><td>GitHub API rate limit exceeded</td></tr>
           <tr><td><code>502</code></td><td><code>GITHUB_ERROR</code></td><td>GitHub API returned an unexpected error</td></tr>
         </tbody>
       </table>
       <pre><code>// All errors follow this format:
 {
-  "code": "RATE_LIMITED",
-  "message": "GitHub API rate limit exceeded.",
-  "hint": "Provide X-GitHub-Token to get 5,000 requests/hour."
+  "code": "TOO_MANY_FILES",
+  "message": "Directory contains 132 files (limit: 50).",
+  "hint": "Upgrade your plan for higher limits, or try a smaller subdirectory."
 }</code></pre>
 
       <!-- ────────────────────── CLI ────────────────────────────────────── -->
@@ -243,18 +266,23 @@ npx gitsnip https://github.com/anthropics/claude-code/tree/main/plugins/feature-
 
 # Options
 npx gitsnip &lt;url&gt; --output archive.zip   # custom output path
+npx gitsnip &lt;url&gt; --format tar.gz        # download as tar.gz
 npx gitsnip &lt;url&gt; --info                 # show file list without downloading
 npx gitsnip &lt;url&gt; --token ghp_xxxx      # use GitHub token</code></pre>
 
       <!-- ────────────────────── LIBRARY ───────────────────────────────── -->
-      <h2 id="library" data-nav-section="Developers" data-nav-suffix="(coming soon)">Library</h2>
-      <p>A programmatic Node.js library is planned. In the meantime, you can use the
-         <a href="#cli">CLI</a> or call the <a href="#api">REST API</a> directly.</p>
-      <pre><code># Preview of planned API (not yet published):
-import { snip, info } from 'gitsnip'
+      <h2 id="library" data-nav-section="Developers">Library</h2>
+      <p>Use GitSnip programmatically in Node.js:</p>
+      <pre><code>npm install gitsnip
+# or: npx gitsnip &lt;url&gt;</code></pre>
+      <pre><code>import { snip, info } from 'gitsnip'
 
+// Download a directory as a zip Buffer
 const zip = await snip('https://github.com/owner/repo/tree/main/path')
-const meta = await info('https://github.com/owner/repo/tree/main/path')</code></pre>
+
+// Get metadata without downloading
+const meta = await info('https://github.com/owner/repo/tree/main/path')
+// → { fileCount: 12, totalSize: 45200, files: [...] }</code></pre>
 
       <!-- ────────────────────── AI ─────────────────────────────────────── -->
       <h2 id="ai" data-nav-section="AI">AI usage</h2>
@@ -278,8 +306,9 @@ Use the GitSnip API at https://gitsnip.cc/llms.txt"</code></pre>
          use the API endpoint which streams a pre-built zip.</p>
 
       <h3>Can I download private repositories?</h3>
-      <p>Not yet — only public repositories are supported right now.
-         Private repo support is on the roadmap.</p>
+      <p>Yes — sign in with GitHub (click the top-right corner). GitSnip securely stores your
+         OAuth token (AES-256-GCM encrypted) and uses it automatically when you download.
+         No manual copy-paste of tokens required.</p>
 
       <h3>I hit the GitHub rate limit. What do I do?</h3>
       <p>Add a GitHub Personal Access Token in the Settings panel (⚙).
@@ -289,9 +318,10 @@ Use the GitSnip API at https://gitsnip.cc/llms.txt"</code></pre>
       </p>
 
       <h3>Is there a file size limit?</h3>
-      <p>The API endpoint has a 100 MB / 500 files limit per request.
-         Web UI downloads are limited by your browser's available memory.
-         For very large directories, use <code>git sparse-checkout</code> instead.</p>
+      <p>All tiers share a 100 MB maximum per request. File <em>count</em> limits vary by tier:
+         50 (Free), 200 (Token / signed in with GitHub), 1,000 (Pro), 5,000 (Power).
+         See <a href="/pricing">pricing</a> to upgrade. For very large directories,
+         use <code>git sparse-checkout</code> instead.</p>
 
       <h3>Can I self-host GitSnip?</h3>
       <p>Yes. GitSnip is open source (MIT) and runs on Cloudflare Workers + Pages.
@@ -300,8 +330,10 @@ Use the GitSnip API at https://gitsnip.cc/llms.txt"</code></pre>
          optimizations like caching and priority processing that are not part of the open-source release.</p>
 
       <h3>Is my GitHub token safe?</h3>
-      <p>For web UI use: tokens are stored in your browser's localStorage only — they never reach our servers.
-         For API use: tokens are passed via HTTPS and used only for the duration of the request.</p>
+      <p>
+        <strong>PAT (manually pasted):</strong> stored in your browser's localStorage only — never sent to our servers.<br>
+        <strong>OAuth (Sign in with GitHub):</strong> your token is encrypted with AES-256-GCM before being stored in our database. It is only decrypted server-side to make GitHub API requests on your behalf, and is never returned to the client.
+      </p>
 
     </main><!-- /docs-content -->
   </div><!-- /docs-layout -->

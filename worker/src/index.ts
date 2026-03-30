@@ -10,20 +10,32 @@
  */
 
 import { Hono } from 'hono'
-import type { Env, Tier } from './types.js'
+import type { Env, Tier, SessionUser } from './types.js'
 import { validateUrl, resolveTier, corsHeaders } from './middleware/security.js'
+import { sessionMiddleware } from './middleware/session.js'
 import apiRoutes from './routes/api.js'
 import billingRoutes from './routes/billing.js'
+import authRoutes from './routes/auth.js'
 
 const app = new Hono<{
   Bindings: Env
-  Variables: { repoInfo: import('./types.js').RepoInfo; tier: Tier; fileLimit: number }
+  Variables: {
+    repoInfo: import('./types.js').RepoInfo
+    tier: Tier
+    fileLimit: number
+    sessionUser?: SessionUser
+  }
 }>()
+
+// ─── Global middleware ───────────────────────────────────────────────────────
+
+// Session middleware: extract JWT from cookie (non-blocking)
+app.use('*', sessionMiddleware)
 
 // ─── CORS preflight ───────────────────────────────────────────────────────────
 
 app.options('*', (c) => {
-  return new Response(null, { status: 204, headers: corsHeaders() })
+  return new Response(null, { status: 204, headers: corsHeaders(c.req.header('Origin')) })
 })
 
 // ─── Health check ─────────────────────────────────────────────────────────────
@@ -42,6 +54,11 @@ app.get('/health', (c) =>
 app.get('/docs', (c) =>
   c.redirect('https://gitsnip.cc/docs', 302),
 )
+
+// ─── Auth routes (Phase 2 — OAuth, session) ─────────────────────────────────
+
+app.route('/api/v1', authRoutes)
+app.route('/v1', authRoutes)
 
 // ─── Billing routes (no URL validation needed) ───────────────────────────────
 
@@ -76,4 +93,13 @@ app.notFound((c) =>
   ),
 )
 
-export default app
+// ─── Scheduled handler (cron) — R2 ZIP cache cleanup ─────────────────────────
+
+import { cleanupOldZips } from './services/cache.js'
+
+export default {
+  fetch: app.fetch,
+  async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext) {
+    ctx.waitUntil(cleanupOldZips(env, 30))
+  },
+}

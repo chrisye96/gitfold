@@ -23,9 +23,12 @@ GitSnip URLs are identical to GitHub tree URLs with the domain swapped.
 Base URL: `https://api.gitsnip.cc`
 
 All endpoints:
-- Accept optional `X-GitHub-Token` header for higher rate limits
-- Return CORS headers (`Access-Control-Allow-Origin: *`)
 - Return errors as JSON with `code`, `message`, and `hint` fields
+- Support `OPTIONS` preflight with CORS headers
+
+**CORS policy:**
+- Credentialed requests (`credentials: 'include'`) are allowed from `gitsnip.cc` and `localhost`
+- Other origins receive `Access-Control-Allow-Origin: *` (no credentials)
 
 ---
 
@@ -42,14 +45,17 @@ Download a GitHub directory as an archive.
 
 **Headers**
 
-| Header          | Description                                     |
-|-----------------|-------------------------------------------------|
-| X-GitHub-Token  | GitHub PAT — raises rate limit to 5,000 req/hr |
+| Header          | Description                                              |
+|-----------------|----------------------------------------------------------|
+| X-GitHub-Token  | GitHub PAT — raises rate limit to 5,000 req/hr           |
+| X-Sub-Token     | Subscription token — unlocks Pro/Power file count limits |
+| Cookie          | `gitsnip_session=<jwt>` — OAuth session (auto from browser) |
 
 **Response**
 
 - `200 OK` — `application/zip` or `application/gzip` stream
 - `Content-Disposition: attachment; filename="dirname.zip"`
+- `X-Cache: HIT` or `X-Cache: MISS` — R2 cache status
 - For full-repo downloads: `302` redirect to GitHub's archive CDN (zero-latency)
 
 **Examples**
@@ -82,16 +88,22 @@ Get metadata about a directory without downloading it.
 |-----------|--------|----------|-----------------------------|
 | url       | string | yes      | URL-encoded GitHub tree URL |
 
+**Headers**
+
+Same as `/v1/download` (X-GitHub-Token, X-Sub-Token, Cookie).
+
 **Response**
 
     {
-      "provider": "github",
-      "owner":    "anthropics",
-      "repo":     "claude-code",
-      "branch":   "main",
-      "path":     "plugins",
+      "provider":  "github",
+      "owner":     "anthropics",
+      "repo":      "claude-code",
+      "branch":    "main",
+      "path":      "plugins",
       "fileCount": 12,
       "totalSize": 45200,
+      "tier":      "free",
+      "fileLimit": 50,
       "files": [
         { "path": "plugins/README.md",        "size": 1204  },
         { "path": "plugins/feature-dev/prompt.md", "size": 11636 }
@@ -101,6 +113,153 @@ Get metadata about a directory without downloading it.
 **Example**
 
     curl "https://api.gitsnip.cc/v1/info?url=https%3A%2F%2Fgithub.com%2Fanthropics%2Fclaude-code%2Ftree%2Fmain%2Fplugins"
+
+---
+
+### GET /v1/auth/github
+
+Start GitHub OAuth login. Redirects the browser to GitHub's authorization page.
+
+**Response:** `302` redirect to `https://github.com/login/oauth/authorize?...`
+
+After the user authorizes, GitHub redirects back to `/v1/auth/github/callback`, which sets a session cookie and redirects to `https://gitsnip.cc/?auth=success`.
+
+**Example (browser navigation):**
+
+    window.location.href = 'https://api.gitsnip.cc/v1/auth/github'
+
+---
+
+### GET /v1/auth/github/callback
+
+OAuth callback handler — called by GitHub automatically. Not intended for direct use.
+
+---
+
+### GET /v1/auth/me
+
+Return the current user's session info.
+
+**Headers:** Cookie with `gitsnip_session` (sent automatically by browser if `credentials: 'include'`)
+
+**Response (authenticated):**
+
+    {
+      "authenticated": true,
+      "userId":       "550e8400-e29b-41d4-a716-446655440000",
+      "email":        "user@example.com",
+      "githubLogin":  "octocat",
+      "tier":         "free"
+    }
+
+**Response (not authenticated):**
+
+    { "authenticated": false }
+
+**Example:**
+
+    fetch('https://api.gitsnip.cc/v1/auth/me', { credentials: 'include' })
+
+---
+
+### POST /v1/auth/logout
+
+Clear the session cookie and revoke the JWT.
+
+**Headers:** Cookie with `gitsnip_session`
+
+**Response:**
+
+    { "ok": true }
+
+Sets `Set-Cookie: gitsnip_session=; Max-Age=0; ...` to clear the session.
+
+**Example:**
+
+    fetch('https://api.gitsnip.cc/v1/auth/logout', {
+      method: 'POST',
+      credentials: 'include'
+    })
+
+---
+
+### POST /v1/checkout
+
+Create a Stripe Checkout session for a Pro or Power subscription.
+
+**Request body (JSON):**
+
+| Field | Type   | Required | Description             |
+|-------|--------|----------|-------------------------|
+| email | string | yes      | Customer email address  |
+| tier  | string | no       | `"pro"` (default) or `"power"` |
+
+**Response:**
+
+    { "url": "https://checkout.stripe.com/pay/cs_..." }
+
+Redirect the user to `url` to complete payment. On success, Stripe redirects to
+`https://gitsnip.cc/pricing?checkout=success&session_id=cs_...`
+
+**Example:**
+
+    const res = await fetch('https://api.gitsnip.cc/v1/checkout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: 'user@example.com', tier: 'pro' })
+    })
+    const { url } = await res.json()
+    window.location.href = url
+
+---
+
+### POST /v1/webhook/stripe
+
+Stripe webhook endpoint. Handles `checkout.session.completed`, `customer.subscription.updated`,
+and `customer.subscription.deleted` events to update subscription state.
+
+**Not for direct use** — configured in Stripe Dashboard to point here.
+
+---
+
+### GET /v1/sub/claim
+
+Claim a subscription token after a successful Stripe Checkout.
+
+**Query parameters**
+
+| Parameter  | Type   | Required | Description                               |
+|------------|--------|----------|-------------------------------------------|
+| session_id | string | yes      | Stripe Checkout session ID from the URL   |
+
+**Response (success):**
+
+    { "ok": true, "token": "sub_xxxxxxxxxxxx", "email": "user@example.com" }
+
+**Response (not found / still processing):**
+
+    { "ok": false, "message": "Session not found or expired. It may take a moment — please refresh." }
+
+Store the returned `token` in localStorage as `gitsnip_sub_token` and pass it as `X-Sub-Token` on API requests.
+
+---
+
+### GET /v1/sub/status
+
+Query subscription status by token or email.
+
+**Query parameters** (provide one):
+
+| Parameter | Type   | Description                    |
+|-----------|--------|--------------------------------|
+| token     | string | Subscription token (preferred) |
+| email     | string | Customer email address         |
+
+**Response:**
+
+    { "tier": "pro", "active": true, "email": "user@example.com" }
+
+    { "tier": "free", "active": false }
 
 ---
 
@@ -122,14 +281,17 @@ All errors return JSON:
       "hint":    "Provide X-GitHub-Token to get 5,000 requests/hour."
     }
 
-| Status | Code           | Meaning                                         |
-|--------|----------------|-------------------------------------------------|
-| 400    | INVALID_URL    | Not a valid GitHub tree URL, or path is empty   |
-| 404    | NOT_FOUND      | Repo, branch, or path does not exist on GitHub  |
-| 413    | TOO_LARGE      | Directory exceeds size or file-count limits     |
-| 429    | RATE_LIMITED   | GitHub API rate limit hit                       |
-| 502    | GITHUB_ERROR   | GitHub API returned an unexpected error         |
-| 500    | INTERNAL_ERROR | Unexpected server error                         |
+| Status | Code            | Meaning                                          |
+|--------|-----------------|--------------------------------------------------|
+| 400    | INVALID_URL     | Not a valid GitHub tree URL, or path is empty    |
+| 400    | INVALID_REQUEST | Missing or malformed request parameters          |
+| 404    | NOT_FOUND       | Repo, branch, or path does not exist on GitHub   |
+| 413    | TOO_MANY_FILES  | Directory exceeds tier file-count limit          |
+| 413    | TOO_LARGE       | Directory exceeds 100 MB size limit              |
+| 429    | RATE_LIMITED    | GitHub API rate limit hit                        |
+| 500    | CONFIG_ERROR    | Server misconfiguration (OAuth/Stripe not set up)|
+| 502    | GITHUB_ERROR    | GitHub API returned an unexpected error          |
+| 500    | INTERNAL_ERROR  | Unexpected server error                          |
 
 ---
 
@@ -147,15 +309,20 @@ All errors return JSON:
 
 ---
 
-## Rate limits
+## Tier limits
 
-| Mode              | Requests/hour |
-|-------------------|--------------|
-| No token          | 60           |
-| With GitHub token | 5,000        |
+| Tier   | Max files | How to unlock                              |
+|--------|-----------|--------------------------------------------|
+| Free   | 50        | Default (no token, no login)               |
+| Token  | 200       | GitHub PAT header or sign in with GitHub   |
+| Pro    | 1,000     | Subscribe at gitsnip.cc/pricing            |
+| Power  | 5,000     | Subscribe at gitsnip.cc/pricing            |
 
-Web UI free tier: 50 files per download.
-API: 100 MB / 500 files per request.
+Max directory size: 100 MB per request (all tiers).
+
+GitHub API rate limits:
+- No token: 60 req/hour
+- With GitHub token / OAuth: 5,000 req/hour
 
 ---
 
@@ -170,4 +337,4 @@ Bookmarklet: drag `javascript:window.location.href=window.location.href.replace(
 ## Source code
 
 https://github.com/chrisye96/gitsnip (MIT license)
-Runs on Cloudflare Workers + Pages.
+Runs on Cloudflare Workers + Pages + D1 + R2.

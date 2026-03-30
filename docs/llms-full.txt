@@ -1,180 +1,340 @@
-# GitSnip — Full API Reference for AI
-> Download any GitHub subdirectory as a zip. No git clone needed.
-> Version: 1.0.0 | Updated: 2026-03
+# GitSnip — Full API Reference
+
+> Download any GitHub subdirectory as a zip — no git clone, no login.
+> Web: https://gitsnip.cc  |  API: https://api.gitsnip.cc  |  Docs: https://gitsnip.cc/docs
 
 ---
 
-## What is GitSnip?
+## URL formats accepted
 
-GitSnip is a web tool and API that downloads a specific subdirectory from any
-public GitHub repository and returns it as a zip file. It is designed to be
-easy for both humans and AI agents to use.
+Any of these work everywhere (web UI, API, CLI):
 
-Use cases:
-- Download a plugin, template, or component from a large repo
-- Avoid cloning an entire repository just to get one folder
-- Programmatically fetch code snippets in scripts or AI workflows
+    https://github.com/owner/repo/tree/branch/path/to/dir   (subdirectory)
+    https://github.com/owner/repo/tree/branch               (entire repo root)
+    github.com/owner/repo/tree/branch/path                  (no protocol OK)
+    https://gitsnip.cc/owner/repo/tree/branch/path          (gitsnip URL)
 
----
-
-## Web Interface
-
-URL: https://gitsnip.cc
-
-### Method 1: Paste and download
-1. Open https://gitsnip.cc
-2. Paste a GitHub tree URL
-3. Click Download
-
-### Method 2: URL replacement (fastest)
-Replace `github.com` with `gitsnip.cc` in any GitHub tree URL:
-  Input:  https://github.com/owner/repo/tree/branch/path
-  Output: https://gitsnip.cc/owner/repo/tree/branch/path
-
-Opening the gitsnip.cc URL in a browser triggers an immediate download.
+GitSnip URLs are identical to GitHub tree URLs with the domain swapped.
 
 ---
 
 ## REST API
 
-Base URL: https://api.gitsnip.cc
+Base URL: `https://api.gitsnip.cc`
 
-### Authentication (optional but recommended)
-Header: X-GitHub-Token: ghp_your_personal_access_token
+All endpoints:
+- Return errors as JSON with `code`, `message`, and `hint` fields
+- Support `OPTIONS` preflight with CORS headers
 
-Without token: 60 GitHub API requests/hour per IP
-With token:  5,000 GitHub API requests/hour
+**CORS policy:**
+- Credentialed requests (`credentials: 'include'`) are allowed from `gitsnip.cc` and `localhost`
+- Other origins receive `Access-Control-Allow-Origin: *` (no credentials)
 
 ---
 
 ### GET /v1/download
 
-Downloads a GitHub directory as a zip file.
+Download a GitHub directory as an archive.
 
-Parameters:
-  url  (required)  URL-encoded GitHub tree URL
+**Query parameters**
 
-Returns: application/zip binary stream
+| Parameter | Type   | Required | Description                          |
+|-----------|--------|----------|--------------------------------------|
+| url       | string | yes      | URL-encoded GitHub tree URL          |
+| format    | string | no       | `zip` (default) or `tar.gz` / `tgz` |
 
-Examples:
+**Headers**
 
-  # Basic download
-  GET https://api.gitsnip.cc/v1/download?url=https%3A%2F%2Fgithub.com%2Fanthropics%2Fclaude-code%2Ftree%2Fmain%2Fplugins%2Ffeature-dev
+| Header          | Description                                              |
+|-----------------|----------------------------------------------------------|
+| X-GitHub-Token  | GitHub PAT — raises rate limit to 5,000 req/hr           |
+| X-Sub-Token     | Subscription token — unlocks Pro/Power file count limits |
+| Cookie          | `gitsnip_session=<jwt>` — OAuth session (auto from browser) |
 
-  # curl
-  curl -L "https://api.gitsnip.cc/v1/download?url=https%3A%2F%2Fgithub.com%2Fanthropics%2Fclaude-code%2Ftree%2Fmain%2Fplugins%2Ffeature-dev" -o feature-dev.zip
+**Response**
 
-  # With token
-  curl -L -H "X-GitHub-Token: ghp_xxxx" "https://api.gitsnip.cc/v1/download?url=..." -o output.zip
+- `200 OK` — `application/zip` or `application/gzip` stream
+- `Content-Disposition: attachment; filename="dirname.zip"`
+- `X-Cache: HIT` or `X-Cache: MISS` — R2 cache status
+- For full-repo downloads: `302` redirect to GitHub's archive CDN (zero-latency)
 
-  # JavaScript fetch
-  const res = await fetch('https://api.gitsnip.cc/v1/download?url=' + encodeURIComponent(githubUrl))
-  const blob = await res.blob()
+**Examples**
 
-  # Python
-  import requests, urllib.parse
-  url = 'https://github.com/anthropics/claude-code/tree/main/plugins/feature-dev'
-  r = requests.get('https://api.gitsnip.cc/v1/download', params={'url': url}, stream=True)
-  with open('feature-dev.zip', 'wb') as f:
-      f.write(r.content)
+Download a subdirectory:
+
+    curl -L "https://api.gitsnip.cc/v1/download?url=https%3A%2F%2Fgithub.com%2Fanthropics%2Fclaude-code%2Ftree%2Fmain%2Fplugins" \
+         -o plugins.zip
+
+With a GitHub token:
+
+    curl -L \
+         -H "X-GitHub-Token: ghp_xxxxxxxxxxxx" \
+         "https://api.gitsnip.cc/v1/download?url=https%3A%2F%2Fgithub.com%2Fanthropics%2Fclaude-code%2Ftree%2Fmain%2Fplugins" \
+         -o plugins.zip
+
+Download as tar.gz:
+
+    curl -L "https://api.gitsnip.cc/v1/download?url=...&format=tar.gz" -o archive.tar.gz
 
 ---
 
 ### GET /v1/info
 
-Returns metadata about a directory without downloading it.
-Useful for AI agents to inspect a directory before deciding to download.
+Get metadata about a directory without downloading it.
 
-Parameters:
-  url  (required)  URL-encoded GitHub tree URL
+**Query parameters**
 
-Returns: JSON
+| Parameter | Type   | Required | Description                 |
+|-----------|--------|----------|-----------------------------|
+| url       | string | yes      | URL-encoded GitHub tree URL |
 
-  {
-    "provider": "github",
-    "owner": "anthropics",
-    "repo": "claude-code",
-    "branch": "main",
-    "path": "plugins/feature-dev",
-    "fileCount": 5,
-    "totalSize": 12840,
-    "files": [
-      { "path": "plugins/feature-dev/README.md", "size": 1204 },
-      { "path": "plugins/feature-dev/prompt.md", "size": 11636 }
-    ]
-  }
+**Headers**
 
-Example:
-  curl "https://api.gitsnip.cc/v1/info?url=https%3A%2F%2Fgithub.com%2Fanthropics%2Fclaude-code%2Ftree%2Fmain%2Fplugins%2Ffeature-dev"
+Same as `/v1/download` (X-GitHub-Token, X-Sub-Token, Cookie).
+
+**Response**
+
+    {
+      "provider":  "github",
+      "owner":     "anthropics",
+      "repo":      "claude-code",
+      "branch":    "main",
+      "path":      "plugins",
+      "fileCount": 12,
+      "totalSize": 45200,
+      "tier":      "free",
+      "fileLimit": 50,
+      "files": [
+        { "path": "plugins/README.md",        "size": 1204  },
+        { "path": "plugins/feature-dev/prompt.md", "size": 11636 }
+      ]
+    }
+
+**Example**
+
+    curl "https://api.gitsnip.cc/v1/info?url=https%3A%2F%2Fgithub.com%2Fanthropics%2Fclaude-code%2Ftree%2Fmain%2Fplugins"
+
+---
+
+### GET /v1/auth/github
+
+Start GitHub OAuth login. Redirects the browser to GitHub's authorization page.
+
+**Response:** `302` redirect to `https://github.com/login/oauth/authorize?...`
+
+After the user authorizes, GitHub redirects back to `/v1/auth/github/callback`, which sets a session cookie and redirects to `https://gitsnip.cc/?auth=success`.
+
+**Example (browser navigation):**
+
+    window.location.href = 'https://api.gitsnip.cc/v1/auth/github'
+
+---
+
+### GET /v1/auth/github/callback
+
+OAuth callback handler — called by GitHub automatically. Not intended for direct use.
+
+---
+
+### GET /v1/auth/me
+
+Return the current user's session info.
+
+**Headers:** Cookie with `gitsnip_session` (sent automatically by browser if `credentials: 'include'`)
+
+**Response (authenticated):**
+
+    {
+      "authenticated": true,
+      "userId":       "550e8400-e29b-41d4-a716-446655440000",
+      "email":        "user@example.com",
+      "githubLogin":  "octocat",
+      "tier":         "free"
+    }
+
+**Response (not authenticated):**
+
+    { "authenticated": false }
+
+**Example:**
+
+    fetch('https://api.gitsnip.cc/v1/auth/me', { credentials: 'include' })
+
+---
+
+### POST /v1/auth/logout
+
+Clear the session cookie and revoke the JWT.
+
+**Headers:** Cookie with `gitsnip_session`
+
+**Response:**
+
+    { "ok": true }
+
+Sets `Set-Cookie: gitsnip_session=; Max-Age=0; ...` to clear the session.
+
+**Example:**
+
+    fetch('https://api.gitsnip.cc/v1/auth/logout', {
+      method: 'POST',
+      credentials: 'include'
+    })
+
+---
+
+### POST /v1/checkout
+
+Create a Stripe Checkout session for a Pro or Power subscription.
+
+**Request body (JSON):**
+
+| Field | Type   | Required | Description             |
+|-------|--------|----------|-------------------------|
+| email | string | yes      | Customer email address  |
+| tier  | string | no       | `"pro"` (default) or `"power"` |
+
+**Response:**
+
+    { "url": "https://checkout.stripe.com/pay/cs_..." }
+
+Redirect the user to `url` to complete payment. On success, Stripe redirects to
+`https://gitsnip.cc/pricing?checkout=success&session_id=cs_...`
+
+**Example:**
+
+    const res = await fetch('https://api.gitsnip.cc/v1/checkout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: 'user@example.com', tier: 'pro' })
+    })
+    const { url } = await res.json()
+    window.location.href = url
+
+---
+
+### POST /v1/webhook/stripe
+
+Stripe webhook endpoint. Handles `checkout.session.completed`, `customer.subscription.updated`,
+and `customer.subscription.deleted` events to update subscription state.
+
+**Not for direct use** — configured in Stripe Dashboard to point here.
+
+---
+
+### GET /v1/sub/claim
+
+Claim a subscription token after a successful Stripe Checkout.
+
+**Query parameters**
+
+| Parameter  | Type   | Required | Description                               |
+|------------|--------|----------|-------------------------------------------|
+| session_id | string | yes      | Stripe Checkout session ID from the URL   |
+
+**Response (success):**
+
+    { "ok": true, "token": "sub_xxxxxxxxxxxx", "email": "user@example.com" }
+
+**Response (not found / still processing):**
+
+    { "ok": false, "message": "Session not found or expired. It may take a moment — please refresh." }
+
+Store the returned `token` in localStorage as `gitsnip_sub_token` and pass it as `X-Sub-Token` on API requests.
+
+---
+
+### GET /v1/sub/status
+
+Query subscription status by token or email.
+
+**Query parameters** (provide one):
+
+| Parameter | Type   | Description                    |
+|-----------|--------|--------------------------------|
+| token     | string | Subscription token (preferred) |
+| email     | string | Customer email address         |
+
+**Response:**
+
+    { "tier": "pro", "active": true, "email": "user@example.com" }
+
+    { "tier": "free", "active": false }
 
 ---
 
 ### GET /health
 
-Returns service status.
+Health check.
 
-  { "ok": true, "service": "gitsnip-worker", "version": "1.0.0" }
+    { "ok": true, "service": "gitsnip-worker", "version": "1.0.0", "timestamp": "..." }
 
 ---
 
-## Error Responses
+## Error responses
 
 All errors return JSON:
 
-  {
-    "code":    "RATE_LIMITED",
-    "message": "GitHub API rate limit exceeded.",
-    "hint":    "Provide X-GitHub-Token header to get 5,000 requests/hour."
-  }
+    {
+      "code":    "RATE_LIMITED",
+      "message": "GitHub API rate limit exceeded.",
+      "hint":    "Provide X-GitHub-Token to get 5,000 requests/hour."
+    }
 
-Error codes:
-  INVALID_URL      400  Missing/invalid url param, or empty path
-  UNAUTHORIZED     401  GitHub token invalid or expired
-  NOT_FOUND        404  Repository, branch, or path not found
-  TOO_MANY_FILES   413  Directory contains >500 files
-  TOO_LARGE        413  Directory exceeds 100 MB
-  RATE_LIMITED     429  GitHub API rate limit exceeded
-  GITHUB_ERROR     502  GitHub API returned unexpected error
-  INTERNAL_ERROR   500  Unexpected server error
-
----
-
-## Limits
-
-  Max files per request:  500
-  Max total size:         100 MB
-  Rate limit (no token):  20 requests/min/IP (Cloudflare) + 60 req/hour (GitHub)
-  Rate limit (with token):20 requests/min/IP (Cloudflare) + 5,000 req/hour (GitHub)
+| Status | Code            | Meaning                                          |
+|--------|-----------------|--------------------------------------------------|
+| 400    | INVALID_URL     | Not a valid GitHub tree URL, or path is empty    |
+| 400    | INVALID_REQUEST | Missing or malformed request parameters          |
+| 404    | NOT_FOUND       | Repo, branch, or path does not exist on GitHub   |
+| 413    | TOO_MANY_FILES  | Directory exceeds tier file-count limit          |
+| 413    | TOO_LARGE       | Directory exceeds 100 MB size limit              |
+| 429    | RATE_LIMITED    | GitHub API rate limit hit                        |
+| 500    | CONFIG_ERROR    | Server misconfiguration (OAuth/Stripe not set up)|
+| 502    | GITHUB_ERROR    | GitHub API returned an unexpected error          |
+| 500    | INTERNAL_ERROR  | Unexpected server error                          |
 
 ---
 
-## URL Format Reference
+## CLI
 
-GitSnip accepts any GitHub tree URL:
+    # No install needed
+    npx gitsnip <url>
 
-  https://github.com/{owner}/{repo}/tree/{branch}/{path}
-  https://github.com/{owner}/{repo}/tree/{branch}          (not supported — path required)
-
-The URL must point to a directory (tree), not a file (blob).
-
-Shareable GitSnip download links have the same structure, just with a different domain:
-  https://gitsnip.cc/{owner}/{repo}/tree/{branch}/{path}
-
----
-
-## AI Agent Workflow Example
-
-1. User asks: "Download the feature-dev plugin from anthropics/claude-code"
-2. Agent calls /v1/info to verify the directory exists and check file count
-3. Agent generates a shareable link: https://gitsnip.cc/anthropics/claude-code/tree/main/plugins/feature-dev
-4. Agent presents the link to the user OR calls /v1/download to get the zip directly
+    # Options
+    npx gitsnip <url>                          # download zip to current directory
+    npx gitsnip <url> --output ./archive.zip   # custom output path
+    npx gitsnip <url> --info                   # list files, no download
+    npx gitsnip <url> --token ghp_xxxx         # use GitHub token
+    npx gitsnip <url> --format tar.gz          # download as tar.gz
 
 ---
 
-## Human Documentation
+## Tier limits
 
-https://gitsnip.cc/docs
+| Tier   | Max files | How to unlock                              |
+|--------|-----------|--------------------------------------------|
+| Free   | 50        | Default (no token, no login)               |
+| Token  | 200       | GitHub PAT header or sign in with GitHub   |
+| Pro    | 1,000     | Subscribe at gitsnip.cc/pricing            |
+| Power  | 5,000     | Subscribe at gitsnip.cc/pricing            |
 
-## Short API docs for AI
+Max directory size: 100 MB per request (all tiers).
 
-https://gitsnip.cc/llms.txt
+GitHub API rate limits:
+- No token: 60 req/hour
+- With GitHub token / OAuth: 5,000 req/hour
+
+---
+
+## Web UI
+
+https://gitsnip.cc — paste any GitHub tree URL, click Download.
+
+Bookmarklet: drag `javascript:window.location.href=window.location.href.replace('github.com','gitsnip.cc')` to bookmarks bar for one-click downloads on GitHub.
+
+---
+
+## Source code
+
+https://github.com/chrisye96/gitsnip (MIT license)
+Runs on Cloudflare Workers + Pages + D1 + R2.
