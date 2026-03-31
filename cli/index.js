@@ -45,7 +45,7 @@ Usage:
   npx gitfold <github-url> [options]
 
 Options:
-  -o, --output <file>        Output path (default: <dirname> — gitfold.cc.zip)
+  -o, --output <file>        Output path (default: <dirname> -gitfold.cc.zip)
   -t, --token  <token>       GitHub Personal Access Token (skips rate limits)
   -f, --format <zip|tar.gz>  Archive format (default: zip)
   -i, --info                 Show file info without downloading
@@ -75,10 +75,10 @@ function defaultFilename(url, fmt) {
     const u = new URL(url.startsWith('http') ? url : 'https://' + url)
     const last = u.pathname.replace(/\/+$/, '').split('/').at(-1) || 'download'
     const ext = fmt === 'tar.gz' ? 'tar.gz' : 'zip'
-    return `${last} — gitfold.cc.${ext}`
+    return `${last} -gitfold.cc.${ext}`
   } catch {
     const ext = fmt === 'tar.gz' ? 'tar.gz' : 'zip'
-    return `download — gitfold.cc.${ext}`
+    return `download -gitfold.cc.${ext}`
   }
 }
 

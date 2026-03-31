@@ -34,7 +34,6 @@ function headerHTML(page) {
   </a>
   <nav class="site-nav" aria-label="Main navigation">
     <a href="/docs"${ariaCurrent('docs')} data-i18n="nav.docs">Docs</a>
-    <a href="/pricing"${ariaCurrent('pricing')}>Pricing</a>
     <a href="https://github.com/chrisye96/gitfold"
        target="_blank" rel="noopener noreferrer"
        data-i18n="nav.github"
@@ -75,8 +74,6 @@ function footerHTML(page) {
   <nav class="footer-links" aria-label="Footer navigation">
     ${page !== 'home' ? '<a href="/">Home</a>' : ''}
     ${page !== 'docs' ? '<a href="/docs">Docs</a>' : ''}
-    <a href="/pricing">Pricing</a>
-    <a href="/team">Team</a>
     <a href="https://github.com/chrisye96/gitfold" target="_blank" rel="noopener noreferrer">GitHub</a>
   </nav>
   <p>If this tool saved you time, consider <a href="https://github.com/sponsors/chrisye96"
