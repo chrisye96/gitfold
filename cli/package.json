@@ -1,5 +1,5 @@
 {
-  "name": "gitsnip",
+  "name": "gitfold",
   "version": "0.1.0",
   "description": "Download any GitHub directory as a zip from the command line",
   "type": "module",
@@ -9,17 +9,17 @@
     "./cli": "./index.js"
   },
   "bin": {
-    "gitsnip": "./index.js"
+    "gitfold": "./index.js"
   },
   "engines": {
     "node": ">=18"
   },
   "keywords": ["github", "download", "directory", "zip", "tar", "cli"],
   "license": "MIT",
-  "homepage": "https://gitsnip.cc",
+  "homepage": "https://gitfold.cc",
   "repository": {
     "type": "git",
-    "url": "https://github.com/chrisye96/gitsnip",
+    "url": "https://github.com/chrisye96/gitfold",
     "directory": "cli"
   }
 }

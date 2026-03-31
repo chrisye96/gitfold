@@ -1,5 +1,5 @@
 /**
- * GitSnip — Download History (localStorage)
+ * GitFold — Download History (localStorage)
  *
  * Stores the last MAX_ENTRIES downloads in localStorage.
  * Each entry records the repo info, timestamp, file count, and total size.
@@ -7,7 +7,7 @@
  * @module history
  */
 
-const HISTORY_KEY = 'gitsnip_history'
+const HISTORY_KEY = 'gitfold_history'
 const MAX_ENTRIES = 20
 
 /**

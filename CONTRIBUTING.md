@@ -1,4 +1,4 @@
-# GitSnip — Developer Guide
+# GitFold — Developer Guide
 
 ## Prerequisites
 
@@ -12,7 +12,7 @@
 ## Project Structure
 
 ```
-gitsnip/
+gitfold/
 ├── web/                  # Frontend — served by Cloudflare Pages
 │   ├── index.html        # Main page (5-state UI)
 │   ├── docs.html         # Documentation page
@@ -98,10 +98,10 @@ wrangler login
 ### 2. Create the KV namespace
 
 ```bash
-wrangler kv:namespace create GITSNIP_CACHE
+wrangler kv:namespace create GITFOLD_CACHE
 # Copy the returned id into wrangler.toml → kv_namespaces[0].id
 
-wrangler kv:namespace create GITSNIP_CACHE --preview
+wrangler kv:namespace create GITFOLD_CACHE --preview
 # Copy the returned id into wrangler.toml → kv_namespaces[0].preview_id
 ```
 
@@ -109,7 +109,7 @@ Edit `worker/wrangler.toml`:
 
 ```toml
 [[kv_namespaces]]
-binding    = "GITSNIP_CACHE"
+binding    = "GITFOLD_CACHE"
 id         = "PASTE_ID_HERE"
 preview_id = "PASTE_PREVIEW_ID_HERE"
 ```
@@ -124,7 +124,7 @@ echo "ghp_your_token" | wrangler secret put GITHUB_TOKEN
 
 ```bash
 pnpm deploy:worker
-# Deploys to api.gitsnip.cc (configure the route in wrangler.toml first)
+# Deploys to api.gitfold.cc (configure the route in wrangler.toml first)
 ```
 
 ### 5. Deploy the frontend
@@ -135,7 +135,7 @@ Connect the `web/` folder to **Cloudflare Pages** via the dashboard:
 2. Connect your GitHub repo
 3. Set **build output directory** to `web`
 4. Leave the build command empty (no build step — pure static files)
-5. Add a custom domain: `gitsnip.cc`
+5. Add a custom domain: `gitfold.cc`
 
 After the first setup, every `git push` to `master` redeploys automatically.
 
@@ -146,13 +146,13 @@ After the first setup, every `git push` to `master` redeploys automatically.
 ```
 Browser user
   │
-  ├─ visits gitsnip.cc (Cloudflare Pages)
+  ├─ visits gitfold.cc (Cloudflare Pages)
   │    └─ web/index.html → web/js/*.js
   │         ├─ parse-url.js    parses the GitHub URL
   │         ├─ github.js       fetches tree + files directly from GitHub
   │         └─ zip.js          creates zip in the browser (JSZip)
   │
-  └─ or calls api.gitsnip.cc (Cloudflare Worker)
+  └─ or calls api.gitfold.cc (Cloudflare Worker)
        ├─ GET /v1/info      → JSON metadata
        └─ GET /v1/download  → zip stream
             ├─ fetchTree()  → GitHub API (2 calls, KV-cached 5 min)

@@ -1,5 +1,5 @@
 -- ============================================================
--- GitSnip D1 Database Schema — Phase 2
+-- GitFold D1 Database Schema — Phase 2
 -- ============================================================
 
 -- Users (created on OAuth login)

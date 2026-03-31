@@ -1,6 +1,6 @@
-# GitSnip API Reference
+# GitFold API Reference
 
-Base URL: `https://api.gitsnip.cc`
+Base URL: `https://api.gitfold.cc`
 
 All endpoints support CORS and are publicly accessible.
 Authentication is optional but recommended for higher rate limits.
@@ -47,13 +47,13 @@ Download a GitHub directory as a zip file.
 **Example**
 
 ```bash
-curl -L "https://api.gitsnip.cc/v1/download?url=https%3A%2F%2Fgithub.com%2Fanthropics%2Fclaude-code%2Ftree%2Fmain%2Fplugins%2Ffeature-dev" \
+curl -L "https://api.gitfold.cc/v1/download?url=https%3A%2F%2Fgithub.com%2Fanthropics%2Fclaude-code%2Ftree%2Fmain%2Fplugins%2Ffeature-dev" \
      -o feature-dev.zip
 
 # With token:
 curl -L \
      -H "X-GitHub-Token: ghp_xxxx" \
-     "https://api.gitsnip.cc/v1/download?url=https%3A%2F%2Fgithub.com%2Fanthropics%2Fclaude-code%2Ftree%2Fmain%2Fplugins" \
+     "https://api.gitfold.cc/v1/download?url=https%3A%2F%2Fgithub.com%2Fanthropics%2Fclaude-code%2Ftree%2Fmain%2Fplugins" \
      -o plugins.zip
 ```
 
@@ -90,7 +90,7 @@ Get metadata about a GitHub directory without downloading it.
 **Example**
 
 ```bash
-curl "https://api.gitsnip.cc/v1/info?url=https%3A%2F%2Fgithub.com%2Fanthropics%2Fclaude-code%2Ftree%2Fmain%2Fplugins%2Ffeature-dev"
+curl "https://api.gitfold.cc/v1/info?url=https%3A%2F%2Fgithub.com%2Fanthropics%2Fclaude-code%2Ftree%2Fmain%2Fplugins%2Ffeature-dev"
 ```
 
 ---
@@ -102,7 +102,7 @@ Service health check.
 ```json
 {
   "ok": true,
-  "service": "gitsnip-worker",
+  "service": "gitfold-worker",
   "version": "1.0.0",
   "timestamp": "2026-03-27T00:00:00.000Z"
 }
@@ -154,6 +154,6 @@ All errors return JSON in this format:
 
 ```bash
 # These are equivalent:
-https://api.gitsnip.cc/api/v1/download?url=...
-https://api.gitsnip.cc/v1/download?url=...
+https://api.gitfold.cc/api/v1/download?url=...
+https://api.gitfold.cc/v1/download?url=...
 ```

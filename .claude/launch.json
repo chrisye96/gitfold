@@ -3,7 +3,7 @@
   "configurations": [
     {
       "name": "web",
-      "runtimeExecutable": "C:\\Users\\Public\\gitsnip-web.cmd",
+      "runtimeExecutable": "C:\\Users\\Public\\gitfold-web.cmd",
       "runtimeArgs": [],
       "port": 3000,
       "autoPort": true

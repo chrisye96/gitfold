@@ -1,5 +1,5 @@
 /**
- * GitSnip Worker — Security Middleware
+ * GitFold Worker — Security Middleware
  *
  * Validates incoming requests and enforces limits to prevent abuse:
  *   - URL validation (only valid GitHub tree URLs accepted)
@@ -7,7 +7,7 @@
  *   - Rate limiting (via Cloudflare rate-limit binding)
  *   - Root directory guard (path must be non-empty)
  *
- * All error responses follow the unified GitSnipError format:
+ * All error responses follow the unified GitFoldError format:
  *   { code, message, hint }
  */
 
@@ -29,7 +29,7 @@ export const LIMITS = {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-/** JSON error response in GitSnipError format */
+/** JSON error response in GitFoldError format */
 export function errorResponse(
   status: number,
   code: string,
@@ -178,8 +178,8 @@ export function checkLimits(
 // ─── Allowed origins for credential-based CORS ─────────────────────────────
 
 const ALLOWED_ORIGINS = [
-  'https://gitsnip.cc',
-  'https://www.gitsnip.cc',
+  'https://gitfold.cc',
+  'https://www.gitfold.cc',
 ]
 
 /** Check if an origin should receive credential-aware CORS headers. */

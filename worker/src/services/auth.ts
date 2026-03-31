@@ -1,5 +1,5 @@
 /**
- * GitSnip Worker — Auth Service (Phase 2)
+ * GitFold Worker — Auth Service (Phase 2)
  *
  * Handles GitHub OAuth flow:
  *   1. Generate authorize URL with CSRF state
@@ -81,7 +81,7 @@ export async function fetchGitHubUser(accessToken: string): Promise<GitHubUser> 
     headers: {
       Authorization: `Bearer ${accessToken}`,
       Accept: 'application/vnd.github+json',
-      'User-Agent': 'GitSnip/1.0 (https://gitsnip.cc)',
+      'User-Agent': 'GitFold/1.0 (https://gitfold.cc)',
     },
   })
 
@@ -98,7 +98,7 @@ export async function fetchGitHubUser(accessToken: string): Promise<GitHubUser> 
         headers: {
           Authorization: `Bearer ${accessToken}`,
           Accept: 'application/vnd.github+json',
-          'User-Agent': 'GitSnip/1.0 (https://gitsnip.cc)',
+          'User-Agent': 'GitFold/1.0 (https://gitfold.cc)',
         },
       })
       if (emailRes.ok) {

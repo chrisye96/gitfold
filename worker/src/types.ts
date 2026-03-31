@@ -1,13 +1,13 @@
 /**
- * Cloudflare Workers environment bindings for GitSnip.
+ * Cloudflare Workers environment bindings for GitFold.
  * Extend this interface as new bindings are added in wrangler.toml.
  */
 export interface Env {
   /** KV namespace for caching GitHub tree responses */
-  GITSNIP_CACHE: KVNamespace
+  GITFOLD_CACHE: KVNamespace
 
   /** KV namespace for subscription state (Phase 1) */
-  GITSNIP_SUBS: KVNamespace
+  GITFOLD_SUBS: KVNamespace
 
   /** D1 database (Phase 2: users, tokens, subscriptions) */
   DB: D1Database
@@ -90,4 +90,4 @@ export interface TeamMember {
 }
 
 /** Re-export shared types for convenience */
-export type { RepoInfo, TreeEntry, SnipInfo, GitSnipError } from '../../shared/types.js'
+export type { RepoInfo, TreeEntry, SnipInfo, GitFoldError } from '../../shared/types.js'

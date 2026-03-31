@@ -1,5 +1,5 @@
 /**
- * GitSnip — URL Parser
+ * GitFold — URL Parser
  * Parses GitHub directory URLs into structured RepoInfo objects.
  * Works in both browser (ES module) and Cloudflare Workers (bundled by Wrangler).
  *
@@ -13,7 +13,7 @@
  *   https://github.com/owner/repo/tree/branch/path/to/dir
  *   https://github.com/owner/repo/tree/branch          (root of branch)
  *   github.com/owner/repo/tree/branch/path             (no protocol)
- *   https://gitsnip.cc/owner/repo/tree/branch/path     (already gitsnip URL)
+ *   https://gitfold.cc/owner/repo/tree/branch/path     (already gitfold URL)
  *
  * @param {string} url
  * @returns {{ provider: 'github', owner: string, repo: string, branch: string, path: string, originalUrl: string } | null}
@@ -34,8 +34,8 @@ export function parseGithubUrl(url) {
     return null
   }
 
-  // Accept both github.com and gitsnip.cc URLs
-  if (u.hostname !== 'github.com' && u.hostname !== 'gitsnip.cc') return null
+  // Accept both github.com and gitfold.cc URLs
+  if (u.hostname !== 'github.com' && u.hostname !== 'gitfold.cc') return null
 
   // Pattern 1: /owner/repo/tree/branch[/path]
   const treeMatch = u.pathname.match(/^\/([^/]+)\/([^/]+)\/tree\/([^/]+)(?:\/(.+))?$/)
@@ -93,13 +93,13 @@ export function parseUrl(url) {
 }
 
 /**
- * Build a GitSnip shareable download URL from repo info.
+ * Build a GitFold shareable download URL from repo info.
  *
  * @param {{ owner: string, repo: string, branch: string, path: string }} info
- * @param {string} [base] - Base URL, defaults to 'https://gitsnip.cc'
+ * @param {string} [base] - Base URL, defaults to 'https://gitfold.cc'
  * @returns {string}
  */
-export function buildSnipUrl(info, base = 'https://gitsnip.cc') {
+export function buildSnipUrl(info, base = 'https://gitfold.cc') {
   const pathPart = info.path ? `/${info.path}` : ''
   return `${base}/${info.owner}/${info.repo}/tree/${info.branch}${pathPart}`
 }
@@ -127,7 +127,7 @@ export function formatRepoInfo(info) {
 export function zipFilename(info) {
   if (info.type === 'repo') return `${info.repo}.zip`
   const base = info.path.split('/').pop() || info.repo
-  return `${base} — gitsnip.cc.zip`
+  return `${base} — gitfold.cc.zip`
 }
 
 /**

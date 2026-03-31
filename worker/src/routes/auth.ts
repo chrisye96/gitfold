@@ -1,5 +1,5 @@
 /**
- * GitSnip Worker — Auth Routes (Phase 2)
+ * GitFold Worker — Auth Routes (Phase 2)
  *
  * GET  /v1/auth/github           → Redirect to GitHub OAuth
  * GET  /v1/auth/github/callback  → Handle OAuth callback
@@ -27,7 +27,7 @@ const auth = new Hono<{
   Variables: { sessionUser?: SessionUser }
 }>()
 
-const FRONTEND_ORIGIN = 'https://gitsnip.cc'
+const FRONTEND_ORIGIN = 'https://gitfold.cc'
 
 // ─── GET /auth/github ───────────────────────────────────────────────────────
 
@@ -36,7 +36,7 @@ auth.get('/auth/github', async (c) => {
     return errorResponse(500, 'CONFIG_ERROR', 'GitHub OAuth not configured.')
   }
 
-  const state = await createOAuthState(c.env.GITSNIP_CACHE)
+  const state = await createOAuthState(c.env.GITFOLD_CACHE)
   const redirectUri = new URL('/v1/auth/github/callback', c.req.url).toString()
   const authUrl = buildAuthUrl(c.env, state, redirectUri)
 
@@ -64,7 +64,7 @@ auth.get('/auth/github/callback', async (c) => {
   }
 
   // Validate CSRF state
-  const stateValid = await validateOAuthState(c.env.GITSNIP_CACHE, state)
+  const stateValid = await validateOAuthState(c.env.GITFOLD_CACHE, state)
   if (!stateValid) {
     return c.redirect(`${FRONTEND_ORIGIN}/?auth=error&reason=invalid_state`, 302)
   }
@@ -101,7 +101,7 @@ auth.get('/auth/github/callback', async (c) => {
     )
 
     // 7. Set cookie and redirect to frontend
-    const cookie = sessionCookie(jwt, 'gitsnip.cc')
+    const cookie = sessionCookie(jwt, 'gitfold.cc')
     return new Response(null, {
       status: 302,
       headers: {
@@ -127,7 +127,7 @@ auth.post('/auth/logout', async (c) => {
       // Store in KV for the remaining TTL to block reuse
       const remainingTtl = Math.max(0, payload.exp - Math.floor(Date.now() / 1000))
       if (remainingTtl > 0) {
-        await c.env.GITSNIP_CACHE.put(
+        await c.env.GITFOLD_CACHE.put(
           `session:revoked:${payload.jti}`,
           '1',
           { expirationTtl: remainingTtl },
@@ -136,7 +136,7 @@ auth.post('/auth/logout', async (c) => {
     }
   }
 
-  const cookie = clearSessionCookie('gitsnip.cc')
+  const cookie = clearSessionCookie('gitfold.cc')
   return Response.json(
     { ok: true },
     {

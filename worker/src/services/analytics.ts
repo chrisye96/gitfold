@@ -1,12 +1,12 @@
 /**
- * GitSnip Worker — Usage Analytics (Phase 2)
+ * GitFold Worker — Usage Analytics (Phase 2)
  *
  * Writes download events to Cloudflare Analytics Engine.
  * Fire-and-forget — never blocks or fails the download.
  *
  * Query data later via the Analytics Engine SQL API:
  *   SELECT blob1 AS userId, double1 AS fileCount, ...
- *   FROM gitsnip_usage
+ *   FROM gitfold_usage
  *   WHERE timestamp > now() - INTERVAL '7' DAY
  */
 

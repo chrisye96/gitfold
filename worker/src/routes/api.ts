@@ -1,5 +1,5 @@
 /**
- * GitSnip Worker — API Routes
+ * GitFold Worker — API Routes
  *
  * GET /v1/download?url={encodedGithubUrl}
  *   Returns: application/zip file stream
@@ -68,7 +68,7 @@ api.get('/download', async (c) => {
     //    R2 cache is only used when the user's tier allows the full directory.
 
     // 2. Fetch file tree (KV-cached)
-    const tree = await fetchTree(info, token, c.env.GITSNIP_CACHE)
+    const tree = await fetchTree(info, token, c.env.GITFOLD_CACHE)
 
     // 3. Check tier-based limits
     const totalSize = tree.reduce((s, e) => s + (e.size ?? 0), 0)
@@ -143,7 +143,7 @@ api.get('/download', async (c) => {
 
   } catch (err) {
     if (err instanceof Response) return err
-    console.error('[gitsnip] Unexpected error in /download:', err)
+    console.error('[gitfold] Unexpected error in /download:', err)
     return Response.json(
       { code: 'INTERNAL_ERROR', message: 'An unexpected error occurred.' },
       { status: 500, headers: corsHeaders() },
@@ -163,7 +163,7 @@ api.get('/info', async (c) => {
   token = token ?? c.env.GITHUB_TOKEN
 
   try {
-    const tree   = await fetchTree(info, token, c.env.GITSNIP_CACHE)
+    const tree   = await fetchTree(info, token, c.env.GITFOLD_CACHE)
     const result = buildInfo(tree, info)
     // Include tier info in response so frontend knows the user's limit
     return Response.json(
@@ -177,7 +177,7 @@ api.get('/info', async (c) => {
       const body    = await err.json()
       return Response.json(body, { status: err.status, headers: corsHeaders() })
     }
-    console.error('[gitsnip] Unexpected error in /info:', err)
+    console.error('[gitfold] Unexpected error in /info:', err)
     return Response.json(
       { code: 'INTERNAL_ERROR', message: 'An unexpected error occurred.' },
       { status: 500, headers: corsHeaders() },
@@ -219,7 +219,7 @@ api.get('/download/progress', async (c) => {
   c.executionCtx.waitUntil((async () => {
     try {
       // 1. Fetch file tree
-      const tree = await fetchTree(info, token, c.env.GITSNIP_CACHE)
+      const tree = await fetchTree(info, token, c.env.GITFOLD_CACHE)
       const totalSize = tree.reduce((s, e) => s + (e.size ?? 0), 0)
       send({ type: 'tree', count: tree.length, size: totalSize, limit: c.get('fileLimit') ?? 50 })
 
@@ -259,13 +259,13 @@ api.get('/download/progress', async (c) => {
       const filename = zipFilename(info.path, info.repo)
       if (zipData.byteLength <= 24 * 1024 * 1024) {
         const jobId = crypto.randomUUID()
-        await c.env.GITSNIP_CACHE.put(
+        await c.env.GITFOLD_CACHE.put(
           `job:${jobId}`,
           zipData,
           { expirationTtl: 300 },
         )
         // Store filename separately
-        await c.env.GITSNIP_CACHE.put(
+        await c.env.GITFOLD_CACHE.put(
           `job:${jobId}:name`,
           filename,
           { expirationTtl: 300 },

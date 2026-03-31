@@ -1,4 +1,4 @@
-name = "gitsnip-worker"
+name = "gitfold-worker"
 main = "src/index.ts"
 compatibility_date = "2024-10-22"
 compatibility_flags = ["nodejs_compat"]
@@ -6,12 +6,12 @@ compatibility_flags = ["nodejs_compat"]
 # Routes
 # Uncomment after domain is set up:
 routes = [
-  { pattern = "api.gitsnip.cc/*", zone_name = "gitsnip.cc" }
+  { pattern = "api.gitfold.cc/*", zone_name = "gitfold.cc" }
 ]
 
 # KV namespace for caching GitHub tree responses
 [[kv_namespaces]]
-binding = "GITSNIP_CACHE"
+binding = "GITFOLD_CACHE"
 id = "375e5ab3bb2f4eb7a396b1fdca020652"
 preview_id = "8141835788f047909750d2bb33529b8e"
 
@@ -24,7 +24,7 @@ simple = { limit = 20, period = 60 }
 
 # KV namespace for subscription state (Phase 1)
 [[kv_namespaces]]
-binding = "GITSNIP_SUBS"
+binding = "GITFOLD_SUBS"
 id = "8d91d2432a264c1e8426be9ddfb7a054"
 preview_id = "fdd12a2d960e440ca3a28e33509d78d2"
 
@@ -42,19 +42,19 @@ POWER_FILE_LIMIT = "5000"
 # ─── D1 Database (Phase 2) ──────────────────────────────
 [[d1_databases]]
 binding = "DB"
-database_name = "gitsnip-db"
+database_name = "gitfold-db"
 database_id = "<replace-with-real-id>"
 migrations_dir = "src/db/migrations"
 
 # ─── R2 Bucket for ZIP caching (Phase 2) ───────────────
 [[r2_buckets]]
 binding = "R2_CACHE"
-bucket_name = "gitsnip-cache"
+bucket_name = "gitfold-cache"
 
 # ─── Analytics Engine (Phase 2) ────────────────────────
 [[analytics_engine_datasets]]
 binding = "ANALYTICS"
-dataset = "gitsnip_usage"
+dataset = "gitfold_usage"
 
 # ─── Cron Trigger: clean up old R2 ZIP caches daily ────
 [triggers]

@@ -1,5 +1,5 @@
 {
-  "name": "gitsnip-worker",
+  "name": "gitfold-worker",
   "version": "0.1.0",
   "private": true,
   "scripts": {

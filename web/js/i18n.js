@@ -1,5 +1,5 @@
 /**
- * GitSnip — i18n foundation
+ * GitFold — i18n foundation
  * All user-visible strings live here.
  * Phase 1: English only. Phase 3+: swap locale object via setLocale().
  *
@@ -17,7 +17,7 @@
 const locales = {
   en: {
     // ── App shell ──────────────────────────────────────────────────────
-    'app.title': 'GitSnip',
+    'app.title': 'GitFold',
     'app.tagline': 'Download any GitHub directory. Instantly.',
     'nav.docs': 'Docs',
     'nav.github': 'GitHub',

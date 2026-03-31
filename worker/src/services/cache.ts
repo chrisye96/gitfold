@@ -1,5 +1,5 @@
 /**
- * GitSnip Worker — Unified Cache Service (Phase 2)
+ * GitFold Worker — Unified Cache Service (Phase 2)
  *
  * Manages R2-based ZIP caching + existing KV tree caching.
  * ZIP cache key: zip/{owner}/{repo}/{path_hash}/{commit_sha}.zip
@@ -77,7 +77,7 @@ export async function fetchCommitSha(
   const headers: Record<string, string> = {
     Accept: 'application/vnd.github+json',
     'X-GitHub-Api-Version': '2022-11-28',
-    'User-Agent': 'GitSnip/1.0 (https://gitsnip.cc)',
+    'User-Agent': 'GitFold/1.0 (https://gitfold.cc)',
   }
   if (token) headers.Authorization = `Bearer ${token}`
 

@@ -1,5 +1,5 @@
 /**
- * GitSnip Worker — Team Routes (Phase 3)
+ * GitFold Worker — Team Routes (Phase 3)
  *
  * All routes require an active session (Power tier owner or team member).
  *
@@ -156,7 +156,7 @@ team.post('/team/invite', async (c) => {
   }
 
   // Return invite URL (frontend shows it to the owner to share)
-  const inviteUrl = `https://gitsnip.cc/team?join=${inviteToken}`
+  const inviteUrl = `https://gitfold.cc/team?join=${inviteToken}`
 
   return Response.json(
     { ok: true, inviteUrl, inviteToken, email },

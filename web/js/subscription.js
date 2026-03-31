@@ -1,5 +1,5 @@
 /**
- * GitSnip — Subscription State Management (Phase 1 + Phase 2)
+ * GitFold — Subscription State Management (Phase 1 + Phase 2)
  *
  * Manages subscription token in localStorage and provides
  * tier-aware file limits for the download flow.
@@ -11,8 +11,8 @@
 
 import { getCachedSession } from './auth.js'
 
-const SUB_TOKEN_KEY = 'gitsnip_sub_token'
-const SUB_STATUS_KEY = 'gitsnip_sub_status'
+const SUB_TOKEN_KEY = 'gitfold_sub_token'
+const SUB_STATUS_KEY = 'gitfold_sub_status'
 
 // ─── Tier limits (must match worker/wrangler.toml) ──────────────────────────
 
@@ -64,7 +64,7 @@ export function getCachedStatus() {
  * Check subscription status from the API (network call).
  * Caches the result in localStorage.
  *
- * @param {string} apiBase  API origin, e.g. 'https://api.gitsnip.cc'
+ * @param {string} apiBase  API origin, e.g. 'https://api.gitfold.cc'
  * @returns {Promise<{ tier: string, active: boolean }>}
  */
 export async function verifySubscription(apiBase) {

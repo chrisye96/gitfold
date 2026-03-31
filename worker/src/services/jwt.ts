@@ -1,11 +1,11 @@
 /**
- * GitSnip Worker — JWT Session Management (Phase 2)
+ * GitFold Worker — JWT Session Management (Phase 2)
  *
  * Minimal JWT implementation using Web Crypto (HMAC-SHA256).
  * No external libraries — Workers-compatible.
  *
- * Session cookie: gitsnip_session=<jwt>
- *   HttpOnly; Secure; SameSite=Lax; Max-Age=604800; Domain=gitsnip.cc
+ * Session cookie: gitfold_session=<jwt>
+ *   HttpOnly; Secure; SameSite=Lax; Max-Age=604800; Domain=gitfold.cc
  */
 
 import type { Tier } from '../types.js'
@@ -98,7 +98,7 @@ export async function verifyJwt(token: string, secret: string): Promise<SessionP
  */
 export function sessionCookie(jwt: string, domain?: string): string {
   const parts = [
-    `gitsnip_session=${jwt}`,
+    `gitfold_session=${jwt}`,
     'HttpOnly',
     'Secure',
     'SameSite=Lax',
@@ -114,7 +114,7 @@ export function sessionCookie(jwt: string, domain?: string): string {
  */
 export function clearSessionCookie(domain?: string): string {
   const parts = [
-    'gitsnip_session=',
+    'gitfold_session=',
     'HttpOnly',
     'Secure',
     'SameSite=Lax',
@@ -130,7 +130,7 @@ export function clearSessionCookie(domain?: string): string {
  */
 export function getSessionFromCookie(cookieHeader: string | null): string | null {
   if (!cookieHeader) return null
-  const match = cookieHeader.match(/(?:^|;\s*)gitsnip_session=([^;]+)/)
+  const match = cookieHeader.match(/(?:^|;\s*)gitfold_session=([^;]+)/)
   return match?.[1] ?? null
 }
 

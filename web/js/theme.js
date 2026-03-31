@@ -1,5 +1,5 @@
 /**
- * GitSnip — Theme toggle (shared across all pages)
+ * GitFold — Theme toggle (shared across all pages)
  *
  * Three preference states, cycled on each click:
  *   light → dark → system → light → …
@@ -20,7 +20,7 @@
  * @module theme
  */
 
-const STORAGE_KEY = 'gitsnip-theme'
+const STORAGE_KEY = 'gitfold-theme'
 
 /** Cycle order */
 const NEXT = { light: 'dark', dark: 'system', system: 'light' }

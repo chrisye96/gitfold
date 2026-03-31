@@ -1,7 +1,7 @@
 /**
- * GitSnip Worker — Session Middleware (Phase 2)
+ * GitFold Worker — Session Middleware (Phase 2)
  *
- * Reads the `gitsnip_session` JWT cookie, verifies it,
+ * Reads the `gitfold_session` JWT cookie, verifies it,
  * and attaches the session user to the Hono context.
  *
  * Does NOT block unauthenticated requests — downstream
@@ -33,7 +33,7 @@ export async function sessionMiddleware(
 
   // Check revocation list (optional, best-effort)
   if (payload.jti) {
-    const revoked = await c.env.GITSNIP_CACHE.get(`session:revoked:${payload.jti}`)
+    const revoked = await c.env.GITFOLD_CACHE.get(`session:revoked:${payload.jti}`)
     if (revoked) return next() // Token was revoked via logout
   }
 

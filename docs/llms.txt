@@ -1,22 +1,22 @@
-# GitSnip
+# GitFold
 
 > Download any GitHub subdirectory as a zip — no git clone, no login.
 
 ## What it does
 
-GitSnip lets you download a specific folder inside a GitHub repository as a zip or tar.gz,
+GitFold lets you download a specific folder inside a GitHub repository as a zip or tar.gz,
 without cloning the full repo. Works for public repositories and private repos (with OAuth login).
 
 ## Quickest way to use it
 
-Replace `github.com` with `gitsnip.cc` in any GitHub tree URL:
+Replace `github.com` with `gitfold.cc` in any GitHub tree URL:
 
     Before: https://github.com/anthropics/claude-code/tree/main/plugins
-    After:  https://gitsnip.cc/anthropics/claude-code/tree/main/plugins
+    After:  https://gitfold.cc/anthropics/claude-code/tree/main/plugins
 
 ## REST API
 
-Base URL: `https://api.gitsnip.cc`
+Base URL: `https://api.gitfold.cc`
 
 ### Download a directory
 
@@ -31,7 +31,7 @@ Optional headers:
 
 Example:
 
-    curl -L "https://api.gitsnip.cc/v1/download?url=https%3A%2F%2Fgithub.com%2Fanthropics%2Fclaude-code%2Ftree%2Fmain%2Fplugins" \
+    curl -L "https://api.gitfold.cc/v1/download?url=https%3A%2F%2Fgithub.com%2Fanthropics%2Fclaude-code%2Ftree%2Fmain%2Fplugins" \
          -o plugins.zip
 
 ### Get directory metadata (no download)
@@ -48,7 +48,7 @@ Sign in with GitHub to use your OAuth token automatically (no manual PAT needed)
     GET /v1/auth/me              → current session info (requires credentials: 'include')
     POST /v1/auth/logout         → clear session
 
-Session is managed via an HttpOnly cookie (`gitsnip_session`). Use `credentials: 'include'` in fetch calls.
+Session is managed via an HttpOnly cookie (`gitfold_session`). Use `credentials: 'include'` in fetch calls.
 
 ## Subscriptions
 
@@ -58,11 +58,11 @@ Session is managed via an HttpOnly cookie (`gitsnip_session`). Use `credentials:
 
 ## CLI
 
-    npx gitsnip https://github.com/anthropics/claude-code/tree/main/plugins
-    npx gitsnip <url> --output archive.zip
-    npx gitsnip <url> --format tar.gz
-    npx gitsnip <url> --info
-    npx gitsnip <url> --token ghp_xxxx
+    npx gitfold https://github.com/anthropics/claude-code/tree/main/plugins
+    npx gitfold <url> --output archive.zip
+    npx gitfold <url> --format tar.gz
+    npx gitfold <url> --info
+    npx gitfold <url> --token ghp_xxxx
 
 ## Error format
 
@@ -78,11 +78,11 @@ Error codes: `INVALID_URL`, `NOT_FOUND`, `TOO_LARGE`, `TOO_MANY_FILES`, `RATE_LI
 |--------|-----------|---------------------------------|
 | Free   | 50        | Default                         |
 | Token  | 200       | GitHub PAT or sign in with GitHub |
-| Pro    | 1,000     | gitsnip.cc/pricing              |
-| Power  | 5,000     | gitsnip.cc/pricing              |
+| Pro    | 1,000     | gitfold.cc/pricing              |
+| Power  | 5,000     | gitfold.cc/pricing              |
 
 Max directory size: 100 MB per request.
 
 ## Full docs
 
-https://gitsnip.cc/docs
+https://gitfold.cc/docs

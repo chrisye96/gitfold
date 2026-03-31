@@ -1,5 +1,5 @@
 /**
- * GitSnip — URL Parser (TypeScript, shared)
+ * GitFold — URL Parser (TypeScript, shared)
  *
  * Single source of truth for URL parsing logic used by the Worker bundle.
  * The browser (web/js/parse-url.js) is a plain-JS mirror of this file.
@@ -15,7 +15,7 @@ import type { RepoInfo } from './types.js'
  *   https://github.com/owner/repo/tree/branch/path/to/dir
  *   https://github.com/owner/repo/tree/branch          (root — path will be '')
  *   github.com/owner/repo/tree/branch/path             (no protocol)
- *   https://gitsnip.cc/owner/repo/tree/branch/path     (gitsnip URL)
+ *   https://gitfold.cc/owner/repo/tree/branch/path     (gitfold URL)
  */
 export function parseGithubUrl(url: string): RepoInfo | null {
   if (!url || typeof url !== 'string') return null
@@ -32,7 +32,7 @@ export function parseGithubUrl(url: string): RepoInfo | null {
     return null
   }
 
-  if (u.hostname !== 'github.com' && u.hostname !== 'gitsnip.cc') return null
+  if (u.hostname !== 'github.com' && u.hostname !== 'gitfold.cc') return null
 
   // Pattern 1: /owner/repo/tree/branch[/path]
   const treeMatch = u.pathname.match(/^\/([^/]+)\/([^/]+)\/tree\/([^/]+)(?:\/(.+))?$/)

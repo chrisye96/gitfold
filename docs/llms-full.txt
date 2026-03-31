@@ -1,7 +1,7 @@
-# GitSnip — Full API Reference
+# GitFold — Full API Reference
 
 > Download any GitHub subdirectory as a zip — no git clone, no login.
-> Web: https://gitsnip.cc  |  API: https://api.gitsnip.cc  |  Docs: https://gitsnip.cc/docs
+> Web: https://gitfold.cc  |  API: https://api.gitfold.cc  |  Docs: https://gitfold.cc/docs
 
 ---
 
@@ -12,22 +12,22 @@ Any of these work everywhere (web UI, API, CLI):
     https://github.com/owner/repo/tree/branch/path/to/dir   (subdirectory)
     https://github.com/owner/repo/tree/branch               (entire repo root)
     github.com/owner/repo/tree/branch/path                  (no protocol OK)
-    https://gitsnip.cc/owner/repo/tree/branch/path          (gitsnip URL)
+    https://gitfold.cc/owner/repo/tree/branch/path          (gitfold URL)
 
-GitSnip URLs are identical to GitHub tree URLs with the domain swapped.
+GitFold URLs are identical to GitHub tree URLs with the domain swapped.
 
 ---
 
 ## REST API
 
-Base URL: `https://api.gitsnip.cc`
+Base URL: `https://api.gitfold.cc`
 
 All endpoints:
 - Return errors as JSON with `code`, `message`, and `hint` fields
 - Support `OPTIONS` preflight with CORS headers
 
 **CORS policy:**
-- Credentialed requests (`credentials: 'include'`) are allowed from `gitsnip.cc` and `localhost`
+- Credentialed requests (`credentials: 'include'`) are allowed from `gitfold.cc` and `localhost`
 - Other origins receive `Access-Control-Allow-Origin: *` (no credentials)
 
 ---
@@ -49,7 +49,7 @@ Download a GitHub directory as an archive.
 |-----------------|----------------------------------------------------------|
 | X-GitHub-Token  | GitHub PAT — raises rate limit to 5,000 req/hr           |
 | X-Sub-Token     | Subscription token — unlocks Pro/Power file count limits |
-| Cookie          | `gitsnip_session=<jwt>` — OAuth session (auto from browser) |
+| Cookie          | `gitfold_session=<jwt>` — OAuth session (auto from browser) |
 
 **Response**
 
@@ -62,19 +62,19 @@ Download a GitHub directory as an archive.
 
 Download a subdirectory:
 
-    curl -L "https://api.gitsnip.cc/v1/download?url=https%3A%2F%2Fgithub.com%2Fanthropics%2Fclaude-code%2Ftree%2Fmain%2Fplugins" \
+    curl -L "https://api.gitfold.cc/v1/download?url=https%3A%2F%2Fgithub.com%2Fanthropics%2Fclaude-code%2Ftree%2Fmain%2Fplugins" \
          -o plugins.zip
 
 With a GitHub token:
 
     curl -L \
          -H "X-GitHub-Token: ghp_xxxxxxxxxxxx" \
-         "https://api.gitsnip.cc/v1/download?url=https%3A%2F%2Fgithub.com%2Fanthropics%2Fclaude-code%2Ftree%2Fmain%2Fplugins" \
+         "https://api.gitfold.cc/v1/download?url=https%3A%2F%2Fgithub.com%2Fanthropics%2Fclaude-code%2Ftree%2Fmain%2Fplugins" \
          -o plugins.zip
 
 Download as tar.gz:
 
-    curl -L "https://api.gitsnip.cc/v1/download?url=...&format=tar.gz" -o archive.tar.gz
+    curl -L "https://api.gitfold.cc/v1/download?url=...&format=tar.gz" -o archive.tar.gz
 
 ---
 
@@ -112,7 +112,7 @@ Same as `/v1/download` (X-GitHub-Token, X-Sub-Token, Cookie).
 
 **Example**
 
-    curl "https://api.gitsnip.cc/v1/info?url=https%3A%2F%2Fgithub.com%2Fanthropics%2Fclaude-code%2Ftree%2Fmain%2Fplugins"
+    curl "https://api.gitfold.cc/v1/info?url=https%3A%2F%2Fgithub.com%2Fanthropics%2Fclaude-code%2Ftree%2Fmain%2Fplugins"
 
 ---
 
@@ -122,11 +122,11 @@ Start GitHub OAuth login. Redirects the browser to GitHub's authorization page.
 
 **Response:** `302` redirect to `https://github.com/login/oauth/authorize?...`
 
-After the user authorizes, GitHub redirects back to `/v1/auth/github/callback`, which sets a session cookie and redirects to `https://gitsnip.cc/?auth=success`.
+After the user authorizes, GitHub redirects back to `/v1/auth/github/callback`, which sets a session cookie and redirects to `https://gitfold.cc/?auth=success`.
 
 **Example (browser navigation):**
 
-    window.location.href = 'https://api.gitsnip.cc/v1/auth/github'
+    window.location.href = 'https://api.gitfold.cc/v1/auth/github'
 
 ---
 
@@ -140,7 +140,7 @@ OAuth callback handler — called by GitHub automatically. Not intended for dire
 
 Return the current user's session info.
 
-**Headers:** Cookie with `gitsnip_session` (sent automatically by browser if `credentials: 'include'`)
+**Headers:** Cookie with `gitfold_session` (sent automatically by browser if `credentials: 'include'`)
 
 **Response (authenticated):**
 
@@ -158,7 +158,7 @@ Return the current user's session info.
 
 **Example:**
 
-    fetch('https://api.gitsnip.cc/v1/auth/me', { credentials: 'include' })
+    fetch('https://api.gitfold.cc/v1/auth/me', { credentials: 'include' })
 
 ---
 
@@ -166,17 +166,17 @@ Return the current user's session info.
 
 Clear the session cookie and revoke the JWT.
 
-**Headers:** Cookie with `gitsnip_session`
+**Headers:** Cookie with `gitfold_session`
 
 **Response:**
 
     { "ok": true }
 
-Sets `Set-Cookie: gitsnip_session=; Max-Age=0; ...` to clear the session.
+Sets `Set-Cookie: gitfold_session=; Max-Age=0; ...` to clear the session.
 
 **Example:**
 
-    fetch('https://api.gitsnip.cc/v1/auth/logout', {
+    fetch('https://api.gitfold.cc/v1/auth/logout', {
       method: 'POST',
       credentials: 'include'
     })
@@ -199,11 +199,11 @@ Create a Stripe Checkout session for a Pro or Power subscription.
     { "url": "https://checkout.stripe.com/pay/cs_..." }
 
 Redirect the user to `url` to complete payment. On success, Stripe redirects to
-`https://gitsnip.cc/pricing?checkout=success&session_id=cs_...`
+`https://gitfold.cc/pricing?checkout=success&session_id=cs_...`
 
 **Example:**
 
-    const res = await fetch('https://api.gitsnip.cc/v1/checkout', {
+    const res = await fetch('https://api.gitfold.cc/v1/checkout', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email: 'user@example.com', tier: 'pro' })
@@ -240,7 +240,7 @@ Claim a subscription token after a successful Stripe Checkout.
 
     { "ok": false, "message": "Session not found or expired. It may take a moment — please refresh." }
 
-Store the returned `token` in localStorage as `gitsnip_sub_token` and pass it as `X-Sub-Token` on API requests.
+Store the returned `token` in localStorage as `gitfold_sub_token` and pass it as `X-Sub-Token` on API requests.
 
 ---
 
@@ -267,7 +267,7 @@ Query subscription status by token or email.
 
 Health check.
 
-    { "ok": true, "service": "gitsnip-worker", "version": "1.0.0", "timestamp": "..." }
+    { "ok": true, "service": "gitfold-worker", "version": "1.0.0", "timestamp": "..." }
 
 ---
 
@@ -298,14 +298,14 @@ All errors return JSON:
 ## CLI
 
     # No install needed
-    npx gitsnip <url>
+    npx gitfold <url>
 
     # Options
-    npx gitsnip <url>                          # download zip to current directory
-    npx gitsnip <url> --output ./archive.zip   # custom output path
-    npx gitsnip <url> --info                   # list files, no download
-    npx gitsnip <url> --token ghp_xxxx         # use GitHub token
-    npx gitsnip <url> --format tar.gz          # download as tar.gz
+    npx gitfold <url>                          # download zip to current directory
+    npx gitfold <url> --output ./archive.zip   # custom output path
+    npx gitfold <url> --info                   # list files, no download
+    npx gitfold <url> --token ghp_xxxx         # use GitHub token
+    npx gitfold <url> --format tar.gz          # download as tar.gz
 
 ---
 
@@ -315,8 +315,8 @@ All errors return JSON:
 |--------|-----------|--------------------------------------------|
 | Free   | 50        | Default (no token, no login)               |
 | Token  | 200       | GitHub PAT header or sign in with GitHub   |
-| Pro    | 1,000     | Subscribe at gitsnip.cc/pricing            |
-| Power  | 5,000     | Subscribe at gitsnip.cc/pricing            |
+| Pro    | 1,000     | Subscribe at gitfold.cc/pricing            |
+| Power  | 5,000     | Subscribe at gitfold.cc/pricing            |
 
 Max directory size: 100 MB per request (all tiers).
 
@@ -328,13 +328,13 @@ GitHub API rate limits:
 
 ## Web UI
 
-https://gitsnip.cc — paste any GitHub tree URL, click Download.
+https://gitfold.cc — paste any GitHub tree URL, click Download.
 
-Bookmarklet: drag `javascript:window.location.href=window.location.href.replace('github.com','gitsnip.cc')` to bookmarks bar for one-click downloads on GitHub.
+Bookmarklet: drag `javascript:window.location.href=window.location.href.replace('github.com','gitfold.cc')` to bookmarks bar for one-click downloads on GitHub.
 
 ---
 
 ## Source code
 
-https://github.com/chrisye96/gitsnip (MIT license)
+https://github.com/chrisye96/gitfold (MIT license)
 Runs on Cloudflare Workers + Pages + D1 + R2.

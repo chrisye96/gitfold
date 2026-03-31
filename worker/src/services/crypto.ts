@@ -1,5 +1,5 @@
 /**
- * GitSnip Worker — Token Encryption (Phase 2)
+ * GitFold Worker — Token Encryption (Phase 2)
  *
  * AES-256-GCM encryption for GitHub OAuth tokens stored in D1.
  * Uses Web Crypto API (Workers-compatible, no Node.js deps).

@@ -1,5 +1,5 @@
 /**
- * GitSnip — Team Management UI (Phase 3 / Power Tier)
+ * GitFold — Team Management UI (Phase 3 / Power Tier)
  *
  * Handles all team operations: create, invite, list members, remove, join.
  *
@@ -10,7 +10,7 @@ import { renderLayout } from './layout.js'
 import { initTheme } from './theme.js'
 import { checkSession } from './auth.js'
 
-const API_BASE = 'https://api.gitsnip.cc'
+const API_BASE = 'https://api.gitfold.cc'
 
 // ─── DOM refs (populated after DOMContentLoaded) ──────────────────────────────
 
@@ -39,7 +39,7 @@ function renderNotSignedIn() {
     <div class="team-empty">
       <h2>Team Management</h2>
       <p>Sign in with GitHub to manage your team.</p>
-      <a href="/" class="btn btn--primary">Go to GitSnip</a>
+      <a href="/" class="btn btn--primary">Go to GitFold</a>
     </div>
   `
 }

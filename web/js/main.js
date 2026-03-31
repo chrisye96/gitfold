@@ -1,5 +1,5 @@
 /**
- * GitSnip — Main UI
+ * GitFold — Main UI
  *
  * Inline feedback state machine:
  *   idle → valid → loading → success/error
@@ -22,8 +22,8 @@ import { saveToHistory, getHistory, renderHistory } from './history.js'
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
-const SITE_BASE = 'https://gitsnip.cc'
-const API_BASE = 'https://api.gitsnip.cc'
+const SITE_BASE = 'https://gitfold.cc'
+const API_BASE = 'https://api.gitfold.cc'
 
 // ─── State ────────────────────────────────────────────────────────────────────
 
@@ -68,16 +68,16 @@ function announce(msg) {
 
 /** Read token from input (or localStorage fallback). */
 function getToken() {
-  return tokenInput.value.trim() || localStorage.getItem('gitsnip_token') || ''
+  return tokenInput.value.trim() || localStorage.getItem('gitfold_token') || ''
 }
 
 /** Save token to localStorage when non-empty; show/hide the clear button. */
 function persistToken(value) {
   if (value) {
-    localStorage.setItem('gitsnip_token', value)
+    localStorage.setItem('gitfold_token', value)
     tokenClearBtn.hidden = false
   } else {
-    localStorage.removeItem('gitsnip_token')
+    localStorage.removeItem('gitfold_token')
     tokenClearBtn.hidden = true
   }
 }
@@ -633,7 +633,7 @@ function toggleTokenPanel() {
   if (!isOpen) tokenInput.focus()
 }
 
-// ─── Auto-detect GitSnip URL path ────────────────────────────────────────────
+// ─── Auto-detect GitFold URL path ────────────────────────────────────────────
 
 function checkUrlPath() {
   const path = window.location.pathname
@@ -670,11 +670,11 @@ downloadBtn.addEventListener('click', startDownload)
 
 copyDomainBtn.addEventListener('click', async () => {
   try {
-    await navigator.clipboard.writeText('gitsnip.cc')
+    await navigator.clipboard.writeText('gitfold.cc')
   } catch {
     // Fallback
     const ta = document.createElement('textarea')
-    ta.value = 'gitsnip.cc'
+    ta.value = 'gitfold.cc'
     ta.style.cssText = 'position:fixed;opacity:0;pointer-events:none'
     document.body.appendChild(ta)
     ta.select()
@@ -707,7 +707,7 @@ renderLayout()
 initTheme()
 
 // Restore saved token
-const savedToken = localStorage.getItem('gitsnip_token')
+const savedToken = localStorage.getItem('gitfold_token')
 if (savedToken) {
   tokenInput.value = savedToken
   tokenClearBtn.hidden = false

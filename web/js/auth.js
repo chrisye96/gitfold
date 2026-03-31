@@ -1,5 +1,5 @@
 /**
- * GitSnip — Frontend Auth Module (Phase 2)
+ * GitFold — Frontend Auth Module (Phase 2)
  *
  * Manages GitHub OAuth session state via cookie-based JWT.
  * The session cookie is HttpOnly (set by the server), so this
@@ -17,7 +17,7 @@ let cachedSession = null
  * Check current session via API.
  * Uses `credentials: 'include'` to send the HttpOnly session cookie.
  *
- * @param {string} apiBase  API origin, e.g. 'https://api.gitsnip.cc'
+ * @param {string} apiBase  API origin, e.g. 'https://api.gitfold.cc'
  * @returns {Promise<{ authenticated: boolean, userId?: string, email?: string, githubLogin?: string, tier?: string } | null>}
  */
 export async function checkSession(apiBase) {

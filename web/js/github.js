@@ -1,5 +1,5 @@
 /**
- * GitSnip — Browser GitHub API Client
+ * GitFold — Browser GitHub API Client
  * Fetches file trees and raw file content directly from the browser.
  * Each user's IP gets its own 60 req/hour quota (no backend cost).
  *
@@ -17,7 +17,7 @@ const RAW_BASE = 'https://raw.githubusercontent.com'
 export function getTierConfig() {
   if (isProUser()) return { concurrency: 8, delayMs: 0 }
   // OAuth or token user gets slightly better throughput
-  const hasToken = !!localStorage.getItem('gitsnip_token') || isAuthenticated()
+  const hasToken = !!localStorage.getItem('gitfold_token') || isAuthenticated()
   if (hasToken) return { concurrency: 3, delayMs: 100 }
   return { concurrency: 2, delayMs: 200 }
 }
@@ -136,7 +136,7 @@ export async function fetchTree(info, token, opts) {
 
   if (treeData.truncated) {
     console.warn(
-      '[GitSnip] GitHub truncated the tree (>100k files). Some files may be missing.',
+      '[GitFold] GitHub truncated the tree (>100k files). Some files may be missing.',
     )
   }
 

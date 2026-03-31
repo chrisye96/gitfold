@@ -1,19 +1,19 @@
-# GitSnip
+# GitFold
 
 > Download any GitHub directory as a zip — instantly.
 
-**[gitsnip.cc](https://gitsnip.cc)** · [Docs](https://gitsnip.cc/docs) · [Pricing](https://gitsnip.cc/pricing) · [API](https://api.gitsnip.cc/docs)
+**[gitfold.cc](https://gitfold.cc)** · [Docs](https://gitfold.cc/docs) · [Pricing](https://gitfold.cc/pricing) · [API](https://api.gitfold.cc/docs)
 
 ---
 
 ## The Fastest Way
 
-Change `github.com` → `gitsnip.cc` in any GitHub tree URL and press Enter:
+Change `github.com` → `gitfold.cc` in any GitHub tree URL and press Enter:
 
 ```
 https://github.com/anthropics/claude-code/tree/main/plugins/feature-dev
          ↓
-https://gitsnip.cc/anthropics/claude-code/tree/main/plugins/feature-dev
+https://gitfold.cc/anthropics/claude-code/tree/main/plugins/feature-dev
 ```
 
 That's it. Your browser downloads the zip immediately.
@@ -22,23 +22,23 @@ That's it. Your browser downloads the zip immediately.
 
 ## Other Ways
 
-**Web UI** — Paste a GitHub URL at [gitsnip.cc](https://gitsnip.cc)
+**Web UI** — Paste a GitHub URL at [gitfold.cc](https://gitfold.cc)
 
 **API**
 ```bash
-curl -L "https://api.gitsnip.cc/v1/download?url=https://github.com/anthropics/claude-code/tree/main/plugins/feature-dev" \
+curl -L "https://api.gitfold.cc/v1/download?url=https://github.com/anthropics/claude-code/tree/main/plugins/feature-dev" \
      -o feature-dev.zip
 
 # tar.gz format
-curl -L "https://api.gitsnip.cc/v1/download?url=...&format=tar.gz" -o archive.tar.gz
+curl -L "https://api.gitfold.cc/v1/download?url=...&format=tar.gz" -o archive.tar.gz
 ```
 
 **CLI**
 ```bash
-npx gitsnip https://github.com/anthropics/claude-code/tree/main/plugins/feature-dev
-npx gitsnip <url> --format tar.gz
-npx gitsnip <url> --info
-npx gitsnip <url> --token ghp_xxxx
+npx gitfold https://github.com/anthropics/claude-code/tree/main/plugins/feature-dev
+npx gitfold <url> --format tar.gz
+npx gitfold <url> --info
+npx gitfold <url> --token ghp_xxxx
 ```
 
 ---
@@ -49,25 +49,25 @@ npx gitsnip <url> --token ghp_xxxx
 |------|-------|---------------|
 | Free | 50 | Default |
 | Token | 200 | Add GitHub PAT or sign in with GitHub |
-| Pro | 1,000 | [Subscribe](https://gitsnip.cc/pricing) |
-| Power | 5,000 | [Subscribe](https://gitsnip.cc/pricing) |
+| Pro | 1,000 | [Subscribe](https://gitfold.cc/pricing) |
+| Power | 5,000 | [Subscribe](https://gitfold.cc/pricing) |
 
 ---
 
 ## Project Structure
 
 ```
-gitsnip/
+gitfold/
 ├── shared/          # URL parser & types (used by both web and worker)
-├── web/             # Static frontend → gitsnip.cc (Cloudflare Pages)
-├── worker/          # REST API backend → api.gitsnip.cc (Cloudflare Workers)
+├── web/             # Static frontend → gitfold.cc (Cloudflare Pages)
+├── worker/          # REST API backend → api.gitfold.cc (Cloudflare Workers)
 │   └── src/
 │       ├── routes/  # api.ts, auth.ts, billing.ts
 │       ├── services/# github, zip, tar, cache, auth, stripe, analytics, crypto, jwt
 │       ├── middleware/ # security, session
 │       └── db/      # D1 schema + migrations
 ├── docs/            # llms.txt, llms-full.txt
-└── cli/             # npx gitsnip
+└── cli/             # npx gitfold
 ```
 
 ## Development
@@ -103,11 +103,11 @@ See `plans/implementation-plan.md` for full deployment steps. Quick reference:
 
 ```bash
 # Create infrastructure
-wrangler d1 create gitsnip-db
-wrangler r2 bucket create gitsnip-cache
+wrangler d1 create gitfold-db
+wrangler r2 bucket create gitfold-cache
 
 # Apply DB migrations
-wrangler d1 migrations apply gitsnip-db
+wrangler d1 migrations apply gitfold-db
 
 # Set secrets
 wrangler secret put GITHUB_CLIENT_ID
@@ -124,11 +124,11 @@ pnpm deploy:worker
 ## AI Usage
 
 ```
-GET https://gitsnip.cc/llms.txt
-GET https://gitsnip.cc/llms-full.txt
+GET https://gitfold.cc/llms.txt
+GET https://gitfold.cc/llms-full.txt
 ```
 
-GitSnip is designed to be AI-friendly. See [llms.txt](https://gitsnip.cc/llms.txt) for machine-readable docs.
+GitFold is designed to be AI-friendly. See [llms.txt](https://gitfold.cc/llms.txt) for machine-readable docs.
 
 ---
 

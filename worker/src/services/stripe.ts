@@ -1,5 +1,5 @@
 /**
- * GitSnip Worker — Stripe Service (Phase 1)
+ * GitFold Worker — Stripe Service (Phase 1)
  *
  * Handles:
  *   1. Creating Stripe Checkout sessions
@@ -155,13 +155,13 @@ export async function processWebhookEvent(
         stripeCustomerId: customerId,
         stripeSubId: subId,
       }
-      await saveSub(env.GITSNIP_SUBS, token, record)
+      await saveSub(env.GITFOLD_SUBS, token, record)
 
       const claimData = JSON.stringify({ token, email })
       // Store mappings for token claim (by session ID and subscription ID)
       await Promise.all([
-        env.GITSNIP_SUBS.put(`checkout:${subId}`, claimData, { expirationTtl: 3600 }),
-        env.GITSNIP_SUBS.put(`session:${sessionId}`, claimData, { expirationTtl: 3600 }),
+        env.GITFOLD_SUBS.put(`checkout:${subId}`, claimData, { expirationTtl: 3600 }),
+        env.GITFOLD_SUBS.put(`session:${sessionId}`, claimData, { expirationTtl: 3600 }),
       ])
       break
     }
@@ -176,7 +176,7 @@ export async function processWebhookEvent(
         const existing = await findSubByStripeId(obj['id'] as string, env)
         if (existing) {
           existing.record.expiresAt = undefined
-          await saveSub(env.GITSNIP_SUBS, existing.token, existing.record)
+          await saveSub(env.GITFOLD_SUBS, existing.token, existing.record)
         }
       }
       break
@@ -186,7 +186,7 @@ export async function processWebhookEvent(
       const subId = obj['id'] as string
       const existing = await findSubByStripeId(subId, env)
       if (existing) {
-        await deleteSub(env.GITSNIP_SUBS, existing.token, existing.record.email)
+        await deleteSub(env.GITFOLD_SUBS, existing.token, existing.record.email)
       }
       break
     }
@@ -216,13 +216,13 @@ async function findSubByStripeId(
   stripeSubId: string,
   env: Env,
 ): Promise<{ token: string; record: SubRecord } | null> {
-  const mapping = await env.GITSNIP_SUBS.get<{ token: string; email: string }>(
+  const mapping = await env.GITFOLD_SUBS.get<{ token: string; email: string }>(
     `checkout:${stripeSubId}`,
     'json',
   )
   if (!mapping) return null
 
-  const record = await env.GITSNIP_SUBS.get<SubRecord>(
+  const record = await env.GITFOLD_SUBS.get<SubRecord>(
     `sub:token:${mapping.token}`,
     'json',
   )

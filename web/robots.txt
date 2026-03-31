@@ -2,4 +2,4 @@ User-agent: *
 Allow: /
 Disallow: /api/
 
-Sitemap: https://gitsnip.cc/sitemap.xml
+Sitemap: https://gitfold.cc/sitemap.xml

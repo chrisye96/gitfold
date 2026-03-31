@@ -1,5 +1,5 @@
 /**
- * GitSnip Worker — Entry Point
+ * GitFold Worker — Entry Point
  *
  * Mounts:
  *   /api/v1/*   REST API (download, info)
@@ -45,7 +45,7 @@ app.options('*', (c) => {
 app.get('/health', (c) =>
   Response.json({
     ok: true,
-    service: 'gitsnip-worker',
+    service: 'gitfold-worker',
     version: '1.0.0',
     timestamp: new Date().toISOString(),
   }),
@@ -54,7 +54,7 @@ app.get('/health', (c) =>
 // ─── API docs redirect ────────────────────────────────────────────────────────
 
 app.get('/docs', (c) =>
-  c.redirect('https://gitsnip.cc/docs', 302),
+  c.redirect('https://gitfold.cc/docs', 302),
 )
 
 // ─── Auth routes (Phase 2 — OAuth, session) ─────────────────────────────────
@@ -84,8 +84,8 @@ async function downloadResultHandler(c: Context<{ Bindings: Env; Variables: { re
   }
 
   const [zipData, filename] = await Promise.all([
-    c.env.GITSNIP_CACHE.get(`job:${jobId}`, 'arrayBuffer'),
-    c.env.GITSNIP_CACHE.get(`job:${jobId}:name`, 'text'),
+    c.env.GITFOLD_CACHE.get(`job:${jobId}`, 'arrayBuffer'),
+    c.env.GITFOLD_CACHE.get(`job:${jobId}:name`, 'text'),
   ])
 
   if (!zipData) {
@@ -96,8 +96,8 @@ async function downloadResultHandler(c: Context<{ Bindings: Env; Variables: { re
   }
 
   c.executionCtx.waitUntil(Promise.all([
-    c.env.GITSNIP_CACHE.delete(`job:${jobId}`),
-    c.env.GITSNIP_CACHE.delete(`job:${jobId}:name`),
+    c.env.GITFOLD_CACHE.delete(`job:${jobId}`),
+    c.env.GITFOLD_CACHE.delete(`job:${jobId}:name`),
   ]))
 
   const safeName = filename
@@ -141,7 +141,7 @@ app.notFound((c) =>
     {
       code: 'NOT_FOUND',
       message: `Route not found: ${c.req.method} ${new URL(c.req.url).pathname}`,
-      hint: 'See https://gitsnip.cc/docs for available endpoints.',
+      hint: 'See https://gitfold.cc/docs for available endpoints.',
     },
     { status: 404, headers: corsHeaders() },
   ),

@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 /**
- * gitsnip CLI
+ * gitfold CLI
  * Download any GitHub directory as a zip or tar.gz.
  *
  * Usage:
- *   npx gitsnip <github-url> [options]
+ *   npx gitfold <github-url> [options]
  *
  * Requires Node.js >= 18 (native fetch + parseArgs).
  */
@@ -14,7 +14,7 @@ import { createWriteStream } from 'node:fs'
 import { pipeline } from 'node:stream/promises'
 import { Readable } from 'node:stream'
 
-const API     = 'https://api.gitsnip.cc/v1'
+const API     = 'https://api.gitfold.cc/v1'
 const VERSION = '0.1.0'
 
 // ─── Args ─────────────────────────────────────────────────────────────────────
@@ -39,13 +39,13 @@ if (values.version) {
 
 if (values.help || positionals.length === 0) {
   console.log(`
-gitsnip v${VERSION} — Download any GitHub directory as a zip or tar.gz
+gitfold v${VERSION} — Download any GitHub directory as a zip or tar.gz
 
 Usage:
-  npx gitsnip <github-url> [options]
+  npx gitfold <github-url> [options]
 
 Options:
-  -o, --output <file>        Output path (default: <dirname> — gitsnip.cc.zip)
+  -o, --output <file>        Output path (default: <dirname> — gitfold.cc.zip)
   -t, --token  <token>       GitHub Personal Access Token (skips rate limits)
   -f, --format <zip|tar.gz>  Archive format (default: zip)
   -i, --info                 Show file info without downloading
@@ -53,11 +53,11 @@ Options:
   -h, --help                 Show this help
 
 Examples:
-  npx gitsnip https://github.com/anthropics/claude-code/tree/main/plugins
-  npx gitsnip https://github.com/... -o archive.zip
-  npx gitsnip https://github.com/... --format tar.gz
-  npx gitsnip https://github.com/... --info
-  npx gitsnip https://github.com/... --token ghp_xxxx
+  npx gitfold https://github.com/anthropics/claude-code/tree/main/plugins
+  npx gitfold https://github.com/... -o archive.zip
+  npx gitfold https://github.com/... --format tar.gz
+  npx gitfold https://github.com/... --info
+  npx gitfold https://github.com/... --token ghp_xxxx
 `)
   process.exit(values.help ? 0 : 1)
 }
@@ -75,10 +75,10 @@ function defaultFilename(url, fmt) {
     const u = new URL(url.startsWith('http') ? url : 'https://' + url)
     const last = u.pathname.replace(/\/+$/, '').split('/').at(-1) || 'download'
     const ext = fmt === 'tar.gz' ? 'tar.gz' : 'zip'
-    return `${last} — gitsnip.cc.${ext}`
+    return `${last} — gitfold.cc.${ext}`
   } catch {
     const ext = fmt === 'tar.gz' ? 'tar.gz' : 'zip'
-    return `download — gitsnip.cc.${ext}`
+    return `download — gitfold.cc.${ext}`
   }
 }
 
