@@ -938,7 +938,7 @@ html[data-theme="dark"] .tool-power .bookmarklet-btn img { filter: invert(1); }
   padding: 1rem 0;
 }
 .history-clear-btn {
-  margin-top: 0.5rem;
+  margin-top: 1.5rem;
   background: none;
   border: none;
   color: var(--c-text-muted);

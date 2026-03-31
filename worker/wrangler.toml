@@ -43,7 +43,7 @@ POWER_FILE_LIMIT = "5000"
 [[d1_databases]]
 binding = "DB"
 database_name = "gitfold-db"
-database_id = "<replace-with-real-id>"
+database_id = "9de55166-a54a-4b89-a9e1-8fa344ccc0cb"
 migrations_dir = "src/db/migrations"
 
 # ─── R2 Bucket for ZIP caching (Phase 2) ───────────────

@@ -127,7 +127,7 @@ export function formatRepoInfo(info) {
 export function zipFilename(info) {
   if (info.type === 'repo') return `${info.repo}.zip`
   const base = info.path.split('/').pop() || info.repo
-  return `${base} — gitfold.cc.zip`
+  return `${base} -gitfold.cc.zip`
 }
 
 /**
