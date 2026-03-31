@@ -1,6 +1,6 @@
 {
-  "name": "GitSnip",
-  "short_name": "GitSnip",
+  "name": "GitFold",
+  "short_name": "GitFold",
   "description": "Download any GitHub directory as a zip — instantly",
   "lang": "en",
   "start_url": "/",

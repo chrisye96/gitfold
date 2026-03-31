@@ -1,5 +1,5 @@
 /**
- * GitSnip Worker — Security Middleware
+ * GitFold Worker — Security Middleware
  *
  * Validates incoming requests and enforces limits to prevent abuse:
  *   - URL validation (only valid GitHub tree URLs accepted)
@@ -7,12 +7,12 @@
  *   - Rate limiting (via Cloudflare rate-limit binding)
  *   - Root directory guard (path must be non-empty)
  *
- * All error responses follow the unified GitSnipError format:
+ * All error responses follow the unified GitFoldError format:
  *   { code, message, hint }
  */
 
 import type { Context, Next } from 'hono'
-import type { Env, RepoInfo, Tier } from '../types.js'
+import type { Env, RepoInfo, Tier, SessionUser } from '../types.js'
 import { parseGithubUrl } from '@shared/parse-url.js'
 import { getFileLimit } from '../services/subscription.js'
 
@@ -29,7 +29,7 @@ export const LIMITS = {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-/** JSON error response in GitSnipError format */
+/** JSON error response in GitFoldError format */
 export function errorResponse(
   status: number,
   code: string,
@@ -87,17 +87,49 @@ export async function validateUrl(
 }
 
 /**
- * Middleware: resolve the user's tier and file limit from subscription state.
- * Attaches tier + fileLimit to context for downstream handlers.
+ * Middleware: resolve the user's tier and file limit.
+ *
+ * Priority:
+ *   1. Session JWT (D1 user — Phase 2)
+ *   2. X-Sub-Token header (KV subscription — Phase 1 backward compat)
+ *   3. X-GitHub-Token (free user with PAT)
+ *   4. Anonymous free user
  */
 export async function resolveTier(
-  c: Context<{ Bindings: Env; Variables: { tier: Tier; fileLimit: number } }>,
+  c: Context<{ Bindings: Env; Variables: { tier: Tier; fileLimit: number; sessionUser?: SessionUser } }>,
   next: Next,
 ) {
+  // Check session user first (set by session middleware)
+  const sessionUser = c.get('sessionUser')
+  if (sessionUser && sessionUser.tier !== 'free') {
+    const limit = tierToLimit(sessionUser.tier, c.env)
+    c.set('tier', sessionUser.tier)
+    c.set('fileLimit', limit)
+    return next()
+  }
+
+  // Fall back to KV-based subscription lookup (Phase 1 path)
   const { tier, limit } = await getFileLimit(c.req.raw, c.env)
+
+  // Session user with GitHub OAuth counts as having a token
+  if (tier === 'free' && sessionUser) {
+    c.set('tier', 'free')
+    c.set('fileLimit', parseInt(c.env.TOKEN_FILE_LIMIT ?? '200', 10))
+    return next()
+  }
+
   c.set('tier', tier)
   c.set('fileLimit', limit)
   return next()
+}
+
+/** Convert a tier to its file limit using env vars. */
+function tierToLimit(tier: Tier, env: Env): number {
+  switch (tier) {
+    case 'power': return parseInt(env.POWER_FILE_LIMIT ?? '5000', 10)
+    case 'pro':   return parseInt(env.PRO_FILE_LIMIT ?? '1000', 10)
+    default:      return parseInt(env.FREE_FILE_LIMIT ?? '50', 10)
+  }
 }
 
 /**
@@ -143,10 +175,42 @@ export function checkLimits(
   return { ok: true }
 }
 
+// ─── Allowed origins for credential-based CORS ─────────────────────────────
+
+const ALLOWED_ORIGINS = [
+  'https://gitfold.cc',
+  'https://www.gitfold.cc',
+]
+
+/** Check if an origin should receive credential-aware CORS headers. */
+function isAllowedOrigin(origin: string | null | undefined): string | null {
+  if (!origin) return null
+  if (ALLOWED_ORIGINS.includes(origin)) return origin
+  // Allow localhost for development
+  if (/^https?:\/\/localhost(:\d+)?$/.test(origin)) return origin
+  return null
+}
+
 /**
- * CORS headers — allow all origins (public API).
+ * CORS headers.
+ *
+ * When `requestOrigin` is provided and matches an allowed origin,
+ * returns credential-aware headers (specific origin + Allow-Credentials).
+ * Otherwise falls back to wildcard `*` (no credentials).
  */
-export function corsHeaders(): HeadersInit {
+export function corsHeaders(requestOrigin?: string | null): HeadersInit {
+  const allowed = isAllowedOrigin(requestOrigin)
+
+  if (allowed) {
+    return {
+      'Access-Control-Allow-Origin': allowed,
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, X-GitHub-Token, X-Sub-Token',
+      'Access-Control-Allow-Credentials': 'true',
+      'Access-Control-Max-Age': '86400',
+    }
+  }
+
   return {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',

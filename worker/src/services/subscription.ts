@@ -1,5 +1,5 @@
 /**
- * GitSnip Worker — Subscription Service (Phase 1)
+ * GitFold Worker — Subscription Service (Phase 1)
  *
  * Manages subscription state in KV.
  * KV schema:
@@ -29,7 +29,7 @@ export async function getFileLimit(
   const subToken = req.headers.get('X-Sub-Token')
 
   if (subToken) {
-    const record = await getSubByToken(env.GITSNIP_SUBS, subToken)
+    const record = await getSubByToken(env.GITFOLD_SUBS, subToken)
     if (record && isActive(record)) {
       const limit = tierLimit(record.tier, env)
       return { tier: record.tier, limit }
@@ -106,7 +106,7 @@ function isActive(record: SubRecord): boolean {
 
 function tierLimit(tier: Tier, env: Env): number {
   if (tier === 'pro') return parseInt(env.PRO_FILE_LIMIT ?? '1000', 10)
-  if (tier === 'power') return parseInt(env.PRO_FILE_LIMIT ?? '5000', 10)
+  if (tier === 'power') return parseInt(env.POWER_FILE_LIMIT ?? '5000', 10)
   return parseInt(env.FREE_FILE_LIMIT ?? '50', 10)
 }
 

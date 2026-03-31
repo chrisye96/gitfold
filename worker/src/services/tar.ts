@@ -1,5 +1,5 @@
 /**
- * GitSnip Worker — TAR.GZ Service
+ * GitFold Worker — TAR.GZ Service
  *
  * Streams a POSIX ustar tar archive, gzip-compressed via CompressionStream.
  * Zero dependencies — uses only the Web Streams API available in Workers.

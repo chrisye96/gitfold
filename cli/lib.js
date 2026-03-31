@@ -1,16 +1,16 @@
 #!/usr/bin/env node
 /**
- * gitsnip — programmatic library
+ * gitfold — programmatic library
  *
- * import { info, snip } from 'gitsnip'
+ * import { info, snip } from 'gitfold'
  *
  * Works in Node.js 18+ and modern browsers (native fetch required).
  * Zero dependencies.
  *
- * @module gitsnip
+ * @module gitfold
  */
 
-const DEFAULT_API = 'https://api.gitsnip.cc/v1'
+const DEFAULT_API = 'https://api.gitfold.cc/v1'
 
 /**
  * @typedef {Object} SnipInfo
@@ -29,7 +29,7 @@ const DEFAULT_API = 'https://api.gitsnip.cc/v1'
  * @param {string} url - GitHub directory URL
  * @param {object} [options]
  * @param {string} [options.token] - GitHub Personal Access Token
- * @param {string} [options.apiBase] - API base URL (default: https://api.gitsnip.cc/v1)
+ * @param {string} [options.apiBase] - API base URL (default: https://api.gitfold.cc/v1)
  * @returns {Promise<SnipInfo>}
  *
  * @example
@@ -43,7 +43,7 @@ export async function info(url, { token, apiBase = DEFAULT_API } = {}) {
   const res = await fetch(`${apiBase}/info?url=${encodeURIComponent(url)}`, { headers })
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
-    throw new Error(body.message || `GitSnip API error: HTTP ${res.status}`)
+    throw new Error(body.message || `GitFold API error: HTTP ${res.status}`)
   }
   return res.json()
 }
@@ -59,12 +59,12 @@ export async function info(url, { token, apiBase = DEFAULT_API } = {}) {
  * @param {object} [options]
  * @param {string} [options.token] - GitHub Personal Access Token
  * @param {'zip'|'tar.gz'} [options.format] - Archive format (default: 'zip')
- * @param {string} [options.apiBase] - API base URL (default: https://api.gitsnip.cc/v1)
+ * @param {string} [options.apiBase] - API base URL (default: https://api.gitfold.cc/v1)
  * @returns {Promise<Response>} - Streaming response with the archive
  *
  * @example
  * // Download and save (Node.js)
- * import { snip } from 'gitsnip'
+ * import { snip } from 'gitfold'
  * import { pipeline } from 'node:stream/promises'
  * import { Readable } from 'node:stream'
  * import { createWriteStream } from 'node:fs'
@@ -89,7 +89,7 @@ export async function snip(url, { token, format = 'zip', apiBase = DEFAULT_API }
   )
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
-    throw new Error(body.message || `GitSnip API error: HTTP ${res.status}`)
+    throw new Error(body.message || `GitFold API error: HTTP ${res.status}`)
   }
   return res
 }

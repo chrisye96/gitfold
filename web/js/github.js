@@ -1,5 +1,5 @@
 /**
- * GitSnip — Browser GitHub API Client
+ * GitFold — Browser GitHub API Client
  * Fetches file trees and raw file content directly from the browser.
  * Each user's IP gets its own 60 req/hour quota (no backend cost).
  *
@@ -7,16 +7,17 @@
  */
 
 import { getSubToken, isProUser } from './subscription.js'
+import { isAuthenticated } from './auth.js'
 
 const GITHUB_API = 'https://api.github.com'
 const RAW_BASE = 'https://raw.githubusercontent.com'
 
 // ─── Tier-based concurrency & throttling ────────────────────────────────────
 
-function getTierConfig() {
+export function getTierConfig() {
   if (isProUser()) return { concurrency: 8, delayMs: 0 }
-  // Token user gets slightly better throughput
-  const hasToken = !!localStorage.getItem('gitsnip_token')
+  // OAuth or token user gets slightly better throughput
+  const hasToken = !!localStorage.getItem('gitfold_token') || isAuthenticated()
   if (hasToken) return { concurrency: 3, delayMs: 100 }
   return { concurrency: 2, delayMs: 200 }
 }
@@ -82,19 +83,39 @@ async function checkGithubResponse(res, context = '') {
 }
 
 /**
+ * Fetch the default branch name for a repository.
+ *
+ * @param {{ owner: string, repo: string }} info
+ * @param {string} [token]
+ * @param {{ signal?: AbortSignal }} [opts]
+ * @returns {Promise<string>}
+ */
+export async function fetchDefaultBranch(info, token, opts) {
+  const headers = apiHeaders(token)
+  const res = await fetch(
+    `${GITHUB_API}/repos/${info.owner}/${info.repo}`,
+    { headers, signal: opts?.signal },
+  )
+  await checkGithubResponse(res, `${info.owner}/${info.repo}`)
+  const data = await res.json()
+  return data.default_branch || 'main'
+}
+
+/**
  * Fetch the file tree for a GitHub directory (2 API calls total).
  *
  * @param {{ owner: string, repo: string, branch: string, path: string }} info
  * @param {string} [token]
+ * @param {{ signal?: AbortSignal }} [opts]
  * @returns {Promise<Array<{ path: string, size: number, sha: string }>>}
  */
-export async function fetchTree(info, token) {
+export async function fetchTree(info, token, opts) {
   const headers = apiHeaders(token)
 
   // Step 1: resolve branch → tree SHA
   const branchRes = await fetch(
     `${GITHUB_API}/repos/${info.owner}/${info.repo}/branches/${encodeURIComponent(info.branch)}`,
-    { headers },
+    { headers, signal: opts?.signal },
   )
   await checkGithubResponse(
     branchRes,
@@ -107,7 +128,7 @@ export async function fetchTree(info, token) {
   // Step 2: fetch recursive tree (1 API call for the entire repo tree)
   const treeRes = await fetch(
     `${GITHUB_API}/repos/${info.owner}/${info.repo}/git/trees/${treeSha}?recursive=1`,
-    { headers },
+    { headers, signal: opts?.signal },
   )
   await checkGithubResponse(treeRes)
 
@@ -115,7 +136,7 @@ export async function fetchTree(info, token) {
 
   if (treeData.truncated) {
     console.warn(
-      '[GitSnip] GitHub truncated the tree (>100k files). Some files may be missing.',
+      '[GitFold] GitHub truncated the tree (>100k files). Some files may be missing.',
     )
   }
 
@@ -162,10 +183,11 @@ export function getRawUrl(filePath, info) {
  * @param {{ owner: string, repo: string, branch: string, path: string }} info
  * @param {string} [token]   - Only used for tree API calls, not raw fetches
  * @param {(done: number, total: number) => void} [onProgress]
+ * @param {{ signal?: AbortSignal }} [opts]
  * @returns {Promise<Array<{ path: string, data: ArrayBuffer }>>}
  */
-export async function fetchFiles(info, token, onProgress) {
-  const tree = await fetchTree(info, token)
+export async function fetchFiles(info, token, onProgress, opts) {
+  const tree = await fetchTree(info, token, opts)
   const total = tree.length
   let done = 0
   const { concurrency, delayMs } = getTierConfig()
@@ -180,7 +202,7 @@ export async function fetchFiles(info, token, onProgress) {
    */
   async function fetchOne(entry, idx) {
     const url = getRawUrl(entry.path, info)
-    const res = await fetch(url)
+    const res = await fetch(url, { signal: opts?.signal })
     if (!res.ok) {
       const err = new Error(`Failed to fetch ${entry.path} (HTTP ${res.status})`)
       err.code = 'FETCH_ERROR'
@@ -206,10 +228,11 @@ export async function fetchFiles(info, token, onProgress) {
  *
  * @param {{ owner: string, repo: string, branch: string, path: string }} info
  * @param {string} [token]
+ * @param {{ signal?: AbortSignal }} [opts]
  * @returns {Promise<{ fileCount: number, totalSize: number, files: Array<{ path: string, size: number }> }>}
  */
-export async function getInfo(info, token) {
-  const tree = await fetchTree(info, token)
+export async function getInfo(info, token, opts) {
+  const tree = await fetchTree(info, token, opts)
   return {
     fileCount: tree.length,
     totalSize: tree.reduce((sum, f) => sum + (f.size || 0), 0),

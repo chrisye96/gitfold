@@ -5,39 +5,39 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <!-- ── Primary SEO ──────────────────────────────────────────────────── -->
-  <title>GitSnip — Download any GitHub directory instantly</title>
+  <title>GitFold — Download any GitHub directory instantly</title>
   <meta name="description"
         content="Download any GitHub subdirectory as a zip file — no git clone needed. Paste a GitHub URL and get a zip instantly. Free tool with API and CLI support." />
   <meta name="keywords"
-        content="github download folder, download github directory, github subdirectory download, git sparse checkout, github zip download, gitsnip" />
-  <meta name="author" content="GitSnip" />
+        content="github download folder, download github directory, github subdirectory download, git sparse checkout, github zip download, gitfold" />
+  <meta name="author" content="GitFold" />
   <meta name="robots" content="index, follow" />
-  <link rel="canonical" href="https://gitsnip.cc/" />
+  <link rel="canonical" href="https://gitfold.cc/" />
 
   <!-- ── Open Graph (Facebook / LinkedIn) ────────────────────────────── -->
   <meta property="og:type"        content="website" />
-  <meta property="og:url"         content="https://gitsnip.cc/" />
-  <meta property="og:title"       content="GitSnip — Download any GitHub directory instantly" />
-  <meta property="og:description" content="Download any GitHub subdirectory as a zip. No git clone. Just replace github.com → gitsnip.cc in the URL." />
-  <meta property="og:image"       content="https://gitsnip.cc/img/og_image.png" />
+  <meta property="og:url"         content="https://gitfold.cc/" />
+  <meta property="og:title"       content="GitFold — Download any GitHub directory instantly" />
+  <meta property="og:description" content="Download any GitHub subdirectory as a zip. No git clone. Just replace github.com → gitfold.cc in the URL." />
+  <meta property="og:image"       content="https://gitfold.cc/img/og_image.png" />
   <meta property="og:image:type"  content="image/png" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height"content="630" />
-  <meta property="og:site_name"   content="GitSnip" />
+  <meta property="og:site_name"   content="GitFold" />
   <meta property="og:locale"      content="en_US" />
 
   <!-- ── Twitter Card ─────────────────────────────────────────────────── -->
   <meta name="twitter:card"        content="summary_large_image" />
-  <meta name="twitter:site"        content="@gitsnip" />
-  <meta name="twitter:title"       content="GitSnip — Download any GitHub directory instantly" />
-  <meta name="twitter:description" content="Paste a GitHub tree URL → get a zip. Or just replace github.com → gitsnip.cc. Free, no login." />
-  <meta name="twitter:image"       content="https://gitsnip.cc/img/og_image.png" />
+  <meta name="twitter:site"        content="@gitfold" />
+  <meta name="twitter:title"       content="GitFold — Download any GitHub directory instantly" />
+  <meta name="twitter:description" content="Paste a GitHub tree URL → get a zip. Or just replace github.com → gitfold.cc. Free, no login." />
+  <meta name="twitter:image"       content="https://gitfold.cc/img/og_image.png" />
 
   <!-- ── Theme / PWA ──────────────────────────────────────────────────── -->
   <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
   <meta name="theme-color" content="#0f0f1a"  media="(prefers-color-scheme: dark)" />
   <!-- Anti-FOUC: apply saved theme before first paint -->
-  <script>(function(){var t=localStorage.getItem('gitsnip-theme');if(t==='dark'||t==='light')document.documentElement.dataset.theme=t})()</script>
+  <script>(function(){var t=localStorage.getItem('gitfold-theme');if(t==='dark'||t==='light')document.documentElement.dataset.theme=t})()</script>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   <link rel="icon" href="/img/favicon.ico" sizes="32x32" />
   <link rel="icon" href="/img/favicon-96x96.png" sizes="96x96" type="image/png" />
@@ -49,8 +49,8 @@
   {
     "@context": "https://schema.org",
     "@type": "WebApplication",
-    "name": "GitSnip",
-    "url": "https://gitsnip.cc",
+    "name": "GitFold",
+    "url": "https://gitfold.cc",
     "description": "Download any GitHub subdirectory as a zip file without cloning the full repository.",
     "applicationCategory": "DeveloperApplication",
     "operatingSystem": "Any",
@@ -101,7 +101,7 @@
 
     <!-- ── Tool card ─────────────────────────────────────────────────────── -->
     <section class="tool-card"
-             aria-label="GitSnip download tool"
+             aria-label="GitFold download tool"
              role="region">
 
       <!-- ── Primary: URL input + Get Files ── -->
@@ -167,7 +167,7 @@
           </div>
           <p id="token-hint" class="token-hint">
             Increases rate limit to 5,000 req/hour. Stored in your browser only.
-            <a href="https://github.com/settings/tokens/new?scopes=public_repo&description=GitSnip"
+            <a href="https://github.com/settings/tokens/new?scopes=public_repo&description=GitFold"
                target="_blank" rel="noopener noreferrer">Generate token ↗</a>
           </p>
         </div>
@@ -179,8 +179,8 @@
           <span class="alt-tip-label">Tip</span>
           Replace <code>github.com</code> →
           <button id="copy-domain" class="copy-domain" type="button"
-                  aria-label="Copy gitsnip.cc to clipboard">
-            <code>gitsnip.cc</code>
+                  aria-label="Copy gitfold.cc to clipboard">
+            <code>gitfold.cc</code>
           </button>
           in the URL bar
         </p>
@@ -190,12 +190,12 @@
       <!-- ── Power: Bookmarklet ── -->
       <div class="tool-power">
         <a class="bookmarklet-btn"
-           href="javascript:window.location.href=window.location.href.replace('github.com','gitsnip.cc')"
+           href="javascript:window.location.href=window.location.href.replace('github.com','gitfold.cc')"
            title="Drag this to your bookmarks bar, then click it on any GitHub folder page"
            draggable="true"
            role="link"
-           aria-label="GitSnip bookmarklet — drag to bookmarks bar">
-          <img src="/img/gitsnip.svg" width="17" height="17" alt="" class="bookmarklet-icon" />GitSnip
+           aria-label="GitFold bookmarklet — drag to bookmarks bar">
+          <img src="/img/gitfold.svg" width="17" height="17" alt="" class="bookmarklet-icon" />GitFold
         </a>
         <p class="bookmarklet-hint">
           One-click download on GitHub — drag to your bookmarks bar
@@ -205,6 +205,17 @@
     </section><!-- /tool-card -->
 
   </main><!-- /site-main -->
+
+  <!-- ── Download history ──────────────────────────────────────────────────── -->
+  <section class="history-section" id="history-section" hidden
+           aria-labelledby="history-heading">
+    <div class="history-header">
+      <h2 class="history-heading" id="history-heading">Recent Downloads</h2>
+      <button id="history-toggle" class="history-toggle" type="button"
+              aria-expanded="true" aria-controls="history-body">Hide</button>
+    </div>
+    <div id="history-body" class="history-body"></div>
+  </section>
 
   <!-- Ad slot: footer (always visible, non-intrusive) -->
   <div class="ad-slot ad-slot-footer" data-ad-slot="footer" hidden aria-label="Advertisement"></div>

@@ -1,5 +1,5 @@
 /**
- * GitSnip — Ad Slot Manager
+ * GitFold — Ad Slot Manager
  *
  * To switch ad providers, change PROVIDER below and fill in CONFIG.
  * To disable ads entirely, set PROVIDER = 'none'.
@@ -31,7 +31,7 @@ const CONFIG = {
   carbon: {
     // From your Carbon Ads dashboard → Placements
     serve:     'YOUR_SERVE_ID',      // e.g. 'CKYIL2JW'
-    placement: 'gitsnipcc',          // your site slug
+    placement: 'gitfoldcc',          // your site slug
   },
 
   adsense: {
@@ -43,7 +43,7 @@ const CONFIG = {
   },
 
   ethicalads: {
-    publisher: 'YOUR_PUBLISHER_ID',  // e.g. 'gitsnip'
+    publisher: 'YOUR_PUBLISHER_ID',  // e.g. 'gitfold'
     type:      'text',               // 'text' | 'image' | 'text-image'
   },
 }

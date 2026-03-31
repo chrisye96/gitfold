@@ -1,5 +1,5 @@
 /**
- * GitSnip — Browser Zip Helper
+ * GitFold — Browser Zip Helper
  * Bundles fetched files into a zip using JSZip (loaded via CDN).
  * Everything runs client-side — no backend needed.
  *

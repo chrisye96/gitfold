@@ -1,7 +1,7 @@
 {
   "permissions": {
     "allow": [
-      "Bash(curl -s https://api.gitsnip.cc/health)",
+      "Bash(curl -s https://api.gitfold.cc/health)",
       "Bash(node -e \"process.stdin.resume\\(\\);let d='''''''';process.stdin.on\\(''''data'''',c=>d+=c\\);process.stdin.on\\(''''end'''',\\(\\)=>console.log\\(JSON.parse\\(d\\)\\)\\)\")",
       "Bash(where python:*)",
       "Bash(where python3:*)",

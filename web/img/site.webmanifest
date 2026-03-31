@@ -1,6 +1,6 @@
 {
-  "name": "GitSnip",
-  "short_name": "GitSnip",
+  "name": "GitFold",
+  "short_name": "GitFold",
   "icons": [
     {
       "src": "/web-app-manifest-192x192.png",

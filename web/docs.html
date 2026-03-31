@@ -5,39 +5,39 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <!-- ── SEO ────────────────────────────────────────────────────────────── -->
-  <title>GitSnip Docs — How to download any GitHub directory</title>
+  <title>GitFold Docs — How to download any GitHub directory</title>
   <meta name="description"
-        content="GitSnip documentation: web UI, URL trick, bookmarklet, REST API reference, CLI, and FAQ. Download any GitHub subdirectory as a zip." />
+        content="GitFold documentation: web UI, URL trick, bookmarklet, REST API reference, CLI, and FAQ. Download any GitHub subdirectory as a zip." />
   <meta name="keywords"
-        content="gitsnip docs, github directory download, gitsnip api, github zip api, download github folder" />
-  <meta name="author" content="GitSnip" />
+        content="gitfold docs, github directory download, gitfold api, github zip api, download github folder" />
+  <meta name="author" content="GitFold" />
   <meta name="robots" content="index, follow" />
-  <link rel="canonical" href="https://gitsnip.cc/docs" />
+  <link rel="canonical" href="https://gitfold.cc/docs" />
 
   <!-- ── Open Graph ──────────────────────────────────────────────────── -->
   <meta property="og:type"        content="website" />
-  <meta property="og:url"         content="https://gitsnip.cc/docs" />
-  <meta property="og:title"       content="GitSnip Docs — How to download any GitHub directory" />
-  <meta property="og:description" content="Learn how to download any GitHub directory using GitSnip — web, API, CLI, and bookmarklet." />
-  <meta property="og:image"       content="https://gitsnip.cc/img/og_image.png" />
+  <meta property="og:url"         content="https://gitfold.cc/docs" />
+  <meta property="og:title"       content="GitFold Docs — How to download any GitHub directory" />
+  <meta property="og:description" content="Learn how to download any GitHub directory using GitFold — web, API, CLI, and bookmarklet." />
+  <meta property="og:image"       content="https://gitfold.cc/img/og_image.png" />
   <meta property="og:image:type"  content="image/png" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height"content="630" />
-  <meta property="og:site_name"   content="GitSnip" />
+  <meta property="og:site_name"   content="GitFold" />
   <meta property="og:locale"      content="en_US" />
 
   <!-- ── Twitter Card ─────────────────────────────────────────────────── -->
   <meta name="twitter:card"        content="summary_large_image" />
-  <meta name="twitter:site"        content="@gitsnip" />
-  <meta name="twitter:title"       content="GitSnip Docs — How to download any GitHub directory" />
-  <meta name="twitter:description" content="GitSnip documentation: web UI, URL trick, bookmarklet, REST API, CLI, and FAQ." />
-  <meta name="twitter:image"       content="https://gitsnip.cc/img/og_image.png" />
+  <meta name="twitter:site"        content="@gitfold" />
+  <meta name="twitter:title"       content="GitFold Docs — How to download any GitHub directory" />
+  <meta name="twitter:description" content="GitFold documentation: web UI, URL trick, bookmarklet, REST API, CLI, and FAQ." />
+  <meta name="twitter:image"       content="https://gitfold.cc/img/og_image.png" />
 
   <!-- ── Theme / PWA ──────────────────────────────────────────────────── -->
   <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
   <meta name="theme-color" content="#0f0f1a"  media="(prefers-color-scheme: dark)" />
   <!-- Anti-FOUC: apply saved theme before first paint -->
-  <script>(function(){var t=localStorage.getItem('gitsnip-theme');if(t==='dark'||t==='light')document.documentElement.dataset.theme=t})()</script>
+  <script>(function(){var t=localStorage.getItem('gitfold-theme');if(t==='dark'||t==='light')document.documentElement.dataset.theme=t})()</script>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   <link rel="icon" href="/img/favicon.ico" sizes="32x32" />
   <link rel="icon" href="/img/favicon-96x96.png" sizes="96x96" type="image/png" />
@@ -49,16 +49,16 @@
   {
     "@context": "https://schema.org",
     "@type": "TechArticle",
-    "headline": "GitSnip Documentation — How to download any GitHub directory",
-    "description": "Complete guide to downloading GitHub subdirectories as zip files using GitSnip: web UI, URL trick, REST API, CLI, and bookmarklet.",
-    "url": "https://gitsnip.cc/docs",
-    "author": { "@type": "Organization", "name": "GitSnip", "url": "https://gitsnip.cc" },
-    "publisher": { "@type": "Organization", "name": "GitSnip", "url": "https://gitsnip.cc" },
+    "headline": "GitFold Documentation — How to download any GitHub directory",
+    "description": "Complete guide to downloading GitHub subdirectories as zip files using GitFold: web UI, URL trick, REST API, CLI, and bookmarklet.",
+    "url": "https://gitfold.cc/docs",
+    "author": { "@type": "Organization", "name": "GitFold", "url": "https://gitfold.cc" },
+    "publisher": { "@type": "Organization", "name": "GitFold", "url": "https://gitfold.cc" },
     "breadcrumb": {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        { "@type": "ListItem", "position": 1, "name": "Home",          "item": "https://gitsnip.cc/" },
-        { "@type": "ListItem", "position": 2, "name": "Documentation", "item": "https://gitsnip.cc/docs" }
+        { "@type": "ListItem", "position": 1, "name": "Home",          "item": "https://gitfold.cc/" },
+        { "@type": "ListItem", "position": 2, "name": "Documentation", "item": "https://gitfold.cc/docs" }
       ]
     }
   }
@@ -86,7 +86,7 @@
     <!-- ── Content ──────────────────────────────────────────────────────── -->
     <main class="docs-content" id="main-content">
 
-      <h1>GitSnip Documentation</h1>
+      <h1>GitFold Documentation</h1>
       <p>Download any GitHub subdirectory as a zip — no <code>git clone</code>, no login required.</p>
 
       <!-- ────────────────────── QUICK START ───────────────────────────── -->
@@ -95,19 +95,19 @@
       <ol>
         <li>Find a GitHub directory you want, e.g.<br>
             <code>https://github.com/anthropics/claude-code/tree/main/plugins/feature-dev</code></li>
-        <li>Go to <a href="/">gitsnip.cc</a> and paste the URL.</li>
+        <li>Go to <a href="/">gitfold.cc</a> and paste the URL.</li>
         <li>Click <strong>Download</strong> — your browser saves the zip.</li>
       </ol>
 
       <div class="callout callout-tip">
         <strong>Even faster:</strong> Just replace <code>github.com</code> with
-        <code>gitsnip.cc</code> in your browser's URL bar and press Enter.
+        <code>gitfold.cc</code> in your browser's URL bar and press Enter.
         The download starts immediately.
       </div>
 
       <!-- ────────────────────── WEB UI ────────────────────────────────── -->
       <h2 id="web-ui" data-nav-section="Usage">Web UI</h2>
-      <p>The main page at <a href="/">gitsnip.cc</a> accepts any GitHub tree URL.</p>
+      <p>The main page at <a href="/">gitfold.cc</a> accepts any GitHub tree URL.</p>
       <p>Supported URL formats:</p>
       <pre><code>https://github.com/owner/repo/tree/branch/path/to/dir
 https://github.com/owner/repo/tree/branch          (entire repo root)
@@ -123,15 +123,15 @@ github.com/owner/repo/tree/branch/path             (no https:// is fine)</code><
         <li>The token is stored in your browser's localStorage — never sent to our servers.</li>
       </ol>
       <p>
-        <a href="https://github.com/settings/tokens/new?scopes=public_repo&description=GitSnip"
+        <a href="https://github.com/settings/tokens/new?scopes=public_repo&description=GitFold"
            target="_blank" rel="noopener noreferrer">Generate a token ↗</a>
       </p>
 
       <!-- ────────────────────── URL TRICK ─────────────────────────────── -->
       <h2 id="url-trick" data-nav-section="Usage">URL trick</h2>
-      <p>Replace <code>github.com</code> with <code>gitsnip.cc</code> in any GitHub tree URL:</p>
+      <p>Replace <code>github.com</code> with <code>gitfold.cc</code> in any GitHub tree URL:</p>
       <pre><code>Before: https://github.com/anthropics/claude-code/tree/main/plugins
-After:  https://gitsnip.cc/anthropics/claude-code/tree/main/plugins</code></pre>
+After:  https://gitfold.cc/anthropics/claude-code/tree/main/plugins</code></pre>
       <p>Press Enter — the download begins immediately without any extra clicks.</p>
 
       <!-- ────────────────────── BOOKMARKLET ───────────────────────────── -->
@@ -140,12 +140,12 @@ After:  https://gitsnip.cc/anthropics/claude-code/tree/main/plugins</code></pre>
          Then, on any GitHub directory page, click the bookmark to trigger an instant download.</p>
 
       <a class="bookmarklet-btn"
-         href="javascript:window.location.href=window.location.href.replace('github.com','gitsnip.cc')"
+         href="javascript:window.location.href=window.location.href.replace('github.com','gitfold.cc')"
          title="Drag me to your bookmarks bar"
          draggable="true"
          role="link"
-         aria-label="GitSnip bookmarklet — drag to bookmarks bar">
-         <img src="/img/gitsnip.svg" width="17" height="17" alt="" style="vertical-align:-2px;margin-right:4px" />GitSnip
+         aria-label="GitFold bookmarklet — drag to bookmarks bar">
+         <img src="/img/gitfold.svg" width="17" height="17" alt="" style="vertical-align:-2px;margin-right:4px" />GitFold
       </a>
       <p class="bookmarklet-hint">
         ⬆ Drag this button to your bookmarks bar. One click = instant download on any GitHub tree page.
@@ -157,19 +157,25 @@ After:  https://gitsnip.cc/anthropics/claude-code/tree/main/plugins</code></pre>
 
       <!-- ────────────────────── SHARE LINK ────────────────────────────── -->
       <h2 id="share-link" data-nav-section="Usage">Share link</h2>
-      <p>Any GitSnip URL is a permanent, shareable download link.
+      <p>Any GitFold URL is a permanent, shareable download link.
          After downloading, click <strong>⎘ Copy link</strong> to get the link.
          Anyone who opens it will immediately get the zip download.</p>
-      <pre><code>https://gitsnip.cc/anthropics/claude-code/tree/main/plugins/feature-dev</code></pre>
+      <pre><code>https://gitfold.cc/anthropics/claude-code/tree/main/plugins/feature-dev</code></pre>
       <p>This link format mirrors GitHub's tree URL — just with a different domain.</p>
 
       <!-- ────────────────────── API ───────────────────────────────────── -->
       <h2 id="api" data-nav-section="Developers">API reference</h2>
-      <p>Base URL: <code>https://api.gitsnip.cc</code></p>
+      <p>Base URL: <code>https://api.gitfold.cc</code></p>
 
-      <h3>Authentication (optional)</h3>
-      <p>Pass your GitHub Personal Access Token to avoid rate limits:</p>
+      <h3>Authentication</h3>
+      <p>Two ways to authenticate:</p>
+      <ul>
+        <li><strong>Sign in with GitHub</strong> (recommended) — click your profile in the top-right corner. Your OAuth token is used automatically on every request, no copy-paste needed.</li>
+        <li><strong>GitHub Personal Access Token (PAT)</strong> — pass it as a header for direct API calls:</li>
+      </ul>
       <pre><code>X-GitHub-Token: ghp_your_token_here</code></pre>
+      <p>Both methods raise the GitHub API rate limit from 60 to 5,000 requests/hour and unlock
+         the 200-file limit (Token tier).</p>
 
       <h3>Download a directory</h3>
       <div class="endpoint">
@@ -180,16 +186,21 @@ After:  https://gitsnip.cc/anthropics/claude-code/tree/main/plugins</code></pre>
         <thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
         <tbody>
           <tr><td><code>url</code></td><td>string (required)</td><td>URL-encoded GitHub tree URL</td></tr>
+          <tr><td><code>format</code></td><td>string (optional)</td><td><code>zip</code> (default) or <code>tar.gz</code> / <code>tgz</code></td></tr>
         </tbody>
       </table>
-      <p>Returns: <code>application/zip</code> file stream with
-         <code>Content-Disposition: attachment; filename="dirname.zip"</code></p>
-      <pre><code>curl -L "https://api.gitsnip.cc/v1/download?url=https%3A%2F%2Fgithub.com%2Fanthropics%2Fclaude-code%2Ftree%2Fmain%2Fplugins%2Ffeature-dev" \
+      <p>Returns: <code>application/zip</code> or <code>application/gzip</code> stream.
+         Full-repo URLs (no path) return a <code>302</code> redirect to GitHub's archive CDN.</p>
+      <pre><code># Download a subdirectory as zip
+curl -L "https://api.gitfold.cc/v1/download?url=https%3A%2F%2Fgithub.com%2Fanthropics%2Fclaude-code%2Ftree%2Fmain%2Fplugins%2Ffeature-dev" \
      -o feature-dev.zip
 
-# With token:
+# Download as tar.gz
+curl -L "https://api.gitfold.cc/v1/download?url=...&format=tar.gz" -o archive.tar.gz
+
+# With GitHub token (higher rate limit)
 curl -L -H "X-GitHub-Token: ghp_xxxx" \
-     "https://api.gitsnip.cc/v1/download?url=..." \
+     "https://api.gitfold.cc/v1/download?url=..." \
      -o feature-dev.zip</code></pre>
 
       <h3>Get directory info (no download)</h3>
@@ -218,55 +229,72 @@ curl -L -H "X-GitHub-Token: ghp_xxxx" \
   ]
 }</code></pre>
 
+      <h3>Tier limits</h3>
+      <table>
+        <thead><tr><th>Tier</th><th>Max files</th><th>How to unlock</th></tr></thead>
+        <tbody>
+          <tr><td>Free</td><td>50</td><td>Default</td></tr>
+          <tr><td>Token</td><td>200</td><td>GitHub PAT header or sign in with GitHub</td></tr>
+          <tr><td>Pro</td><td>1,000</td><td><a href="/pricing">Subscribe</a></td></tr>
+          <tr><td>Power</td><td>5,000</td><td><a href="/pricing">Subscribe</a></td></tr>
+        </tbody>
+      </table>
+
       <h3>Error responses</h3>
       <table>
         <thead><tr><th>Status</th><th>Code</th><th>Meaning</th></tr></thead>
         <tbody>
           <tr><td><code>400</code></td><td><code>INVALID_URL</code></td><td>URL is not a valid GitHub tree URL, or path is empty</td></tr>
           <tr><td><code>404</code></td><td><code>NOT_FOUND</code></td><td>Repository, branch, or path does not exist</td></tr>
-          <tr><td><code>413</code></td><td><code>TOO_LARGE</code></td><td>Directory exceeds size/file-count limits</td></tr>
+          <tr><td><code>413</code></td><td><code>TOO_MANY_FILES</code></td><td>Directory exceeds tier file-count limit</td></tr>
+          <tr><td><code>413</code></td><td><code>TOO_LARGE</code></td><td>Directory exceeds 100 MB size limit</td></tr>
           <tr><td><code>429</code></td><td><code>RATE_LIMITED</code></td><td>GitHub API rate limit exceeded</td></tr>
           <tr><td><code>502</code></td><td><code>GITHUB_ERROR</code></td><td>GitHub API returned an unexpected error</td></tr>
         </tbody>
       </table>
       <pre><code>// All errors follow this format:
 {
-  "code": "RATE_LIMITED",
-  "message": "GitHub API rate limit exceeded.",
-  "hint": "Provide X-GitHub-Token to get 5,000 requests/hour."
+  "code": "TOO_MANY_FILES",
+  "message": "Directory contains 132 files (limit: 50).",
+  "hint": "Upgrade your plan for higher limits, or try a smaller subdirectory."
 }</code></pre>
 
       <!-- ────────────────────── CLI ────────────────────────────────────── -->
       <h2 id="cli" data-nav-section="Developers">CLI</h2>
       <pre><code># No install needed — run with npx
-npx gitsnip https://github.com/anthropics/claude-code/tree/main/plugins/feature-dev
+npx gitfold https://github.com/anthropics/claude-code/tree/main/plugins/feature-dev
 
 # Options
-npx gitsnip &lt;url&gt; --output archive.zip   # custom output path
-npx gitsnip &lt;url&gt; --info                 # show file list without downloading
-npx gitsnip &lt;url&gt; --token ghp_xxxx      # use GitHub token</code></pre>
+npx gitfold &lt;url&gt; --output archive.zip   # custom output path
+npx gitfold &lt;url&gt; --format tar.gz        # download as tar.gz
+npx gitfold &lt;url&gt; --info                 # show file list without downloading
+npx gitfold &lt;url&gt; --token ghp_xxxx      # use GitHub token</code></pre>
 
       <!-- ────────────────────── LIBRARY ───────────────────────────────── -->
-      <h2 id="library" data-nav-section="Developers" data-nav-suffix="(coming soon)">Library</h2>
-      <p>A programmatic Node.js library is planned. In the meantime, you can use the
-         <a href="#cli">CLI</a> or call the <a href="#api">REST API</a> directly.</p>
-      <pre><code># Preview of planned API (not yet published):
-import { snip, info } from 'gitsnip'
+      <h2 id="library" data-nav-section="Developers">Library</h2>
+      <p>Use GitFold programmatically in Node.js:</p>
+      <pre><code>npm install gitfold
+# or: npx gitfold &lt;url&gt;</code></pre>
+      <pre><code>import { snip, info } from 'gitfold'
 
+// Download a directory as a zip Buffer
 const zip = await snip('https://github.com/owner/repo/tree/main/path')
-const meta = await info('https://github.com/owner/repo/tree/main/path')</code></pre>
+
+// Get metadata without downloading
+const meta = await info('https://github.com/owner/repo/tree/main/path')
+// → { fileCount: 12, totalSize: 45200, files: [...] }</code></pre>
 
       <!-- ────────────────────── AI ─────────────────────────────────────── -->
       <h2 id="ai" data-nav-section="AI">AI usage</h2>
-      <p>GitSnip is designed to be AI-friendly. The machine-readable docs are at:</p>
+      <p>GitFold is designed to be AI-friendly. The machine-readable docs are at:</p>
       <ul>
-        <li><a href="/llms.txt"><code>gitsnip.cc/llms.txt</code></a> — concise summary</li>
-        <li><a href="/llms-full.txt"><code>gitsnip.cc/llms-full.txt</code></a> — full API reference</li>
+        <li><a href="/llms.txt"><code>gitfold.cc/llms.txt</code></a> — concise summary</li>
+        <li><a href="/llms-full.txt"><code>gitfold.cc/llms-full.txt</code></a> — full API reference</li>
       </ul>
       <p>Example: tell Claude or ChatGPT:</p>
       <pre><code>"Download the plugins/feature-dev directory from
 https://github.com/anthropics/claude-code
-Use the GitSnip API at https://gitsnip.cc/llms.txt"</code></pre>
+Use the GitFold API at https://gitfold.cc/llms.txt"</code></pre>
 
       <!-- ────────────────────── FAQ ────────────────────────────────────── -->
       <h2 id="faq" data-nav-section="Help">FAQ</h2>
@@ -278,30 +306,34 @@ Use the GitSnip API at https://gitsnip.cc/llms.txt"</code></pre>
          use the API endpoint which streams a pre-built zip.</p>
 
       <h3>Can I download private repositories?</h3>
-      <p>Not yet — only public repositories are supported right now.
-         Private repo support is on the roadmap.</p>
+      <p>Yes — sign in with GitHub (click the top-right corner). GitFold securely stores your
+         OAuth token (AES-256-GCM encrypted) and uses it automatically when you download.
+         No manual copy-paste of tokens required.</p>
 
       <h3>I hit the GitHub rate limit. What do I do?</h3>
       <p>Add a GitHub Personal Access Token in the Settings panel (⚙).
          A token increases your limit from 60 to 5,000 requests/hour.
-         <a href="https://github.com/settings/tokens/new?scopes=public_repo&description=GitSnip"
+         <a href="https://github.com/settings/tokens/new?scopes=public_repo&description=GitFold"
             target="_blank" rel="noopener noreferrer">Generate one here ↗</a>
       </p>
 
       <h3>Is there a file size limit?</h3>
-      <p>The API endpoint has a 100 MB / 500 files limit per request.
-         Web UI downloads are limited by your browser's available memory.
-         For very large directories, use <code>git sparse-checkout</code> instead.</p>
+      <p>All tiers share a 100 MB maximum per request. File <em>count</em> limits vary by tier:
+         50 (Free), 200 (Token / signed in with GitHub), 1,000 (Pro), 5,000 (Power).
+         See <a href="/pricing">pricing</a> to upgrade. For very large directories,
+         use <code>git sparse-checkout</code> instead.</p>
 
-      <h3>Can I self-host GitSnip?</h3>
-      <p>Yes. GitSnip is open source (MIT) and runs on Cloudflare Workers + Pages.
-         See the <a href="https://github.com/chrisye96/gitsnip" target="_blank" rel="noopener noreferrer">GitHub repo</a>
-         for setup instructions. The hosted version at gitsnip.cc includes
+      <h3>Can I self-host GitFold?</h3>
+      <p>Yes. GitFold is open source (MIT) and runs on Cloudflare Workers + Pages.
+         See the <a href="https://github.com/chrisye96/gitfold" target="_blank" rel="noopener noreferrer">GitHub repo</a>
+         for setup instructions. The hosted version at gitfold.cc includes
          optimizations like caching and priority processing that are not part of the open-source release.</p>
 
       <h3>Is my GitHub token safe?</h3>
-      <p>For web UI use: tokens are stored in your browser's localStorage only — they never reach our servers.
-         For API use: tokens are passed via HTTPS and used only for the duration of the request.</p>
+      <p>
+        <strong>PAT (manually pasted):</strong> stored in your browser's localStorage only — never sent to our servers.<br>
+        <strong>OAuth (Sign in with GitHub):</strong> your token is encrypted with AES-256-GCM before being stored in our database. It is only decrypted server-side to make GitHub API requests on your behalf, and is never returned to the client.
+      </p>
 
     </main><!-- /docs-content -->
   </div><!-- /docs-layout -->

@@ -1,5 +1,5 @@
 /**
- * GitSnip Worker — Billing Routes (Phase 1)
+ * GitFold Worker — Billing Routes (Phase 1)
  *
  * POST /v1/checkout         → Create Stripe Checkout Session
  * POST /v1/webhook/stripe   → Handle Stripe Webhook
@@ -39,8 +39,8 @@ billing.post('/checkout', async (c) => {
       {
         email,
         tier,
-        successUrl: `https://gitsnip.cc/pricing?checkout=success`,
-        cancelUrl: `https://gitsnip.cc/pricing?checkout=cancelled`,
+        successUrl: `https://gitfold.cc/pricing?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
+        cancelUrl: `https://gitfold.cc/pricing?checkout=cancelled`,
       },
       c.env,
     )
@@ -76,6 +76,32 @@ billing.post('/webhook/stripe', async (c) => {
   }
 })
 
+// ─── GET /sub/claim ──────────────────────────────────────────────────────
+
+billing.get('/sub/claim', async (c) => {
+  const sessionId = c.req.query('session_id')
+  if (!sessionId) {
+    return errorResponse(400, 'INVALID_REQUEST', 'Missing session_id parameter.')
+  }
+
+  const mapping = await c.env.GITFOLD_SUBS.get<{ token: string; email: string }>(
+    `session:${sessionId}`,
+    'json',
+  )
+
+  if (!mapping) {
+    return Response.json(
+      { ok: false, message: 'Session not found or expired. It may take a moment — please refresh.' },
+      { headers: corsHeaders() },
+    )
+  }
+
+  return Response.json(
+    { ok: true, token: mapping.token, email: mapping.email },
+    { headers: corsHeaders() },
+  )
+})
+
 // ─── GET /sub/status ─────────────────────────────────────────────────────────
 
 billing.get('/sub/status', async (c) => {
@@ -87,8 +113,8 @@ billing.get('/sub/status', async (c) => {
   }
 
   const record = token
-    ? await getSubByToken(c.env.GITSNIP_SUBS, token)
-    : await getSubByEmail(c.env.GITSNIP_SUBS, email!)
+    ? await getSubByToken(c.env.GITFOLD_SUBS, token)
+    : await getSubByEmail(c.env.GITFOLD_SUBS, email!)
 
   if (!record) {
     return Response.json(

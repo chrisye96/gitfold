@@ -1,5 +1,5 @@
 /**
- * GitSnip Worker — GitHub API Service
+ * GitFold Worker — GitHub API Service
  *
  * Fetches file trees and raw file content from GitHub.
  * Caches tree responses in Cloudflare KV to reduce API calls.
@@ -19,7 +19,7 @@ function apiHeaders(token?: string): HeadersInit {
   const h: HeadersInit = {
     Accept: 'application/vnd.github+json',
     'X-GitHub-Api-Version': '2022-11-28',
-    'User-Agent': 'GitSnip/1.0 (https://gitsnip.cc)',
+    'User-Agent': 'GitFold/1.0 (https://gitfold.cc)',
   }
   if (token) (h as Record<string, string>).Authorization = `Bearer ${token}`
   return h
@@ -107,7 +107,7 @@ export async function fetchTree(
   }
 
   if (treeData.truncated) {
-    console.warn('[GitSnip] GitHub truncated the tree (>100k files). Some files may be missing.')
+    console.warn('[GitFold] GitHub truncated the tree (>100k files). Some files may be missing.')
   }
 
   // Filter: blobs under target path, exclude .git

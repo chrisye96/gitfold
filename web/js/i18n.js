@@ -1,5 +1,5 @@
 /**
- * GitSnip — i18n foundation
+ * GitFold — i18n foundation
  * All user-visible strings live here.
  * Phase 1: English only. Phase 3+: swap locale object via setLocale().
  *
@@ -17,7 +17,7 @@
 const locales = {
   en: {
     // ── App shell ──────────────────────────────────────────────────────
-    'app.title': 'GitSnip',
+    'app.title': 'GitFold',
     'app.tagline': 'Download any GitHub directory. Instantly.',
     'nav.docs': 'Docs',
     'nav.github': 'GitHub',
@@ -40,6 +40,12 @@ const locales = {
     // ── Inline feedback ───────────────────────────────────────────────
     'feedback.valid': '{info}',
     'feedback.invalid': 'Not a valid GitHub directory URL',
+    'feedback.repo_warning': 'This is a full repository. Click download to get the archive from GitHub.',
+    'feedback.checking': 'Checking directory…',
+    'feedback.file_count': '{count} files found ({size})',
+    'feedback.file_count_over': '{count} files found — exceeds your {limit}-file limit',
+    'feedback.downloading_progress': 'Downloading… {done}/{total}',
+    'feedback.cancelled': 'Download cancelled',
     'feedback.downloading': 'Downloading…',
     'feedback.success': 'Download started',
     'feedback.rate_limited': 'Rate limit exceeded',
@@ -51,6 +57,7 @@ const locales = {
     'feedback.action.add_token': 'Add GitHub Token',
     'feedback.action.update_token': 'Update Token',
     'feedback.action.retry': 'Try again',
+    'feedback.action.cancel': 'Cancel',
 
     // ── Footer ────────────────────────────────────────────────────────
     'footer.github': 'GitHub',

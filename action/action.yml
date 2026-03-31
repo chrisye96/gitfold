@@ -1,6 +1,6 @@
-name: 'GitSnip'
+name: 'GitFold'
 description: 'Download any GitHub directory as a zip or tar.gz archive'
-author: 'GitSnip'
+author: 'GitFold'
 branding:
   icon: 'download'
   color: 'yellow'
@@ -30,25 +30,25 @@ outputs:
 runs:
   using: 'composite'
   steps:
-    - name: Download with GitSnip
+    - name: Download with GitFold
       id: download
       shell: bash
       env:
-        GITSNIP_URL: ${{ inputs.url }}
-        GITSNIP_OUTPUT: ${{ inputs.output }}
-        GITSNIP_FORMAT: ${{ inputs.format }}
-        GITSNIP_TOKEN: ${{ inputs.token }}
+        GITFOLD_URL: ${{ inputs.url }}
+        GITFOLD_OUTPUT: ${{ inputs.output }}
+        GITFOLD_FORMAT: ${{ inputs.format }}
+        GITFOLD_TOKEN: ${{ inputs.token }}
       run: |
         set -euo pipefail
 
-        ARGS=("$GITSNIP_URL")
-        [ -n "$GITSNIP_OUTPUT" ]                && ARGS+=(--output "$GITSNIP_OUTPUT")
-        [ "$GITSNIP_FORMAT" = "tar.gz" ]        && ARGS+=(--format tar.gz)
-        [ -n "$GITSNIP_TOKEN" ]                 && ARGS+=(--token "$GITSNIP_TOKEN")
+        ARGS=("$GITFOLD_URL")
+        [ -n "$GITFOLD_OUTPUT" ]                && ARGS+=(--output "$GITFOLD_OUTPUT")
+        [ "$GITFOLD_FORMAT" = "tar.gz" ]        && ARGS+=(--format tar.gz)
+        [ -n "$GITFOLD_TOKEN" ]                 && ARGS+=(--token "$GITFOLD_TOKEN")
 
-        npx --yes gitsnip "${ARGS[@]}"
+        npx --yes gitfold "${ARGS[@]}"
 
         # Resolve output path for the action output
-        if [ -n "$GITSNIP_OUTPUT" ]; then
-          echo "path=$(realpath "$GITSNIP_OUTPUT")" >> "$GITHUB_OUTPUT"
+        if [ -n "$GITFOLD_OUTPUT" ]; then
+          echo "path=$(realpath "$GITFOLD_OUTPUT")" >> "$GITHUB_OUTPUT"
         fi

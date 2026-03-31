@@ -1,23 +1,88 @@
-# GitSnip
-> Download any GitHub subdirectory as a zip. No git clone needed.
+# GitFold
+
+> Download any GitHub subdirectory as a zip — no git clone, no login.
 
 ## What it does
-Given a GitHub directory URL, GitSnip downloads all files in that directory and returns them as a zip file.
 
-## Web UI
-Visit https://gitsnip.cc and paste any GitHub tree URL.
-Or: replace `github.com` with `gitsnip.cc` in the URL bar and press Enter.
+GitFold lets you download a specific folder inside a GitHub repository as a zip or tar.gz,
+without cloning the full repo. Works for public repositories and private repos (with OAuth login).
 
-## API
-- Download zip: GET https://api.gitsnip.cc/v1/download?url={githubUrl}
-- Get file info: GET https://api.gitsnip.cc/v1/info?url={githubUrl}
-- Auth header:   X-GitHub-Token: {personalAccessToken}  (optional, increases rate limit)
+## Quickest way to use it
 
-## URL Format
-https://gitsnip.cc/{owner}/{repo}/tree/{branch}/{path}
+Replace `github.com` with `gitfold.cc` in any GitHub tree URL:
 
-## Docs
-https://gitsnip.cc/docs
+    Before: https://github.com/anthropics/claude-code/tree/main/plugins
+    After:  https://gitfold.cc/anthropics/claude-code/tree/main/plugins
 
-## Full API docs for AI
-https://gitsnip.cc/llms-full.txt
+## REST API
+
+Base URL: `https://api.gitfold.cc`
+
+### Download a directory
+
+    GET /v1/download?url={encoded_github_tree_url}
+    GET /v1/download?url={encoded_github_tree_url}&format=tar.gz
+
+Returns: `application/zip` or `application/gzip` stream. Full-repo URLs → 302 redirect to GitHub archive CDN.
+
+Optional headers:
+- `X-GitHub-Token: ghp_...` — raises rate limit to 5,000 req/hour
+- `X-Sub-Token: sub_...` — subscription token for Pro/Power tier
+
+Example:
+
+    curl -L "https://api.gitfold.cc/v1/download?url=https%3A%2F%2Fgithub.com%2Fanthropics%2Fclaude-code%2Ftree%2Fmain%2Fplugins" \
+         -o plugins.zip
+
+### Get directory metadata (no download)
+
+    GET /v1/info?url={encoded_github_tree_url}
+
+Returns JSON with fileCount, totalSize, files list, tier, and fileLimit.
+
+## Authentication (OAuth)
+
+Sign in with GitHub to use your OAuth token automatically (no manual PAT needed):
+
+    GET /v1/auth/github          → redirect to GitHub OAuth
+    GET /v1/auth/me              → current session info (requires credentials: 'include')
+    POST /v1/auth/logout         → clear session
+
+Session is managed via an HttpOnly cookie (`gitfold_session`). Use `credentials: 'include'` in fetch calls.
+
+## Subscriptions
+
+    POST /v1/checkout            → create Stripe Checkout session (body: {email, tier})
+    GET  /v1/sub/status?token=   → query subscription status by sub token
+    GET  /v1/sub/claim?session_id= → claim sub token after Stripe checkout
+
+## CLI
+
+    npx gitfold https://github.com/anthropics/claude-code/tree/main/plugins
+    npx gitfold <url> --output archive.zip
+    npx gitfold <url> --format tar.gz
+    npx gitfold <url> --info
+    npx gitfold <url> --token ghp_xxxx
+
+## Error format
+
+All errors return JSON:
+
+    { "code": "RATE_LIMITED", "message": "...", "hint": "..." }
+
+Error codes: `INVALID_URL`, `NOT_FOUND`, `TOO_LARGE`, `TOO_MANY_FILES`, `RATE_LIMITED`, `GITHUB_ERROR`
+
+## Limits by tier
+
+| Tier   | Max files | How to unlock                   |
+|--------|-----------|---------------------------------|
+| Free   | 50        | Default                         |
+| Token  | 200       | GitHub PAT or sign in with GitHub |
+| Pro    | 1,000     | gitfold.cc/pricing              |
+| Power  | 5,000     | gitfold.cc/pricing              |
+
+Max directory size: 100 MB per request.
+
+## Full docs
+
+https://gitfold.cc/docs

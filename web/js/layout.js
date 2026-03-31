@@ -1,5 +1,5 @@
 /**
- * GitSnip — Shared layout components (header + footer)
+ * GitFold — Shared layout components (header + footer)
  *
  * Renders the site header and footer into placeholder elements so every page
  * shares a single source of truth for navigation, logo, and theme toggle.
@@ -18,6 +18,7 @@ function currentPage() {
   const p = window.location.pathname
   if (p === '/docs' || p === '/docs.html' || p.startsWith('/docs#')) return 'docs'
   if (p === '/pricing' || p === '/pricing.html') return 'pricing'
+  if (p === '/team' || p === '/team.html') return 'team'
   return 'home'
 }
 
@@ -27,16 +28,18 @@ function headerHTML(page) {
   const ariaCurrent = (target) => page === target ? ' aria-current="page"' : ''
 
   return `
-  <a href="/" class="site-logo" aria-label="GitSnip home">
-    <img class="logo-icon" src="/img/gitsnip.svg" width="24" height="24" alt="" aria-hidden="true" />
-    <span>GitSnip</span>
+  <a href="/" class="site-logo" aria-label="GitFold home">
+    <img class="logo-icon" src="/img/gitfold.svg" width="24" height="24" alt="" aria-hidden="true" />
+    <span>GitFold</span>
   </a>
   <nav class="site-nav" aria-label="Main navigation">
     <a href="/docs"${ariaCurrent('docs')} data-i18n="nav.docs">Docs</a>
-    <a href="https://github.com/chrisye96/gitsnip"
+    <a href="/pricing"${ariaCurrent('pricing')}>Pricing</a>
+    <a href="https://github.com/chrisye96/gitfold"
        target="_blank" rel="noopener noreferrer"
        data-i18n="nav.github"
-       aria-label="GitSnip on GitHub (opens in new tab)">GitHub</a>
+       aria-label="GitFold on GitHub (opens in new tab)">GitHub</a>
+    <span id="user-menu" class="user-menu" hidden></span>
     <button id="theme-toggle" class="btn-theme-toggle" type="button" aria-label="Switch to light mode">
       <!-- IoSunnyOutline — shown when preference = light -->
       <svg id="icon-sun" viewBox="0 0 512 512" width="18" height="18" fill="none" stroke="currentColor" stroke-width="32" stroke-linecap="round" stroke-miterlimit="10" aria-hidden="true" hidden>
@@ -67,16 +70,14 @@ function headerHTML(page) {
 // ─── Footer ───────────────────────────────────────────────────────────────────
 
 function footerHTML(page) {
-  const navLink = page === 'home'
-    ? '<a href="/docs">Docs</a>'
-    : '<a href="/">Home</a>'
-
   return `
   <p class="footer-tagline">Built for developers who hate git clone.</p>
   <nav class="footer-links" aria-label="Footer navigation">
-    ${navLink}
-    <a href="https://github.com/chrisye96/gitsnip" target="_blank" rel="noopener noreferrer">GitHub</a>
+    ${page !== 'home' ? '<a href="/">Home</a>' : ''}
+    ${page !== 'docs' ? '<a href="/docs">Docs</a>' : ''}
     <a href="/pricing">Pricing</a>
+    <a href="/team">Team</a>
+    <a href="https://github.com/chrisye96/gitfold" target="_blank" rel="noopener noreferrer">GitHub</a>
   </nav>
   <p>If this tool saved you time, consider <a href="https://github.com/sponsors/chrisye96"
      target="_blank" rel="noopener noreferrer"

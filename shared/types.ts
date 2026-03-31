@@ -1,5 +1,5 @@
 /**
- * GitSnip shared types
+ * GitFold shared types
  * Used by both web frontend (browser) and worker backend (Cloudflare Workers)
  */
 
@@ -67,7 +67,7 @@ export interface SnipInfo {
 }
 
 /** Unified error format for API responses */
-export interface GitSnipError {
+export interface GitFoldError {
   code:
     | 'INVALID_URL'
     | 'NOT_FOUND'

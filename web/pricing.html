@@ -4,15 +4,15 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <title>GitSnip — Pricing</title>
-  <meta name="description" content="GitSnip pricing plans. Download GitHub directories without hitting limits." />
+  <title>GitFold — Pricing</title>
+  <meta name="description" content="GitFold pricing plans. Download GitHub directories without hitting limits." />
   <meta name="robots" content="index, follow" />
-  <link rel="canonical" href="https://gitsnip.cc/pricing" />
+  <link rel="canonical" href="https://gitfold.cc/pricing" />
 
   <!-- ── Theme / PWA ──────────────────────────────────────────────────── -->
   <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
   <meta name="theme-color" content="#0f0f1a"  media="(prefers-color-scheme: dark)" />
-  <script>(function(){var t=localStorage.getItem('gitsnip-theme');if(t==='dark'||t==='light')document.documentElement.dataset.theme=t})()</script>
+  <script>(function(){var t=localStorage.getItem('gitfold-theme');if(t==='dark'||t==='light')document.documentElement.dataset.theme=t})()</script>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   <link rel="icon" href="/img/favicon.ico" sizes="32x32" />
   <link rel="apple-touch-icon" href="/img/apple-touch-icon.png" />
@@ -120,7 +120,7 @@
     <!-- ── How it works ──────────────────────────────────────────────── -->
     <section class="pricing-how-it-works">
       <h2>How it works</h2>
-      <p>GitSnip uses the GitHub API to fetch files. Your experience depends on how you authenticate:</p>
+      <p>GitFold uses the GitHub API to fetch files. Your experience depends on how you authenticate:</p>
       <div class="how-grid">
         <div class="how-card">
           <h3>Without a token</h3>
@@ -187,7 +187,7 @@
     import { applyI18n } from '/js/i18n.js'
     import { startCheckout, handleCheckoutReturn, isProUser } from '/js/subscription.js'
 
-    const API_BASE = 'https://api.gitsnip.cc'
+    const API_BASE = 'https://api.gitfold.cc'
 
     renderLayout()
     initTheme()
