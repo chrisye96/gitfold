@@ -102,7 +102,7 @@ Service health check.
 ```json
 {
   "ok": true,
-  "service": "gitfold-worker",
+  "service": "worker",
   "version": "1.0.0",
   "timestamp": "2026-03-27T00:00:00.000Z"
 }

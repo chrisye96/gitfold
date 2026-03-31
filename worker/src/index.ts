@@ -45,7 +45,7 @@ app.options('*', (c) => {
 app.get('/health', (c) =>
   Response.json({
     ok: true,
-    service: 'gitfold-worker',
+    service: 'worker',
     version: '1.0.0',
     timestamp: new Date().toISOString(),
   }),

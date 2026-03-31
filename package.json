@@ -8,10 +8,10 @@
     "cli"
   ],
   "scripts": {
-    "dev:worker": "pnpm --filter worker dev",
+    "dev:worker": "pnpm --filter worker run dev",
     "dev:web": "serve web",
-    "build:worker": "pnpm --filter worker build",
-    "deploy:worker": "pnpm --filter worker deploy",
+    "build:worker": "pnpm --filter worker run build",
+    "deploy:worker": "pnpm --filter worker run deploy",
     "deploy:web": "echo 'Deploy web/ to Cloudflare Pages via git push'",
     "copy-vendors": "node -e \"const fs=require('fs');fs.mkdirSync('web/vendor',{recursive:true});fs.copyFileSync('node_modules/jszip/dist/jszip.min.js','web/vendor/jszip.min.js');console.log('vendors copied')\""
   },
