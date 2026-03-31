@@ -70,3 +70,4 @@ crons = ["0 3 * * *"]
 # GITHUB_CLIENT_SECRET = "..."
 # JWT_SECRET = "..."
 # TOKEN_ENCRYPTION_KEY = "..."
+
