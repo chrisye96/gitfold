@@ -267,7 +267,7 @@ Query subscription status by token or email.
 
 Health check.
 
-    { "ok": true, "service": "gitfold-worker", "version": "1.0.0", "timestamp": "..." }
+    { "ok": true, "service": "worker", "version": "1.0.0", "timestamp": "..." }
 
 ---
 
