@@ -1,41 +1,43 @@
 /**
  * GitFold — Theme toggle (shared across all pages)
  *
- * Three preference states, cycled on each click:
- *   light → dark → system → light → …
+ * Two preference states, cycled on each click:
+ *   light → dark → light → …
  *
  * Preferences:
  *   'light'  — force light (data-theme="light")
  *   'dark'   — force dark  (data-theme="dark")
- *   'system' — remove data-theme; CSS @media + real-time matchMedia listener
+ *   'system' — default on first visit; follows OS, not selectable via toggle
  *
- * Icons (Ionicons 5, injected by layout.js):
- *   #icon-sun      shown when preference = light
- *   #icon-moon     shown when preference = dark
- *   #icon-monitor  shown when preference = system
- *
- * The anti-FOUC inline script in <head> handles the initial paint:
- *   light/dark → sets data-theme; system/unset → no data-theme, CSS takes over.
+ * Icons:
+ *   #icon-sun   shown when effective theme = light
+ *   #icon-moon  shown when effective theme = dark
  *
  * @module theme
  */
 
 const STORAGE_KEY = 'gitfold-theme'
 
-/** Cycle order */
-const NEXT = { light: 'dark', dark: 'system', system: 'light' }
+/** Cycle order — system is entry point only, not part of the loop */
+const NEXT = { light: 'dark', dark: 'light', system: 'dark' }
 
 /** aria-label describes the *next* action on click */
 const ARIA_LABEL = {
   light:  'Switch to dark mode',
-  dark:   'Switch to system theme',
+  dark:   'Switch to light mode',
   system: 'Switch to light mode',
 }
 
 /** @returns {'light'|'dark'|'system'} */
 function getSaved() {
   const v = localStorage.getItem(STORAGE_KEY)
-  return v === 'light' || v === 'dark' || v === 'system' ? v : 'system'
+  return v === 'light' || v === 'dark' ? v : 'system'
+}
+
+/** Returns the effective visual theme ('light' or 'dark'), resolving 'system'. */
+function effectiveTheme(pref) {
+  if (pref !== 'system') return pref
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
 }
 
 /**
@@ -50,14 +52,12 @@ function applyPreference(pref) {
     document.documentElement.dataset.theme = pref
   }
 
-  // 2. Sync icons — exactly one visible at a time
-  const ids = { light: 'icon-sun', dark: 'icon-moon', system: 'icon-monitor' }
-  for (const [p, id] of Object.entries(ids)) {
-    const el = document.getElementById(id)
-    if (!el) continue
-    if (p === pref) el.removeAttribute('hidden')
-    else            el.setAttribute('hidden', '')
-  }
+  // 2. Sync icons based on effective (rendered) theme
+  const effective = effectiveTheme(pref)
+  const sunEl  = document.getElementById('icon-sun')
+  const moonEl = document.getElementById('icon-moon')
+  if (sunEl)  effective === 'light' ? sunEl.removeAttribute('hidden')  : sunEl.setAttribute('hidden', '')
+  if (moonEl) effective === 'dark'  ? moonEl.removeAttribute('hidden') : moonEl.setAttribute('hidden', '')
 
   // 3. aria-label on button
   const btn = document.getElementById('theme-toggle')
@@ -73,7 +73,6 @@ export function initTheme() {
   let systemListener = null
 
   function activate(pref) {
-    // Remove previous system listener when leaving system mode
     if (systemListener) {
       mql.removeEventListener('change', systemListener)
       systemListener = null
@@ -82,17 +81,16 @@ export function initTheme() {
     localStorage.setItem(STORAGE_KEY, pref)
     applyPreference(pref)
 
-    // In system mode, re-apply on every OS preference change so icons stay in sync
     if (pref === 'system') {
       systemListener = () => applyPreference('system')
       mql.addEventListener('change', systemListener)
     }
   }
 
-  // Boot with saved preference
+  // Boot with saved preference (defaults to 'system' on first visit)
   activate(getSaved())
 
-  // Cycle on click
+  // Cycle on click: light ↔ dark
   document.getElementById('theme-toggle')?.addEventListener('click', () => {
     activate(NEXT[getSaved()])
   })

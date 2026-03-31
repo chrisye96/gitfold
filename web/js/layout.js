@@ -56,12 +56,6 @@ function headerHTML(page) {
       <svg id="icon-moon" viewBox="0 0 512 512" width="18" height="18" fill="none" stroke="currentColor" stroke-width="32" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" hidden>
         <path d="M160,136c0-30.62,4.51-61.61,16-88C99.57,81.27,48,159.32,48,248c0,119.29,96.71,216,216,216,88.68,0,166.73-51.57,200-128-26.39,11.49-57.38,16-88,16C256.71,352,160,255.29,160,136Z"/>
       </svg>
-      <!-- Lucide Monitor — shown when preference = system -->
-      <svg id="icon-monitor" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" hidden>
-        <rect x="2" y="3" width="20" height="14" rx="2"/>
-        <line x1="8" y1="21" x2="16" y2="21"/>
-        <line x1="12" y1="17" x2="12" y2="21"/>
-      </svg>
     </button>
   </nav>`
 }
@@ -70,7 +64,6 @@ function headerHTML(page) {
 
 function footerHTML(page) {
   return `
-  <p class="footer-tagline">Built for developers who hate git clone.</p>
   <nav class="footer-links" aria-label="Footer navigation">
     ${page !== 'home' ? '<a href="/">Home</a>' : ''}
     ${page !== 'docs' ? '<a href="/docs">Docs</a>' : ''}
