@@ -168,16 +168,6 @@ export function renderHistory(container, onSelect, onUpdate) {
     list.appendChild(li)
   })
 
-  const clearBtn = document.createElement('button')
-  clearBtn.type = 'button'
-  clearBtn.className = 'history-clear-btn'
-  clearBtn.textContent = 'Clear history'
-  clearBtn.addEventListener('click', () => {
-    clearHistory()
-    onUpdate()
-  })
-
   container.innerHTML = ''
   container.appendChild(list)
-  container.appendChild(clearBtn)
 }

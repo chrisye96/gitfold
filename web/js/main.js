@@ -52,11 +52,14 @@ const copyDomainBtn  = /** @type {HTMLButtonElement} */ (document.getElementById
 const tokenToggle    = /** @type {HTMLButtonElement} */ (document.getElementById('token-toggle'))
 const tokenPanel     = /** @type {HTMLElement}       */ (document.getElementById('token-panel'))
 const tokenInput     = /** @type {HTMLInputElement}  */ (document.getElementById('token-input'))
+const tokenSaveBtn   = /** @type {HTMLButtonElement} */ (document.getElementById('token-save-btn'))
 const tokenClearBtn  = /** @type {HTMLButtonElement} */ (document.getElementById('token-clear-btn'))
+const tokenError     = /** @type {HTMLElement}       */ (document.getElementById('token-error'))
 const statusRegion   = /** @type {HTMLElement}       */ (document.getElementById('status-region'))
 const historySection = /** @type {HTMLElement}       */ (document.getElementById('history-section'))
 const historyBody    = /** @type {HTMLElement}       */ (document.getElementById('history-body'))
 const historyToggle  = /** @type {HTMLButtonElement} */ (document.getElementById('history-toggle'))
+const historyClearBtn = /** @type {HTMLButtonElement} */ (document.getElementById('history-clear-btn'))
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -66,9 +69,29 @@ function announce(msg) {
   requestAnimationFrame(() => { statusRegion.textContent = msg })
 }
 
+const TOKEN_FORMAT = /^(ghp_|github_pat_|gho_|ghs_|ghu_|ghr_)[A-Za-z0-9_]+$/
+
 /** Read token from input (or localStorage fallback). */
 function getToken() {
   return tokenInput.value.trim() || localStorage.getItem('gitfold_token') || ''
+}
+
+/** Update the toggle button text to reflect whether a token is saved. */
+function updateTokenToggleText() {
+  const hasSaved = !!localStorage.getItem('gitfold_token')
+  tokenToggle.textContent = hasSaved ? t('token.toggle.active') : t('token.toggle')
+}
+
+/** Show or hide the format error below the input. */
+function setTokenError(msg) {
+  if (msg) {
+    tokenError.textContent = msg
+    tokenError.hidden = false
+    tokenInput.classList.add('token-input--error')
+  } else {
+    tokenError.hidden = true
+    tokenInput.classList.remove('token-input--error')
+  }
 }
 
 /** Save token to localStorage when non-empty; show/hide the clear button. */
@@ -82,10 +105,31 @@ function persistToken(value) {
   }
 }
 
+/** Save the current input value, collapse the panel, and update toggle state. */
+function saveToken() {
+  const value = tokenInput.value.trim()
+  if (!value) return
+  if (!TOKEN_FORMAT.test(value)) {
+    setTokenError(t('token.error.format'))
+    tokenInput.focus()
+    return
+  }
+  setTokenError(null)
+  persistToken(value)
+  tokenPanel.hidden = true
+  tokenToggle.setAttribute('aria-expanded', 'false')
+  tokenInput.setAttribute('readonly', '')
+  updateTokenToggleText()
+  tokenToggle.focus()
+}
+
 /** Clear the saved token from input and localStorage. */
 function clearToken() {
   tokenInput.value = ''
+  setTokenError(null)
+  tokenSaveBtn.disabled = true
   persistToken('')
+  updateTokenToggleText()
   tokenInput.focus()
 }
 
@@ -95,9 +139,11 @@ function refreshHistory() {
   const entries = getHistory()
   if (entries.length === 0) {
     historySection.hidden = true
+    historyClearBtn.hidden = true
     return
   }
   historySection.hidden = false
+  historyClearBtn.hidden = false
   renderHistory(historyBody, (entry) => {
     urlInput.value = entry.url
     handleUrlChange()
@@ -313,7 +359,7 @@ async function startDownload() {
             },
             RATE_LIMITED: {
               msg: t('feedback.rate_limited'),
-              action: { label: t('feedback.action.add_token'), handler() { tokenPanel.hidden = false; tokenInput.focus() } },
+              action: { label: t('feedback.action.add_token'), handler() { tokenPanel.hidden = false; tokenToggle.setAttribute('aria-expanded', 'true'); tokenInput.removeAttribute('readonly'); tokenInput.focus() } },
             },
           }
           const entry = errorMap[err.code]
@@ -361,7 +407,7 @@ async function startDownload() {
         msg: t('feedback.rate_limited'),
         action: {
           label: t('feedback.action.add_token'),
-          handler() { tokenPanel.hidden = false; tokenToggle.setAttribute('aria-expanded', 'true'); tokenInput.focus() },
+          handler() { tokenPanel.hidden = false; tokenToggle.setAttribute('aria-expanded', 'true'); tokenInput.removeAttribute('readonly'); tokenInput.focus() },
         },
       },
       NOT_FOUND: {
@@ -372,7 +418,7 @@ async function startDownload() {
         msg: t('feedback.unauthorized'),
         action: {
           label: t('feedback.action.update_token'),
-          handler() { tokenPanel.hidden = false; tokenToggle.setAttribute('aria-expanded', 'true'); tokenInput.focus() },
+          handler() { tokenPanel.hidden = false; tokenToggle.setAttribute('aria-expanded', 'true'); tokenInput.removeAttribute('readonly'); tokenInput.focus() },
         },
       },
       TOO_MANY_FILES: {
@@ -613,6 +659,7 @@ function showUpgradeModal(fileCount, limit, hasToken, onPartialDownload) {
     resetButton()
     tokenPanel.hidden = false
     tokenToggle.setAttribute('aria-expanded', 'true')
+    tokenInput.removeAttribute('readonly')
     tokenInput.focus()
   })
 
@@ -630,7 +677,12 @@ function toggleTokenPanel() {
   const isOpen = tokenPanel.hidden === false
   tokenPanel.hidden = isOpen
   tokenToggle.setAttribute('aria-expanded', String(!isOpen))
-  if (!isOpen) tokenInput.focus()
+  if (!isOpen) {
+    tokenInput.removeAttribute('readonly')
+    tokenInput.focus()
+  } else {
+    tokenInput.setAttribute('readonly', '')
+  }
 }
 
 // ─── Auto-detect GitFold URL path ────────────────────────────────────────────
@@ -692,11 +744,26 @@ copyDomainBtn.addEventListener('click', async () => {
 })
 
 tokenToggle.addEventListener('click', toggleTokenPanel)
-tokenInput.addEventListener('change', () => persistToken(tokenInput.value.trim()))
+tokenSaveBtn.addEventListener('click', saveToken)
 tokenClearBtn.addEventListener('click', clearToken)
 
+tokenInput.addEventListener('input', () => {
+  const hasValue = tokenInput.value.trim().length > 0
+  tokenSaveBtn.disabled = !hasValue
+  if (tokenError.hidden === false) setTokenError(null)
+})
+
+tokenInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') { e.preventDefault(); saveToken() }
+})
+
 tokenPanel.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') { tokenPanel.hidden = true; tokenToggle.setAttribute('aria-expanded', 'false'); tokenToggle.focus() }
+  if (e.key === 'Escape') { tokenPanel.hidden = true; tokenToggle.setAttribute('aria-expanded', 'false'); tokenInput.setAttribute('readonly', ''); updateTokenToggleText(); tokenToggle.focus() }
+})
+
+historyClearBtn.addEventListener('click', () => {
+  clearHistory()
+  refreshHistory()
 })
 
 historyToggle.addEventListener('click', toggleHistoryBody)
@@ -710,7 +777,9 @@ initTheme()
 const savedToken = localStorage.getItem('gitfold_token')
 if (savedToken) {
   tokenInput.value = savedToken
+  tokenSaveBtn.disabled = false
   tokenClearBtn.hidden = false
+  updateTokenToggleText()
 }
 
 checkUrlPath()

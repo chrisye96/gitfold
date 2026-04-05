@@ -32,10 +32,14 @@ const locales = {
     'btn.downloading': 'Downloading…',
 
     // ── Token panel ───────────────────────────────────────────────────
-    'token.toggle': 'Need higher limits? Add your GitHub Token',
-    'token.placeholder': 'ghp_xxxxxxxxxxxx  (optional)',
-    'token.clear': 'Clear saved token',
-    'token.hint': 'Increases rate limit to 5,000 req/hour. Stored in your browser only.',
+    'token.toggle': 'Need higher limits? Add your GitHub Token ↓',
+    'token.toggle.active': 'GitHub Token: active ✓',
+    'token.placeholder': 'ghp_xxxxxxxxxxxx',
+    'token.save': 'Save',
+    'token.clear': 'Clear',
+    'token.error.format': 'Invalid token format — should start with ghp_ , github_pat_ , or similar',
+    'token.hint.rate': 'Increases rate limit to 5,000 req/hour.',
+    'token.hint.secure': 'Stored in your browser only — never sent to our servers',
 
     // ── Inline feedback ───────────────────────────────────────────────
     'feedback.valid': '{info}',

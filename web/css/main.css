@@ -423,25 +423,64 @@ html[data-theme="dark"] .tool-power .bookmarklet-btn img { filter: invert(1); }
   transition: border-color var(--transition), box-shadow var(--transition);
 }
 .token-input:focus { border-color: var(--c-border-focus); box-shadow: 0 0 0 3px var(--c-focus-ring); outline: none; }
+.token-input--error { border-color: var(--c-error) !important; }
+.token-input--error:focus { box-shadow: 0 0 0 3px rgba(207,34,46,0.2) !important; }
+.btn-token-save {
+  flex-shrink: 0;
+  background: var(--c-primary);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: #fff;
+  font-size: 0.8125rem;
+  font-family: inherit;
+  padding: 0.4rem 0.75rem;
+  cursor: pointer;
+  transition: background var(--transition);
+}
+.btn-token-save:hover { background: var(--c-primary-hover); }
+.btn-token-save:disabled { opacity: 0.45; cursor: default; }
 .btn-token-clear {
   flex-shrink: 0;
-  background: var(--c-surface);
+  background: none;
   border: 1px solid var(--c-border);
   border-radius: var(--radius-sm);
   color: var(--c-text-muted);
-  font-size: 1rem;
-  line-height: 1;
+  font-size: 0.8125rem;
+  font-family: inherit;
   padding: 0.4rem 0.6rem;
   cursor: pointer;
   transition: color var(--transition), border-color var(--transition);
 }
 .btn-token-clear:hover { color: var(--c-text); border-color: var(--c-text-muted); }
-.token-hint {
+.token-error {
   margin-top: 0.375rem;
   font-size: 0.75rem;
-  color: var(--c-text-muted);
+  color: var(--c-error);
 }
-.token-hint a { color: var(--c-primary); }
+.token-hint {
+  margin-top: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.token-hint-rate {
+  font-size: 0.75rem;
+  color: var(--c-text-muted);
+  margin: 0;
+}
+.token-hint-rate a { color: var(--c-primary); }
+.token-hint-secure {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.75rem;
+  color: var(--c-text-muted);
+  margin: 0;
+}
+.token-lock-icon {
+  flex-shrink: 0;
+  opacity: 0.7;
+}
 
 
 
@@ -937,13 +976,17 @@ html[data-theme="dark"] .tool-power .bookmarklet-btn img { filter: invert(1); }
   text-align: center;
   padding: 1rem 0;
 }
+.history-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
 .history-clear-btn {
-  margin-top: 1.5rem;
-  margin-bottom: 2rem;
   background: none;
   border: none;
   color: var(--c-text-muted);
   font-size: 0.75rem;
+  font-family: inherit;
   cursor: pointer;
   text-decoration: underline;
   padding: 0.2rem 0;
