@@ -280,9 +280,9 @@
   // src/content/checkboxes.ts
   var PREFIX = "gitfold-cb";
   var STYLE_ID = `${PREFIX}-style`;
-  var selected = /* @__PURE__ */ new Set();
-  function getSelectedPaths() {
-    return Array.from(selected);
+  var selected = /* @__PURE__ */ new Map();
+  function getSelectedItems() {
+    return Array.from(selected.entries()).map(([path, type]) => ({ path, type }));
   }
   function cleanupCheckboxes() {
     selected.clear();
@@ -319,6 +319,7 @@
       if (!link) continue;
       const match = link.href.match(/\/(blob|tree)\/[^/]+\/(.+)$/);
       if (!match) continue;
+      const itemType = match[1];
       const path = decodeURIComponent(match[2]);
       const cb = document.createElement("input");
       cb.type = "checkbox";
@@ -327,7 +328,7 @@
       cb.setAttribute("aria-label", `Select ${path}`);
       cb.addEventListener("change", () => {
         if (cb.checked) {
-          selected.add(path);
+          selected.set(path, itemType);
         } else {
           selected.delete(path);
         }
@@ -383,12 +384,12 @@
       onDownload: async () => {
         setState({ status: "loading" });
         try {
-          const selectedPaths = getSelectedPaths();
+          const selectedItems = getSelectedItems();
           const response = await chrome.runtime.sendMessage({
             action: "download",
             url: window.location.href,
             info,
-            selectedPaths: selectedPaths.length > 0 ? selectedPaths : void 0
+            selectedItems: selectedItems.length > 0 ? selectedItems : void 0
           });
           if (!response) {
             setState({ status: "error", code: "network", hasToken: false });
@@ -415,10 +416,10 @@
     };
     setState = mountButton(shadow, label, callbacks);
     selectionChangedHandler = () => {
-      const paths = getSelectedPaths();
+      const items = getSelectedItems();
       setState({
         status: "idle",
-        label: paths.length > 0 ? `Download ${paths.length} selected` : void 0
+        label: items.length > 0 ? `Download ${items.length} selected` : void 0
       });
     };
     document.addEventListener("gitfold:selection-changed", selectionChangedHandler);

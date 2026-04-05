@@ -2,7 +2,7 @@ import { parseGithubUrl } from '../shared/parse-url'
 import { findAnchor } from './anchor'
 import { mountButton } from './button'
 import type { ButtonState } from './button'
-import { getSelectedPaths, cleanupCheckboxes } from './checkboxes'
+import { getSelectedItems, cleanupCheckboxes } from './checkboxes'
 
 const MOUNT_ID = 'gitfold-root'
 
@@ -54,13 +54,13 @@ export function tryMount(): void {
     onDownload: async () => {
       setState({ status: 'loading' })
       try {
-        const selectedPaths = getSelectedPaths()
+        const selectedItems = getSelectedItems()
         const response: { ok: boolean; code?: string; hasToken?: boolean } =
           await chrome.runtime.sendMessage({
             action: 'download',
             url: window.location.href,
             info,
-            selectedPaths: selectedPaths.length > 0 ? selectedPaths : undefined,
+            selectedItems: selectedItems.length > 0 ? selectedItems : undefined,
           })
 
         // response can be undefined if the service worker was inactive
@@ -95,10 +95,10 @@ export function tryMount(): void {
 
   // Register selection-changed listener (replacing any previous one via cleanup())
   selectionChangedHandler = () => {
-    const paths = getSelectedPaths()
+    const items = getSelectedItems()
     setState({
       status: 'idle',
-      label: paths.length > 0 ? `Download ${paths.length} selected` : undefined,
+      label: items.length > 0 ? `Download ${items.length} selected` : undefined,
     })
   }
   document.addEventListener('gitfold:selection-changed', selectionChangedHandler)

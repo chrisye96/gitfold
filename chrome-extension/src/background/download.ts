@@ -69,10 +69,15 @@ async function blobToDownloadUrl(blob: Blob): Promise<{ url: string; revoke: () 
  *
  * chrome.downloads requires the "downloads" permission in manifest.json.
  */
+interface SelectedItem {
+  path: string
+  type: 'blob' | 'tree'
+}
+
 export async function handleDownload(
   url: string,
   info: RepoInfo,
-  selectedPaths?: string[],
+  selectedItems?: SelectedItem[],
 ): Promise<DownloadResult> {
   // Full repo: redirect to GitHub's native archive (zero cost, no bandwidth)
   if (info.type === 'repo') {
@@ -85,52 +90,62 @@ export async function handleDownload(
   // Read optional token from storage
   const { github_token: token } = await chrome.storage.local.get('github_token') as { github_token?: string }
 
-  // Multi-path POST (Phase 4: checkbox selection)
-  if (selectedPaths && selectedPaths.length > 0) {
-    const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS)
-    try {
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-        'X-Client': 'extension',
+  // Multi-item selection: download each selected item individually.
+  //   - blob (file) → download raw from GitHub directly
+  //   - tree (folder) → download via GitFold API
+  if (selectedItems && selectedItems.length > 0) {
+    const hasToken = Boolean(token)
+    const headers: Record<string, string> = { 'X-Client': 'extension' }
+    if (token) headers['X-GitHub-Token'] = token
+
+    let successCount = 0
+    let lastErrorCode: DownloadResult['code'] = 'unknown'
+
+    for (const item of selectedItems) {
+      try {
+        if (item.type === 'blob') {
+          // Raw file download directly from GitHub (no GitFold API needed)
+          const rawUrl = `https://raw.githubusercontent.com/${info.owner}/${info.repo}/${info.branch}/${item.path}`
+          const response = await fetchWithRetry(rawUrl, token ? { Authorization: `Bearer ${token}` } : {})
+          if (response.ok) {
+            const blob = await response.blob()
+            const { url: dlUrl, revoke } = await blobToDownloadUrl(blob)
+            const filename = item.path.split('/').pop() || 'file'
+            await chrome.downloads.download({ url: dlUrl, filename, saveAs: false })
+            revoke()
+            successCount++
+          } else {
+            lastErrorCode = response.status === 404 ? 'not_found' : 'unknown'
+          }
+        } else {
+          // Folder download via GitFold API
+          const treeUrl = `https://github.com/${info.owner}/${info.repo}/tree/${info.branch}/${item.path}`
+          const apiUrl = `${API_BASE}/v1/download?url=${encodeURIComponent(treeUrl)}`
+          const response = await fetchWithRetry(apiUrl, headers)
+          if (response.ok) {
+            const blob = await response.blob()
+            const { url: dlUrl, revoke } = await blobToDownloadUrl(blob)
+            const safePath = item.path.replace(/\//g, '-')
+            const filename = `${info.owner}-${info.repo}-${safePath}.zip`
+            await chrome.downloads.download({ url: dlUrl, filename, saveAs: false })
+            revoke()
+            successCount++
+          } else {
+            const s = response.status
+            if (s === 429) lastErrorCode = 'rate_limited'
+            else if (s === 404) lastErrorCode = 'not_found'
+            else if (s === 401 || s === 403) lastErrorCode = 'forbidden'
+            else if (s === 413) lastErrorCode = 'too_many_files'
+            else lastErrorCode = 'unknown'
+          }
+        }
+      } catch (err) {
+        lastErrorCode = 'network'
       }
-      if (token) headers['X-GitHub-Token'] = token
-
-      const response = await fetch(`${API_BASE}/v1/download`, {
-        method: 'POST',
-        signal: controller.signal,
-        headers,
-        body: JSON.stringify({
-          owner: info.owner,
-          repo: info.repo,
-          branch: info.branch,
-          paths: selectedPaths,
-        }),
-      })
-
-      if (response.ok) {
-        const blob = await response.blob()
-        const { url: dlUrl, revoke } = await blobToDownloadUrl(blob)
-        const filename = `${info.owner}-${info.repo}-selection.zip`
-        await chrome.downloads.download({ url: dlUrl, filename, saveAs: false })
-        revoke()
-        return { ok: true }
-      }
-
-      const hasToken = Boolean(token)
-      if (response.status === 429) return { ok: false, code: 'rate_limited', hasToken }
-      if (response.status === 404) return { ok: false, code: 'not_found',    hasToken }
-      if (response.status === 401 || response.status === 403) return { ok: false, code: 'forbidden', hasToken }
-      if (response.status === 413) return { ok: false, code: 'too_many_files', hasToken }
-      return { ok: false, code: 'unknown', hasToken }
-
-    } catch (err) {
-      const hasToken = Boolean(token)
-      if ((err as Error).name === 'AbortError') return { ok: false, code: 'network', hasToken }
-      return { ok: false, code: 'network', hasToken }
-    } finally {
-      clearTimeout(timeoutId)
     }
+
+    if (successCount > 0) return { ok: true }
+    return { ok: false, code: lastErrorCode, hasToken }
   }
 
   // Fetch zip from GitFold API with a 30s timeout (1 automatic retry on 5xx)

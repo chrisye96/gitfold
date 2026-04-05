@@ -3,12 +3,18 @@ import { parseGithubUrl } from '../shared/parse-url'
 const PREFIX = 'gitfold-cb'
 const STYLE_ID = `${PREFIX}-style`
 
-// Selected paths: set of relative paths within the current directory
-export const selected = new Set<string>()
+export interface SelectedItem {
+  path: string
+  /** 'blob' = file, 'tree' = folder */
+  type: 'blob' | 'tree'
+}
+
+// Selected items: map of path → type
+export const selected = new Map<string, 'blob' | 'tree'>()
 
 /** Called from mount.ts to get current selection for download. */
-export function getSelectedPaths(): string[] {
-  return Array.from(selected)
+export function getSelectedItems(): SelectedItem[] {
+  return Array.from(selected.entries()).map(([path, type]) => ({ path, type }))
 }
 
 /** Called on navigation: clear selection and remove injected checkboxes. */
@@ -64,6 +70,7 @@ export function injectCheckboxes(): void {
     // Extract relative path from the href
     const match = link.href.match(/\/(blob|tree)\/[^/]+\/(.+)$/)
     if (!match) continue
+    const itemType = match[1] as 'blob' | 'tree'
     const path = decodeURIComponent(match[2])
 
     const cb = document.createElement('input')
@@ -74,7 +81,7 @@ export function injectCheckboxes(): void {
 
     cb.addEventListener('change', () => {
       if (cb.checked) {
-        selected.add(path)
+        selected.set(path, itemType)
       } else {
         selected.delete(path)
       }

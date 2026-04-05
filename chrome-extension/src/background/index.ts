@@ -18,7 +18,7 @@ registerContextMenu()
  */
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (msg.action === 'download') {
-    handleDownload(msg.url, msg.info, msg.selectedPaths)
+    handleDownload(msg.url, msg.info, msg.selectedItems)
       .then(sendResponse)
       .catch((err) => {
         console.error('[GitFold] download failed:', err)
