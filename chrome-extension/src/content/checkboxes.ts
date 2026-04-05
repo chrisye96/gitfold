@@ -44,9 +44,13 @@ export function injectCheckboxes(): void {
     document.head.appendChild(style)
   }
 
-  // Find file list rows
+  // Find file list rows — GitHub uses different DOM structures:
+  //   - Repo root: [role="row"] with data-testid or aria-label
+  //   - Subdirectory pages: <tr class="react-directory-row">
   const rows = Array.from(
-    document.querySelectorAll('[role="row"][data-testid], [role="row"][aria-label]')
+    document.querySelectorAll(
+      '[role="row"][data-testid], [role="row"][aria-label], tr.react-directory-row'
+    )
   ).filter(row => row.querySelector('a[href*="/blob/"], a[href*="/tree/"]'))
 
   for (const row of rows) {

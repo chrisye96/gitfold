@@ -70,6 +70,7 @@
 :host {
   display: inline-flex;
   align-items: center;
+  margin-left: 12px;
   margin-right: 8px;
 
   /* Light mode \u2014 mirrors web/css/tokens.css */
@@ -102,28 +103,29 @@
   }
 }
 
-/* \u2500\u2500 Primary download button \u2014 matches .btn-token-save from web \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
+/* \u2500\u2500 Primary download button \u2014 compact, blends with GitHub's toolbar \u2500\u2500\u2500\u2500\u2500\u2500 */
 .gf-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 5px 12px;
-  background: var(--c-primary);
-  color: #ffffff;
-  border: 1px solid transparent;
+  gap: 4px;
+  padding: 3px 8px;
+  background: transparent;
+  color: var(--c-primary);
+  border: 1px solid var(--c-border);
   border-radius: var(--radius-sm);
   font-family: var(--font-body);
-  font-size: 0.8125rem;
+  font-size: 0.75rem;
   font-weight: 500;
   line-height: 1.25;
   cursor: pointer;
-  transition: background var(--transition), opacity var(--transition);
+  transition: background var(--transition), color var(--transition), opacity var(--transition);
   white-space: nowrap;
   user-select: none;
 }
 
 .gf-btn:hover:not(:disabled) {
-  background: var(--c-primary-hover);
+  background: var(--c-surface);
+  color: var(--c-primary-hover);
 }
 
 .gf-btn:focus-visible {
@@ -182,10 +184,10 @@
 }
 
 .gf-spinner {
-  width: 13px;
-  height: 13px;
-  border: 2px solid rgba(255, 255, 255, 0.35);
-  border-top-color: #ffffff;
+  width: 11px;
+  height: 11px;
+  border: 1.5px solid var(--c-focus-ring);
+  border-top-color: var(--c-primary);
   border-radius: 50%;
   animation: gf-spin 0.65s linear infinite;
   flex-shrink: 0;
@@ -193,7 +195,7 @@
 `;
 
   // src/content/button.ts
-  var ICON_DOWNLOAD = `<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+  var ICON_DOWNLOAD = `<svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
   <path d="M2.75 14A1.75 1.75 0 0 1 1 12.25v-2.5a.75.75 0 0 1 1.5 0v2.5c0 .138.112.25.25.25h10.5a.25.25 0 0 0 .25-.25v-2.5a.75.75 0 0 1 1.5 0v2.5A1.75 1.75 0 0 1 13.25 14Z"/>
   <path d="M7.25 7.689V2a.75.75 0 0 1 1.5 0v5.689l1.97-1.97a.749.749 0 1 1 1.06 1.06l-3.25 3.25a.749.749 0 0 1-1.06 0L4.22 6.779a.749.749 0 1 1 1.06-1.06l1.97 1.97Z"/>
 </svg>`;
@@ -296,7 +298,9 @@
       document.head.appendChild(style);
     }
     const rows = Array.from(
-      document.querySelectorAll('[role="row"][data-testid], [role="row"][aria-label]')
+      document.querySelectorAll(
+        '[role="row"][data-testid], [role="row"][aria-label], tr.react-directory-row'
+      )
     ).filter((row) => row.querySelector('a[href*="/blob/"], a[href*="/tree/"]'));
     for (const row of rows) {
       if (row.querySelector(`.${PREFIX}-cb`)) continue;
