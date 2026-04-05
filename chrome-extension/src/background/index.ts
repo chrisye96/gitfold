@@ -1,4 +1,5 @@
 import { handleDownload } from './download'
+import { saveToken, clearToken, validateToken } from './token'
 
 /**
  * Background service worker — message router.
@@ -16,12 +17,25 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     handleDownload(msg.url, msg.info)
       .then(sendResponse)
       .catch(() => sendResponse({ ok: false, code: 'network', hasToken: false }))
-    return true  // Keep message channel open for async response
+    return true
+  }
+
+  if (msg.action === 'saveToken') {
+    validateToken(msg.token)
+      .then(async (result) => {
+        if (result.valid) await saveToken(msg.token)
+        sendResponse(result)
+      })
+      .catch(() => sendResponse({ valid: false, reason: 'network' }))
+    return true
+  }
+
+  if (msg.action === 'clearToken') {
+    clearToken().then(() => sendResponse({ ok: true })).catch(() => sendResponse({ ok: false }))
+    return true
   }
 
   if (msg.action === 'openPopup') {
-    // chrome.action.openPopup() requires the extension to be "active" in the
-    // toolbar. Available since Chrome 127; gracefully ignored on older versions.
     chrome.action.openPopup?.()
     return false
   }

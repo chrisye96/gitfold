@@ -41,10 +41,49 @@ async function handleDownload(url, info) {
   }
 }
 
+// src/background/token.ts
+var STORAGE_KEY = "github_token";
+var TOKEN_FORMAT = /^(ghp_|github_pat_|gho_|ghs_|ghu_|ghr_)[A-Za-z0-9_]+$/;
+async function saveToken(token) {
+  await chrome.storage.local.set({ [STORAGE_KEY]: token });
+}
+async function clearToken() {
+  await chrome.storage.local.remove(STORAGE_KEY);
+}
+async function validateToken(token) {
+  if (!TOKEN_FORMAT.test(token)) {
+    return { valid: false, reason: "format" };
+  }
+  try {
+    const response = await fetch("https://api.github.com/rate_limit", {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (response.status === 401) return { valid: false, reason: "auth" };
+    if (response.ok) {
+      const data = await response.json();
+      return { valid: true, limit: data.resources.core.limit };
+    }
+    return { valid: true, limit: 0 };
+  } catch {
+    return { valid: true, limit: 0 };
+  }
+}
+
 // src/background/index.ts
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (msg.action === "download") {
     handleDownload(msg.url, msg.info).then(sendResponse).catch(() => sendResponse({ ok: false, code: "network", hasToken: false }));
+    return true;
+  }
+  if (msg.action === "saveToken") {
+    validateToken(msg.token).then(async (result) => {
+      if (result.valid) await saveToken(msg.token);
+      sendResponse(result);
+    }).catch(() => sendResponse({ valid: false, reason: "network" }));
+    return true;
+  }
+  if (msg.action === "clearToken") {
+    clearToken().then(() => sendResponse({ ok: true })).catch(() => sendResponse({ ok: false }));
     return true;
   }
   if (msg.action === "openPopup") {
