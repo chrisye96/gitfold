@@ -299,4 +299,90 @@ api.get('/download/progress', async (c) => {
   })
 })
 
+// ─── POST /v1/download (multi-path) ────────────────────────────────────────
+
+api.post('/download', async (c) => {
+  const sessionUser = c.get('sessionUser')
+  let token = c.req.header('X-GitHub-Token')
+  if (!token && sessionUser && c.env.TOKEN_ENCRYPTION_KEY) {
+    token = await getUserOAuthToken(c.env.DB, sessionUser.userId, c.env.TOKEN_ENCRYPTION_KEY) ?? undefined
+  }
+  token = token ?? c.env.GITHUB_TOKEN
+
+  let body: { owner: string; repo: string; branch: string; paths: string[] }
+  try {
+    body = await c.req.json()
+  } catch {
+    return Response.json({ code: 'INVALID_URL', message: 'Invalid JSON body' }, { status: 400 })
+  }
+
+  const { owner, repo, branch, paths } = body
+  if (!owner || !repo || !branch || !Array.isArray(paths) || paths.length === 0) {
+    return Response.json({ code: 'INVALID_URL', message: 'Missing required fields' }, { status: 400 })
+  }
+
+  const startTime = Date.now()
+  const userId = sessionUser?.userId ?? 'anon'
+  const fileLimit = c.get('fileLimit')
+  const rawClient = c.req.header('X-Client') ?? 'web'
+  const source: 'web' | 'extension' | 'cli' =
+    rawClient === 'extension' || rawClient === 'cli' ? rawClient : 'web'
+
+  try {
+    // Step 1: Fetch all trees and accumulate entries (for limit check before fetching content)
+    const allTrees: import('../types.js').TreeEntry[][] = []
+    let totalEntries = 0
+    let totalTreeSize = 0
+
+    for (const path of paths) {
+      const pathInfo: import('../types.js').RepoInfo = {
+        provider: 'github', type: 'folder', owner, repo, branch, path, originalUrl: '',
+      }
+      const tree = await fetchTree(pathInfo, token, c.env.GITFOLD_CACHE)
+      totalEntries += tree.length
+      totalTreeSize += tree.reduce((s, e) => s + (e.size ?? 0), 0)
+      allTrees.push(tree)
+    }
+
+    // Step 2: Check combined limits before fetching file content
+    const limitCheck = checkLimits(totalEntries, totalTreeSize, fileLimit)
+    if (!limitCheck.ok) return limitCheck.response
+
+    // Step 3: Fetch actual file contents (uses raw.githubusercontent.com, no rate-limit cost)
+    const allFiles: Array<{ path: string; data: Uint8Array }> = []
+    for (let i = 0; i < paths.length; i++) {
+      const currentPath = paths[i]!
+      const currentTree = allTrees[i]!
+      const pathInfo: import('../types.js').RepoInfo = {
+        provider: 'github', type: 'folder', owner, repo, branch, path: currentPath, originalUrl: '',
+      }
+      const files = await fetchAllFiles(currentTree, pathInfo)
+      allFiles.push(...files)
+    }
+
+    // Step 4: Build zip and respond
+    const zipData = createZip(allFiles, '')
+    const filename = zipFilename('selection', repo)
+
+    trackDownload(c.env, {
+      userId,
+      tier: c.get('tier') ?? 'free',
+      source,
+      owner, repo,
+      path: paths.join(','),
+      fileCount: allFiles.length,
+      totalBytes: allFiles.reduce((s, f) => s + f.data.byteLength, 0),
+      durationMs: Date.now() - startTime,
+      cacheHit: false,
+    })
+
+    return zipResponse(zipData, filename, corsHeaders(c.req.header('Origin')))
+
+  } catch (err) {
+    if (err instanceof Response) return err
+    console.error('[POST /download]', err)
+    return Response.json({ code: 'GITHUB_ERROR', message: 'Unexpected error' }, { status: 500 })
+  }
+})
+
 export default api
