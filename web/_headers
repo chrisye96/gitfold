@@ -15,21 +15,26 @@
 /docs
   Cache-Control: public, max-age=0, must-revalidate
 
-# ── Cache: static assets (long-lived) ───────────────────────────────────
+# ── Cache: JS & CSS (revalidate — no bundler, no content hashes) ────────
 /css/*
-  Cache-Control: public, max-age=31536000, immutable
+  Cache-Control: public, no-cache
 
 /js/*
-  Cache-Control: public, max-age=31536000, immutable
+  Cache-Control: public, no-cache
 
+# ── Cache: vendor libs (long-lived, versioned externally) ───────────────
 /vendor/*
   Cache-Control: public, max-age=31536000, immutable
 
+# ── Cache: images & favicons (1 day, revalidate) ───────────────────────
+/favicon.ico
+  Cache-Control: public, max-age=86400
+
 /favicon.svg
-  Cache-Control: public, max-age=31536000, immutable
+  Cache-Control: public, max-age=86400
 
 /img/*
-  Cache-Control: public, max-age=31536000, immutable
+  Cache-Control: public, max-age=86400
 
 # ── Cache: SEO / AI files ───────────────────────────────────────────────
 /llms.txt
