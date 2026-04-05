@@ -26,6 +26,7 @@ const baseOptions = {
 const entries = [
   { entryPoints: ['src/content/index.ts'],    outfile: 'dist/content.js',    format: 'iife' },
   { entryPoints: ['src/background/index.ts'], outfile: 'dist/background.js', format: 'esm'  },
+  { entryPoints: ['src/popup/popup.ts'],      outfile: 'src/popup/popup.js', format: 'iife' },
 ]
 
 try {
