@@ -145,31 +145,41 @@
                 class="token-toggle-link"
                 type="button"
                 aria-expanded="false"
-                aria-controls="token-panel"
-                data-i18n="token.toggle">
-          Need higher limits? Add your GitHub Token
+                aria-controls="token-panel">
+          Need higher limits? Add your GitHub Token ↓
         </button>
         <div id="token-panel" class="token-panel" hidden>
           <div class="token-input-row">
             <input type="password"
                    id="token-input"
                    class="token-input"
-                   autocomplete="new-password"
-                   data-i18n-placeholder="token.placeholder"
-                   placeholder="ghp_xxxxxxxxxxxx  (optional)"
-                   aria-describedby="token-hint" />
+                   autocomplete="off"
+                   readonly
+                   placeholder="ghp_xxxxxxxxxxxx"
+                   aria-describedby="token-hint token-error" />
+            <button id="token-save-btn"
+                    type="button"
+                    class="btn-token-save"
+                    disabled>Save</button>
             <button id="token-clear-btn"
                     type="button"
                     class="btn-token-clear"
-                    data-i18n-label="token.clear"
-                    aria-label="Clear token"
-                    hidden>×</button>
+                    aria-label="Clear saved token"
+                    hidden>Clear</button>
           </div>
-          <p id="token-hint" class="token-hint">
-            Increases rate limit to 5,000 req/hour. Stored in your browser only.
-            <a href="https://github.com/settings/tokens/new?scopes=public_repo&description=GitFold"
-               target="_blank" rel="noopener noreferrer">Generate token ↗</a>
-          </p>
+          <p id="token-error" class="token-error" hidden aria-live="polite"></p>
+          <div id="token-hint" class="token-hint">
+            <p class="token-hint-rate">Increases rate limit to 5,000 req/hour.
+              <a href="https://github.com/settings/tokens/new?scopes=public_repo&description=GitFold"
+                 target="_blank" rel="noopener noreferrer">Generate token ↗</a>
+            </p>
+            <p class="token-hint-secure">
+              <svg class="token-lock-icon" viewBox="0 0 16 16" width="12" height="12" fill="currentColor" aria-hidden="true">
+                <path d="M4 4a4 4 0 0 1 8 0v2h.5A1.5 1.5 0 0 1 14 7.5v6A1.5 1.5 0 0 1 12.5 15h-9A1.5 1.5 0 0 1 2 13.5v-6A1.5 1.5 0 0 1 3.5 6H4V4Zm2 2h4V4a2 2 0 1 0-4 0v2Zm2 4.5a1 1 0 1 0-2 0v1a1 1 0 1 0 2 0v-1Z"/>
+              </svg>
+              Stored in your browser only — never sent to our servers
+            </p>
+          </div>
         </div>
       </div>
 
@@ -211,8 +221,11 @@
            aria-labelledby="history-heading">
     <div class="history-header">
       <h2 class="history-heading" id="history-heading">Recent Downloads</h2>
-      <button id="history-toggle" class="history-toggle" type="button"
-              aria-expanded="true" aria-controls="history-body">Hide</button>
+      <div class="history-header-actions">
+        <button id="history-clear-btn" class="history-clear-btn" type="button" hidden>Clear history</button>
+        <button id="history-toggle" class="history-toggle" type="button"
+                aria-expanded="true" aria-controls="history-body">Hide</button>
+      </div>
     </div>
     <div id="history-body" class="history-body"></div>
   </section>
