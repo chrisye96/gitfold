@@ -73,6 +73,12 @@ export function tryMount(): void {
 
   setState = mountButton(shadow, label, callbacks)
 
+  // Initialize with file count hint if available
+  const fileCount = getVisibleFileCount()
+  if (fileCount !== null) {
+    setState({ status: 'idle', fileCount })
+  }
+
   // Insert the host element before the anchor in GitHub's toolbar
   anchor.parentElement?.insertBefore(host, anchor)
 }
@@ -80,4 +86,22 @@ export function tryMount(): void {
 /** Remove the GitFold button from the DOM (called when navigating away from supported pages). */
 export function cleanup(): void {
   document.getElementById(MOUNT_ID)?.remove()
+}
+
+/**
+ * Read the file count GitHub renders in its own UI.
+ * Returns null if the count isn't visible (GitHub may not show it on all pages).
+ *
+ * GitHub renders something like: "123 files" in an aria-label or text node
+ * near the file list header. This is best-effort — failure is silent.
+ */
+function getVisibleFileCount(): number | null {
+  // GitHub renders file count in the directory listing header
+  // Selector targets the commit count area which includes file count
+  const countEl = document.querySelector('[data-testid="files-count"]') ??
+                  document.querySelector('[aria-label*="files"]')
+  if (!countEl) return null
+
+  const match = countEl.textContent?.match(/(\d+)\s+files?/)
+  return match ? parseInt(match[1], 10) : null
 }

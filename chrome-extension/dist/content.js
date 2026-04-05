@@ -301,10 +301,20 @@
       }
     };
     setState = mountButton(shadow, label, callbacks);
+    const fileCount = getVisibleFileCount();
+    if (fileCount !== null) {
+      setState({ status: "idle", fileCount });
+    }
     anchor.parentElement?.insertBefore(host, anchor);
   }
   function cleanup() {
     document.getElementById(MOUNT_ID)?.remove();
+  }
+  function getVisibleFileCount() {
+    const countEl = document.querySelector('[data-testid="files-count"]') ?? document.querySelector('[aria-label*="files"]');
+    if (!countEl) return null;
+    const match = countEl.textContent?.match(/(\d+)\s+files?/);
+    return match ? parseInt(match[1], 10) : null;
   }
 
   // src/content/index.ts
