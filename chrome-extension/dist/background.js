@@ -1,6 +1,24 @@
 // src/background/download.ts
 var API_BASE = "https://api.gitfold.cc";
 var TIMEOUT_MS = 3e4;
+async function fetchWithRetry(url, headers, maxRetries = 1) {
+  let lastError;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
+    try {
+      const res = await fetch(url, { signal: controller.signal, headers });
+      clearTimeout(timeoutId);
+      if (res.status >= 500 && attempt < maxRetries) continue;
+      return res;
+    } catch (err) {
+      clearTimeout(timeoutId);
+      lastError = err;
+      if (err.name === "AbortError") throw err;
+    }
+  }
+  throw lastError;
+}
 async function handleDownload(url, info) {
   if (info.type === "repo") {
     const branch = info.branch || "HEAD";
@@ -9,13 +27,11 @@ async function handleDownload(url, info) {
     return { ok: true };
   }
   const { github_token: token } = await chrome.storage.local.get("github_token");
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
   try {
     const apiUrl = `${API_BASE}/v1/download?url=${encodeURIComponent(url)}`;
     const headers = { "X-Client": "extension" };
     if (token) headers["X-GitHub-Token"] = token;
-    const response = await fetch(apiUrl, { signal: controller.signal, headers });
+    const response = await fetchWithRetry(apiUrl, headers);
     if (response.ok) {
       const blob = await response.blob();
       const blobUrl = URL.createObjectURL(blob);
@@ -36,8 +52,6 @@ async function handleDownload(url, info) {
     const hasToken = Boolean(token);
     if (err.name === "AbortError") return { ok: false, code: "network", hasToken };
     return { ok: false, code: "network", hasToken };
-  } finally {
-    clearTimeout(timeoutId);
   }
 }
 

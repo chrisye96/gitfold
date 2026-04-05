@@ -9,6 +9,31 @@ export interface DownloadResult {
   hasToken?: boolean
 }
 
+async function fetchWithRetry(
+  url: string,
+  headers: Record<string, string>,
+  maxRetries = 1,
+): Promise<Response> {
+  let lastError: unknown
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS)
+    try {
+      const res = await fetch(url, { signal: controller.signal, headers })
+      clearTimeout(timeoutId)
+      // Only retry on 5xx server errors — not on 4xx client errors
+      if (res.status >= 500 && attempt < maxRetries) continue
+      return res
+    } catch (err) {
+      clearTimeout(timeoutId)
+      lastError = err
+      // Don't retry AbortError (timeout)
+      if ((err as Error).name === 'AbortError') throw err
+    }
+  }
+  throw lastError
+}
+
 /**
  * Handle a download request from the content script.
  *
@@ -32,16 +57,13 @@ export async function handleDownload(url: string, info: RepoInfo): Promise<Downl
   // Read optional token from storage
   const { github_token: token } = await chrome.storage.local.get('github_token') as { github_token?: string }
 
-  // Fetch zip from GitFold API with a 30s timeout
-  const controller = new AbortController()
-  const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS)
-
+  // Fetch zip from GitFold API with a 30s timeout (1 automatic retry on 5xx)
   try {
     const apiUrl = `${API_BASE}/v1/download?url=${encodeURIComponent(url)}`
     const headers: Record<string, string> = { 'X-Client': 'extension' }
     if (token) headers['X-GitHub-Token'] = token
 
-    const response = await fetch(apiUrl, { signal: controller.signal, headers })
+    const response = await fetchWithRetry(apiUrl, headers)
 
     if (response.ok) {
       const blob = await response.blob()
@@ -70,7 +92,5 @@ export async function handleDownload(url: string, info: RepoInfo): Promise<Downl
     const hasToken = Boolean(token)
     if ((err as Error).name === 'AbortError') return { ok: false, code: 'network', hasToken }
     return { ok: false, code: 'network', hasToken }
-  } finally {
-    clearTimeout(timeoutId)
   }
 }
