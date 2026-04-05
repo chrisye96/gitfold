@@ -19,16 +19,44 @@ async function fetchWithRetry(url, headers, maxRetries = 1) {
   }
   throw lastError;
 }
-async function downloadBlob(blob, filename) {
-  const buffer = await blob.arrayBuffer();
-  const bytes = new Uint8Array(buffer);
-  let binary = "";
-  for (let i = 0; i < bytes.length; i++) {
-    binary += String.fromCharCode(bytes[i]);
+function buildApiUrl(info, subPath) {
+  const path = subPath ?? info.path;
+  const ghUrl = `https://github.com/${info.owner}/${info.repo}/tree/${info.branch}/${path}`;
+  return `${API_BASE}/v1/download?url=${encodeURIComponent(ghUrl)}`;
+}
+async function downloadViaApi(apiUrl, token, fallbackFilename) {
+  if (!token) {
+    await chrome.downloads.download({ url: apiUrl, saveAs: false });
+    return null;
   }
-  const base64 = btoa(binary);
-  const dataUrl = `data:application/octet-stream;base64,${base64}`;
-  await chrome.downloads.download({ url: dataUrl, filename, saveAs: false });
+  const headers = {
+    "X-Client": "extension",
+    "X-GitHub-Token": token
+  };
+  const response = await fetchWithRetry(apiUrl, headers);
+  if (response.ok) {
+    const blob = await response.blob();
+    const cd = response.headers.get("Content-Disposition");
+    const cdMatch = cd?.match(/filename="?([^"]+)"?/);
+    const filename = cdMatch?.[1] || fallbackFilename;
+    const buffer = await blob.arrayBuffer();
+    const bytes = new Uint8Array(buffer);
+    let binary = "";
+    for (let i = 0; i < bytes.length; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    const base64 = btoa(binary);
+    const dataUrl = `data:application/octet-stream;base64,${base64}`;
+    await chrome.downloads.download({ url: dataUrl, filename, saveAs: false });
+  }
+  return response;
+}
+function mapStatusCode(status) {
+  if (status === 429) return "rate_limited";
+  if (status === 404) return "not_found";
+  if (status === 401 || status === 403) return "forbidden";
+  if (status === 413) return "too_many_files";
+  return "unknown";
 }
 async function handleDownload(url, info, selectedItems) {
   if (info.type === "repo") {
@@ -38,66 +66,40 @@ async function handleDownload(url, info, selectedItems) {
     return { ok: true };
   }
   const { github_token: token } = await chrome.storage.local.get("github_token");
+  const hasToken = Boolean(token);
   if (selectedItems && selectedItems.length > 0) {
-    const hasToken = Boolean(token);
-    const headers = { "X-Client": "extension" };
-    if (token) headers["X-GitHub-Token"] = token;
-    let successCount = 0;
-    let lastErrorCode = "unknown";
-    for (const item of selectedItems) {
+    if (selectedItems.length === 1 && selectedItems[0].type === "blob") {
       try {
-        if (item.type === "blob") {
-          const rawUrl = `https://raw.githubusercontent.com/${info.owner}/${info.repo}/${info.branch}/${item.path}`;
-          const filename = item.path.split("/").pop() || "file";
-          await chrome.downloads.download({ url: rawUrl, filename, saveAs: false });
-          successCount++;
-        } else {
-          const treeUrl = `https://github.com/${info.owner}/${info.repo}/tree/${info.branch}/${item.path}`;
-          const apiUrl = `${API_BASE}/v1/download?url=${encodeURIComponent(treeUrl)}`;
-          const response = await fetchWithRetry(apiUrl, headers);
-          if (response.ok) {
-            const blob = await response.blob();
-            const safePath = item.path.replace(/\//g, "-");
-            const filename = `${info.owner}-${info.repo}-${safePath}.zip`;
-            await downloadBlob(blob, filename);
-            successCount++;
-          } else {
-            const s = response.status;
-            if (s === 429) lastErrorCode = "rate_limited";
-            else if (s === 404) lastErrorCode = "not_found";
-            else if (s === 401 || s === 403) lastErrorCode = "forbidden";
-            else if (s === 413) lastErrorCode = "too_many_files";
-            else lastErrorCode = "unknown";
-          }
-        }
-      } catch (err) {
-        lastErrorCode = "network";
+        const item = selectedItems[0];
+        const rawUrl = `https://raw.githubusercontent.com/${info.owner}/${info.repo}/${info.branch}/${item.path}`;
+        const filename = item.path.split("/").pop() || "file";
+        await chrome.downloads.download({ url: rawUrl, filename, saveAs: false });
+        return { ok: true };
+      } catch {
+        return { ok: false, code: "network", hasToken };
       }
     }
-    if (successCount > 0) return { ok: true };
-    return { ok: false, code: lastErrorCode, hasToken };
+    try {
+      const apiUrl = buildApiUrl(info);
+      const safePath = info.path.replace(/\//g, "-") || "root";
+      const fallbackFilename = `${info.owner}-${info.repo}-${safePath}.zip`;
+      const response = await downloadViaApi(apiUrl, token, fallbackFilename);
+      if (!response) return { ok: true };
+      if (response.ok) return { ok: true };
+      return { ok: false, code: mapStatusCode(response.status), hasToken };
+    } catch {
+      return { ok: false, code: "network", hasToken };
+    }
   }
   try {
-    const apiUrl = `${API_BASE}/v1/download?url=${encodeURIComponent(url)}`;
-    const headers = { "X-Client": "extension" };
-    if (token) headers["X-GitHub-Token"] = token;
-    const response = await fetchWithRetry(apiUrl, headers);
-    if (response.ok) {
-      const blob = await response.blob();
-      const safePath = info.path.replace(/\//g, "-") || "root";
-      const filename = `${info.owner}-${info.repo}-${safePath}.zip`;
-      await downloadBlob(blob, filename);
-      return { ok: true };
-    }
-    const hasToken = Boolean(token);
-    const status = response.status;
-    if (status === 429) return { ok: false, code: "rate_limited", hasToken };
-    if (status === 404) return { ok: false, code: "not_found", hasToken };
-    if (status === 401 || status === 403) return { ok: false, code: "forbidden", hasToken };
-    if (status === 413) return { ok: false, code: "too_many_files", hasToken };
-    return { ok: false, code: "unknown", hasToken };
+    const apiUrl = buildApiUrl(info);
+    const safePath = info.path.replace(/\//g, "-") || "root";
+    const fallbackFilename = `${info.owner}-${info.repo}-${safePath}.zip`;
+    const response = await downloadViaApi(apiUrl, token, fallbackFilename);
+    if (!response) return { ok: true };
+    if (response.ok) return { ok: true };
+    return { ok: false, code: mapStatusCode(response.status), hasToken };
   } catch (err) {
-    const hasToken = Boolean(token);
     if (err.name === "AbortError") return { ok: false, code: "network", hasToken };
     return { ok: false, code: "network", hasToken };
   }
