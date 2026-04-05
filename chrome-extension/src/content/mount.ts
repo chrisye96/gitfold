@@ -30,8 +30,9 @@ export function tryMount(): void {
   if (document.getElementById(MOUNT_ID)) return
 
   // Find stable anchor in GitHub's toolbar
-  const anchor = findAnchor()
-  if (!anchor) return  // graceful degradation — will retry on next trigger
+  const anchorResult = findAnchor()
+  if (!anchorResult) return  // graceful degradation — will retry on next trigger
+  const { element: anchor, position: insertPosition } = anchorResult
 
   const label = info.type === 'folder' ? 'Download Folder' : 'Download Repository'
 
@@ -98,8 +99,12 @@ export function tryMount(): void {
     setState({ status: 'idle', fileCount })
   }
 
-  // Insert the host element before the anchor in GitHub's toolbar
-  anchor.parentElement?.insertBefore(host, anchor)
+  // Insert the host element relative to the anchor
+  if (insertPosition === 'after') {
+    anchor.parentElement?.insertBefore(host, anchor.nextSibling)
+  } else {
+    anchor.parentElement?.insertBefore(host, anchor)
+  }
 }
 
 /** Remove the GitFold button from the DOM (called when navigating away from supported pages). */

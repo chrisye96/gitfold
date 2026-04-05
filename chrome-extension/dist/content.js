@@ -49,12 +49,16 @@
   // src/content/anchor.ts
   function findAnchor() {
     const byAriaLabel = document.querySelector('[aria-label="Code"]');
-    if (byAriaLabel) return byAriaLabel;
+    if (byAriaLabel) return { element: byAriaLabel, position: "before" };
     const byTestId = document.querySelector('[data-testid="code-button"]');
-    if (byTestId) return byTestId;
+    if (byTestId) return { element: byTestId, position: "before" };
     const buttons = Array.from(document.querySelectorAll("button"));
     const byText = buttons.find((btn) => btn.textContent?.trim() === "Code");
-    if (byText) return byText;
+    if (byText) return { element: byText, position: "before" };
+    const copyPathBtn = document.querySelector('[aria-label="Copy path"]');
+    if (copyPathBtn) return { element: copyPathBtn, position: "after" };
+    const addFileBtn = document.querySelector('[aria-label="Add file"]');
+    if (addFileBtn) return { element: addFileBtn, position: "before" };
     return null;
   }
 
@@ -348,8 +352,9 @@
       return;
     }
     if (document.getElementById(MOUNT_ID)) return;
-    const anchor = findAnchor();
-    if (!anchor) return;
+    const anchorResult = findAnchor();
+    if (!anchorResult) return;
+    const { element: anchor, position: insertPosition } = anchorResult;
     const label = info.type === "folder" ? "Download Folder" : "Download Repository";
     const host = document.createElement("div");
     host.id = MOUNT_ID;
@@ -400,7 +405,11 @@
     if (fileCount !== null) {
       setState({ status: "idle", fileCount });
     }
-    anchor.parentElement?.insertBefore(host, anchor);
+    if (insertPosition === "after") {
+      anchor.parentElement?.insertBefore(host, anchor.nextSibling);
+    } else {
+      anchor.parentElement?.insertBefore(host, anchor);
+    }
   }
   function cleanup() {
     document.getElementById(MOUNT_ID)?.remove();
