@@ -5,14 +5,18 @@ import { handleDownload } from './download'
 const MENU_ID = 'gitfold-download'
 
 export function registerContextMenu(): void {
-  chrome.contextMenus.create({
-    id: MENU_ID,
-    title: 'Download with GitFold',
-    contexts: ['page'],
-    documentUrlPatterns: [
-      'https://github.com/*/tree/*',
-      'https://github.com/*/*',
-    ],
+  // removeAll first to avoid duplicate-ID errors when the MV3 service worker
+  // restarts (which happens frequently — after 30s idle, on update, etc.)
+  chrome.contextMenus.removeAll(() => {
+    chrome.contextMenus.create({
+      id: MENU_ID,
+      title: 'Download with GitFold',
+      contexts: ['page'],
+      documentUrlPatterns: [
+        'https://github.com/*/tree/*',
+        'https://github.com/*/*',
+      ],
+    })
   })
 
   chrome.contextMenus.onClicked.addListener((info, tab) => {

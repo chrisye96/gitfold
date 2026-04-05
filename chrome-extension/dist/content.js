@@ -359,13 +359,18 @@
   // src/content/mount.ts
   var MOUNT_ID = "gitfold-root";
   var selectionChangedHandler = null;
+  var mountedForUrl = "";
   function tryMount() {
     const info = parseGithubUrl(window.location.href);
     if (!info) {
       cleanup();
       return;
     }
-    if (document.getElementById(MOUNT_ID)) return;
+    const currentUrl = window.location.href;
+    if (document.getElementById(MOUNT_ID)) {
+      if (currentUrl === mountedForUrl) return;
+      cleanup();
+    }
     const anchorResult = findAnchor();
     if (!anchorResult) return;
     const { element: anchor, position: insertPosition } = anchorResult;
@@ -385,7 +390,9 @@
             info,
             selectedPaths: selectedPaths.length > 0 ? selectedPaths : void 0
           });
-          if (response.ok) {
+          if (!response) {
+            setState({ status: "error", code: "network", hasToken: false });
+          } else if (response.ok) {
             setState({ status: "success" });
             setTimeout(() => setState({ status: "idle" }), 2e3);
           } else {
@@ -424,6 +431,7 @@
     } else {
       anchor.parentElement?.insertBefore(host, anchor);
     }
+    mountedForUrl = currentUrl;
   }
   function cleanup() {
     document.getElementById(MOUNT_ID)?.remove();

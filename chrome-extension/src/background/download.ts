@@ -35,6 +35,30 @@ async function fetchWithRetry(
 }
 
 /**
+ * Convert a Blob to a downloadable URL.
+ * Prefers blob URL (fast, zero-copy) but falls back to base64 data URL
+ * if URL.createObjectURL is unavailable in the service worker context.
+ */
+async function blobToDownloadUrl(blob: Blob): Promise<{ url: string; revoke: () => void }> {
+  // Try blob URL first (available in Chrome 120+ service workers)
+  if (typeof URL.createObjectURL === 'function') {
+    const url = URL.createObjectURL(blob)
+    return { url, revoke: () => setTimeout(() => URL.revokeObjectURL(url), 60_000) }
+  }
+
+  // Fallback: base64 data URL (works everywhere, but uses more memory)
+  const buffer = await blob.arrayBuffer()
+  const bytes = new Uint8Array(buffer)
+  let binary = ''
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i])
+  }
+  const base64 = btoa(binary)
+  const url = `data:${blob.type || 'application/zip'};base64,${base64}`
+  return { url, revoke: () => {} }  // data URLs don't need revoking
+}
+
+/**
  * Handle a download request from the content script.
  *
  * For full-repo downloads: opens GitHub's native archive URL in a new tab
@@ -86,10 +110,10 @@ export async function handleDownload(
 
       if (response.ok) {
         const blob = await response.blob()
-        const blobUrl = URL.createObjectURL(blob)
+        const { url: dlUrl, revoke } = await blobToDownloadUrl(blob)
         const filename = `${info.owner}-${info.repo}-selection.zip`
-        await chrome.downloads.download({ url: blobUrl, filename, saveAs: false })
-        setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000)
+        await chrome.downloads.download({ url: dlUrl, filename, saveAs: false })
+        revoke()
         return { ok: true }
       }
 
@@ -119,13 +143,12 @@ export async function handleDownload(
 
     if (response.ok) {
       const blob = await response.blob()
-      const blobUrl = URL.createObjectURL(blob)
+      const { url: dlUrl, revoke } = await blobToDownloadUrl(blob)
       const safePath = info.path.replace(/\//g, '-') || 'root'
       const filename = `${info.owner}-${info.repo}-${safePath}.zip`
 
-      await chrome.downloads.download({ url: blobUrl, filename, saveAs: false })
-      // Revoke after delay to let the download manager copy the bytes
-      setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000)
+      await chrome.downloads.download({ url: dlUrl, filename, saveAs: false })
+      revoke()
 
       return { ok: true }
     }

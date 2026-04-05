@@ -7,6 +7,8 @@ import { getSelectedPaths, cleanupCheckboxes } from './checkboxes'
 const MOUNT_ID = 'gitfold-root'
 
 let selectionChangedHandler: (() => void) | null = null
+/** URL that was active when the button was last mounted */
+let mountedForUrl = ''
 
 /**
  * Attempt to inject the GitFold button into the current page.
@@ -26,8 +28,13 @@ export function tryMount(): void {
     return
   }
 
-  // Already mounted — idempotency check
-  if (document.getElementById(MOUNT_ID)) return
+  // If URL changed since last mount, tear down and re-mount fresh.
+  // This clears stale error/success states from the previous directory.
+  const currentUrl = window.location.href
+  if (document.getElementById(MOUNT_ID)) {
+    if (currentUrl === mountedForUrl) return  // same page, truly idempotent
+    cleanup()  // different page → reset
+  }
 
   // Find stable anchor in GitHub's toolbar
   const anchorResult = findAnchor()
@@ -56,7 +63,10 @@ export function tryMount(): void {
             selectedPaths: selectedPaths.length > 0 ? selectedPaths : undefined,
           })
 
-        if (response.ok) {
+        // response can be undefined if the service worker was inactive
+        if (!response) {
+          setState({ status: 'error', code: 'network', hasToken: false })
+        } else if (response.ok) {
           setState({ status: 'success' })
           setTimeout(() => setState({ status: 'idle' }), 2000)
         } else {
@@ -105,6 +115,8 @@ export function tryMount(): void {
   } else {
     anchor.parentElement?.insertBefore(host, anchor)
   }
+
+  mountedForUrl = currentUrl
 }
 
 /** Remove the GitFold button from the DOM (called when navigating away from supported pages). */

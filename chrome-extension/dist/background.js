@@ -19,6 +19,22 @@ async function fetchWithRetry(url, headers, maxRetries = 1) {
   }
   throw lastError;
 }
+async function blobToDownloadUrl(blob) {
+  if (typeof URL.createObjectURL === "function") {
+    const url2 = URL.createObjectURL(blob);
+    return { url: url2, revoke: () => setTimeout(() => URL.revokeObjectURL(url2), 6e4) };
+  }
+  const buffer = await blob.arrayBuffer();
+  const bytes = new Uint8Array(buffer);
+  let binary = "";
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  const base64 = btoa(binary);
+  const url = `data:${blob.type || "application/zip"};base64,${base64}`;
+  return { url, revoke: () => {
+  } };
+}
 async function handleDownload(url, info, selectedPaths) {
   if (info.type === "repo") {
     const branch = info.branch || "HEAD";
@@ -49,10 +65,10 @@ async function handleDownload(url, info, selectedPaths) {
       });
       if (response.ok) {
         const blob = await response.blob();
-        const blobUrl = URL.createObjectURL(blob);
+        const { url: dlUrl, revoke } = await blobToDownloadUrl(blob);
         const filename = `${info.owner}-${info.repo}-selection.zip`;
-        await chrome.downloads.download({ url: blobUrl, filename, saveAs: false });
-        setTimeout(() => URL.revokeObjectURL(blobUrl), 6e4);
+        await chrome.downloads.download({ url: dlUrl, filename, saveAs: false });
+        revoke();
         return { ok: true };
       }
       const hasToken = Boolean(token);
@@ -76,11 +92,11 @@ async function handleDownload(url, info, selectedPaths) {
     const response = await fetchWithRetry(apiUrl, headers);
     if (response.ok) {
       const blob = await response.blob();
-      const blobUrl = URL.createObjectURL(blob);
+      const { url: dlUrl, revoke } = await blobToDownloadUrl(blob);
       const safePath = info.path.replace(/\//g, "-") || "root";
       const filename = `${info.owner}-${info.repo}-${safePath}.zip`;
-      await chrome.downloads.download({ url: blobUrl, filename, saveAs: false });
-      setTimeout(() => URL.revokeObjectURL(blobUrl), 6e4);
+      await chrome.downloads.download({ url: dlUrl, filename, saveAs: false });
+      revoke();
       return { ok: true };
     }
     const hasToken = Boolean(token);
@@ -174,14 +190,16 @@ function parseGithubUrl(url) {
 // src/background/context-menu.ts
 var MENU_ID = "gitfold-download";
 function registerContextMenu() {
-  chrome.contextMenus.create({
-    id: MENU_ID,
-    title: "Download with GitFold",
-    contexts: ["page"],
-    documentUrlPatterns: [
-      "https://github.com/*/tree/*",
-      "https://github.com/*/*"
-    ]
+  chrome.contextMenus.removeAll(() => {
+    chrome.contextMenus.create({
+      id: MENU_ID,
+      title: "Download with GitFold",
+      contexts: ["page"],
+      documentUrlPatterns: [
+        "https://github.com/*/tree/*",
+        "https://github.com/*/*"
+      ]
+    });
   });
   chrome.contextMenus.onClicked.addListener((info, tab) => {
     if (info.menuItemId !== MENU_ID || !tab?.url) return;
@@ -195,7 +213,10 @@ function registerContextMenu() {
 registerContextMenu();
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (msg.action === "download") {
-    handleDownload(msg.url, msg.info, msg.selectedPaths).then(sendResponse).catch(() => sendResponse({ ok: false, code: "network", hasToken: false }));
+    handleDownload(msg.url, msg.info, msg.selectedPaths).then(sendResponse).catch((err) => {
+      console.error("[GitFold] download failed:", err);
+      sendResponse({ ok: false, code: "network", hasToken: false });
+    });
     return true;
   }
   if (msg.action === "saveToken") {
