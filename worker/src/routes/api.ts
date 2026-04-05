@@ -317,8 +317,8 @@ api.post('/download', async (c) => {
   }
 
   const { owner, repo, branch, paths } = body
-  if (!owner || !repo || !branch || !Array.isArray(paths) || paths.length === 0) {
-    return Response.json({ code: 'INVALID_URL', message: 'Missing required fields' }, { status: 400 })
+  if (!owner || !repo || !branch || !Array.isArray(paths) || paths.length === 0 || paths.length > 10) {
+    return Response.json({ code: 'INVALID_URL', message: 'Missing required fields or too many paths (max 10)' }, { status: 400 })
   }
 
   const startTime = Date.now()

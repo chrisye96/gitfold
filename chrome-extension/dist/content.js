@@ -215,7 +215,11 @@
         btn.className = "gf-btn";
         const displayLabel = state.label ?? label;
         if (state.fileCount !== void 0) btn.title = `${state.fileCount} files`;
-        btn.innerHTML = `${ICON_DOWNLOAD} ${displayLabel}`;
+        const iconSpan = document.createElement("span");
+        iconSpan.innerHTML = ICON_DOWNLOAD;
+        const labelText = document.createTextNode(` ${displayLabel}`);
+        btn.appendChild(iconSpan);
+        btn.appendChild(labelText);
         btn.addEventListener("click", callbacks.onDownload);
         container.appendChild(btn);
       } else if (state.status === "loading") {
@@ -264,6 +268,12 @@
   var selected = /* @__PURE__ */ new Set();
   function getSelectedPaths() {
     return Array.from(selected);
+  }
+  function cleanupCheckboxes() {
+    selected.clear();
+    document.querySelectorAll(`.${PREFIX}-wrap`).forEach((el) => el.remove());
+    document.getElementById(STYLE_ID)?.remove();
+    document.getElementById(`${PREFIX}-toolbar`)?.remove();
   }
   function injectCheckboxes() {
     if (!parseGithubUrl(window.location.href)) return;
@@ -398,6 +408,7 @@
       document.removeEventListener("gitfold:selection-changed", selectionChangedHandler);
       selectionChangedHandler = null;
     }
+    cleanupCheckboxes();
   }
   function getVisibleFileCount() {
     const countEl = document.querySelector('[data-testid="files-count"]') ?? document.querySelector('[aria-label*="files"]');

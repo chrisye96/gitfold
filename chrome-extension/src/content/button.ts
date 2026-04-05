@@ -64,7 +64,11 @@ export function mountButton(
       // state.label overrides the default label (used for "Download N selected" in Phase 4)
       const displayLabel = state.label ?? label
       if (state.fileCount !== undefined) btn.title = `${state.fileCount} files`
-      btn.innerHTML = `${ICON_DOWNLOAD} ${displayLabel}`
+      const iconSpan = document.createElement('span')
+      iconSpan.innerHTML = ICON_DOWNLOAD  // ICON_DOWNLOAD is a static string literal, safe
+      const labelText = document.createTextNode(` ${displayLabel}`)
+      btn.appendChild(iconSpan)
+      btn.appendChild(labelText)
       btn.addEventListener('click', callbacks.onDownload)
       container.appendChild(btn)
 

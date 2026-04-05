@@ -2,7 +2,7 @@ import { parseGithubUrl } from '../shared/parse-url'
 import { findAnchor } from './anchor'
 import { mountButton } from './button'
 import type { ButtonState } from './button'
-import { getSelectedPaths } from './checkboxes'
+import { getSelectedPaths, cleanupCheckboxes } from './checkboxes'
 
 const MOUNT_ID = 'gitfold-root'
 
@@ -109,6 +109,7 @@ export function cleanup(): void {
     document.removeEventListener('gitfold:selection-changed', selectionChangedHandler)
     selectionChangedHandler = null
   }
+  cleanupCheckboxes()
 }
 
 /**
