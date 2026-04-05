@@ -1,0 +1,127 @@
+/* ── Shadow DOM stylesheet — self-contained, no dependencies on GitHub's page ─
+   Tokens mirror web/css/tokens.css exactly.
+   When tokens change in web/css/tokens.css, update this file to match.       */
+
+:host {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 8px;
+
+  /* Light mode — mirrors web/css/tokens.css */
+  --c-primary:       #0969da;
+  --c-primary-hover: #035cc5;
+  --c-success:       #1a7f37;
+  --c-error:         #cf222e;
+  --c-text:          #1F2328;
+  --c-text-muted:    #656d76;
+  --c-border:        #d0d7de;
+  --c-surface:       #f6f8fa;
+  --c-focus-ring:    rgba(9, 105, 218, 0.3);
+  --radius-sm:       4px;
+  --radius:          6px;
+  --transition:      80ms ease-in-out;
+  --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :host {
+    --c-primary:       #2f81f7;
+    --c-primary-hover: #388bfd;
+    --c-success:       #3fb950;
+    --c-error:         #f85149;
+    --c-text:          #e6edf3;
+    --c-text-muted:    #9ba3ab;
+    --c-border:        #30363d;
+    --c-surface:       #161b22;
+    --c-focus-ring:    rgba(47, 129, 247, 0.4);
+  }
+}
+
+/* ── Primary download button — matches .btn-token-save from web ─────────── */
+.gf-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  background: var(--c-primary);
+  color: #ffffff;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.25;
+  cursor: pointer;
+  transition: background var(--transition), opacity var(--transition);
+  white-space: nowrap;
+  user-select: none;
+}
+
+.gf-btn:hover:not(:disabled) {
+  background: var(--c-primary-hover);
+}
+
+.gf-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--c-focus-ring);
+}
+
+.gf-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+/* ── State variants ──────────────────────────────────────────────────────── */
+.gf-btn--success {
+  background: transparent;
+  color: var(--c-success);
+  border-color: transparent;
+  cursor: default;
+  font-weight: 500;
+}
+
+/* ── Error message (not a button) ───────────────────────────────────────── */
+.gf-error-msg {
+  font-family: var(--font-body);
+  font-size: 0.8125rem;
+  color: var(--c-error);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ── Secondary action button (Add Token / Retry) ────────────────────────── */
+.gf-action-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  background: transparent;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  color: var(--c-text);
+  cursor: pointer;
+  margin-left: 6px;
+  transition: background var(--transition);
+  white-space: nowrap;
+}
+
+.gf-action-btn:hover {
+  background: var(--c-surface);
+}
+
+/* ── Loading spinner ─────────────────────────────────────────────────────── */
+@keyframes gf-spin {
+  to { transform: rotate(360deg); }
+}
+
+.gf-spinner {
+  width: 13px;
+  height: 13px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: gf-spin 0.65s linear infinite;
+  flex-shrink: 0;
+}
