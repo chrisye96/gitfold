@@ -28,13 +28,18 @@ const entries = [
   { entryPoints: ['src/background/index.ts'], outfile: 'dist/background.js', format: 'esm'  },
 ]
 
-if (isWatch) {
-  const contexts = await Promise.all(
-    entries.map(e => esbuild.context({ ...baseOptions, ...e }))
-  )
-  await Promise.all(contexts.map(ctx => ctx.watch()))
-  console.log('[esbuild] watching...')
-} else {
-  await Promise.all(entries.map(e => esbuild.build({ ...baseOptions, ...e })))
-  console.log('[esbuild] build complete')
+try {
+  if (isWatch) {
+    const contexts = await Promise.all(
+      entries.map(e => esbuild.context({ ...baseOptions, ...e }))
+    )
+    await Promise.all(contexts.map(ctx => ctx.watch()))
+    console.log('[esbuild] watching...')
+  } else {
+    await Promise.all(entries.map(e => esbuild.build({ ...baseOptions, ...e })))
+    console.log('[esbuild] build complete')
+  }
+} catch (err) {
+  console.error('[esbuild] build failed:', err)
+  process.exit(1)
 }
