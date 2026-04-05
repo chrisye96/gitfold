@@ -45,7 +45,11 @@ async function fetchWithRetry(
  *
  * chrome.downloads requires the "downloads" permission in manifest.json.
  */
-export async function handleDownload(url: string, info: RepoInfo): Promise<DownloadResult> {
+export async function handleDownload(
+  url: string,
+  info: RepoInfo,
+  selectedPaths?: string[],
+): Promise<DownloadResult> {
   // Full repo: redirect to GitHub's native archive (zero cost, no bandwidth)
   if (info.type === 'repo') {
     const branch = info.branch || 'HEAD'
@@ -56,6 +60,54 @@ export async function handleDownload(url: string, info: RepoInfo): Promise<Downl
 
   // Read optional token from storage
   const { github_token: token } = await chrome.storage.local.get('github_token') as { github_token?: string }
+
+  // Multi-path POST (Phase 4: checkbox selection)
+  if (selectedPaths && selectedPaths.length > 0) {
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS)
+    try {
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'X-Client': 'extension',
+      }
+      if (token) headers['X-GitHub-Token'] = token
+
+      const response = await fetch(`${API_BASE}/v1/download`, {
+        method: 'POST',
+        signal: controller.signal,
+        headers,
+        body: JSON.stringify({
+          owner: info.owner,
+          repo: info.repo,
+          branch: info.branch,
+          paths: selectedPaths,
+        }),
+      })
+
+      if (response.ok) {
+        const blob = await response.blob()
+        const blobUrl = URL.createObjectURL(blob)
+        const filename = `${info.owner}-${info.repo}-selection.zip`
+        await chrome.downloads.download({ url: blobUrl, filename, saveAs: false })
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000)
+        return { ok: true }
+      }
+
+      const hasToken = Boolean(token)
+      if (response.status === 429) return { ok: false, code: 'rate_limited', hasToken }
+      if (response.status === 404) return { ok: false, code: 'not_found',    hasToken }
+      if (response.status === 401 || response.status === 403) return { ok: false, code: 'forbidden', hasToken }
+      if (response.status === 413) return { ok: false, code: 'too_many_files', hasToken }
+      return { ok: false, code: 'unknown', hasToken }
+
+    } catch (err) {
+      const hasToken = Boolean(token)
+      if ((err as Error).name === 'AbortError') return { ok: false, code: 'network', hasToken }
+      return { ok: false, code: 'network', hasToken }
+    } finally {
+      clearTimeout(timeoutId)
+    }
+  }
 
   // Fetch zip from GitFold API with a 30s timeout (1 automatic retry on 5xx)
   try {

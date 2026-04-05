@@ -18,7 +18,7 @@ registerContextMenu()
  */
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (msg.action === 'download') {
-    handleDownload(msg.url, msg.info)
+    handleDownload(msg.url, msg.info, msg.selectedPaths)
       .then(sendResponse)
       .catch(() => sendResponse({ ok: false, code: 'network', hasToken: false }))
     return true

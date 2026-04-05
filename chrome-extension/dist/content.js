@@ -258,8 +258,79 @@
     return setState;
   }
 
+  // src/content/checkboxes.ts
+  var PREFIX = "gitfold-cb";
+  var STYLE_ID = `${PREFIX}-style`;
+  var selected = /* @__PURE__ */ new Set();
+  function getSelectedPaths() {
+    return Array.from(selected);
+  }
+  function injectCheckboxes() {
+    if (!parseGithubUrl(window.location.href)) return;
+    if (!document.getElementById(STYLE_ID)) {
+      const style = document.createElement("style");
+      style.id = STYLE_ID;
+      style.textContent = `
+      .${PREFIX}-wrap { display: contents; }
+      .${PREFIX}-cb { width: 16px; height: 16px; cursor: pointer; accent-color: #0969da; }
+      .${PREFIX}-toolbar {
+        display: flex; align-items: center; gap: 8px;
+        padding: 4px 8px; font-size: 0.8125rem;
+        color: #656d76;
+      }
+    `;
+      document.head.appendChild(style);
+    }
+    const rows = Array.from(
+      document.querySelectorAll('[role="row"][data-testid], [role="row"][aria-label]')
+    ).filter((row) => row.querySelector('a[href*="/blob/"], a[href*="/tree/"]'));
+    for (const row of rows) {
+      if (row.querySelector(`.${PREFIX}-cb`)) continue;
+      const link = row.querySelector('a[href*="/blob/"], a[href*="/tree/"]');
+      if (!link) continue;
+      const match = link.href.match(/\/(blob|tree)\/[^/]+\/(.+)$/);
+      if (!match) continue;
+      const path = decodeURIComponent(match[2]);
+      const wrap = document.createElement("span");
+      wrap.className = `${PREFIX}-wrap`;
+      const cb = document.createElement("input");
+      cb.type = "checkbox";
+      cb.className = `${PREFIX}-cb`;
+      cb.checked = selected.has(path);
+      cb.setAttribute("aria-label", `Select ${path}`);
+      cb.addEventListener("change", () => {
+        if (cb.checked) {
+          selected.add(path);
+        } else {
+          selected.delete(path);
+        }
+        updateToolbar();
+        document.dispatchEvent(new CustomEvent("gitfold:selection-changed"));
+      });
+      wrap.appendChild(cb);
+      row.insertBefore(wrap, row.firstChild);
+    }
+  }
+  function updateToolbar() {
+    const count = selected.size;
+    let toolbar = document.getElementById(`${PREFIX}-toolbar`);
+    if (count === 0) {
+      toolbar?.remove();
+      return;
+    }
+    if (!toolbar) {
+      toolbar = document.createElement("div");
+      toolbar.id = `${PREFIX}-toolbar`;
+      toolbar.className = `${PREFIX}-toolbar`;
+      const fileList = document.querySelector('[aria-label="Files"]') ?? document.querySelector('[data-testid="file-tree-content"]');
+      fileList?.parentElement?.insertBefore(toolbar, fileList);
+    }
+    toolbar.textContent = `${count} item${count === 1 ? "" : "s"} selected`;
+  }
+
   // src/content/mount.ts
   var MOUNT_ID = "gitfold-root";
+  var selectionChangedHandler = null;
   function tryMount() {
     const info = parseGithubUrl(window.location.href);
     if (!info) {
@@ -278,7 +349,13 @@
       onDownload: async () => {
         setState({ status: "loading" });
         try {
-          const response = await chrome.runtime.sendMessage({ action: "download", url: window.location.href, info });
+          const selectedPaths = getSelectedPaths();
+          const response = await chrome.runtime.sendMessage({
+            action: "download",
+            url: window.location.href,
+            info,
+            selectedPaths: selectedPaths.length > 0 ? selectedPaths : void 0
+          });
           if (response.ok) {
             setState({ status: "success" });
             setTimeout(() => setState({ status: "idle" }), 2e3);
@@ -301,6 +378,14 @@
       }
     };
     setState = mountButton(shadow, label, callbacks);
+    selectionChangedHandler = () => {
+      const paths = getSelectedPaths();
+      setState({
+        status: "idle",
+        label: paths.length > 0 ? `Download ${paths.length} selected` : void 0
+      });
+    };
+    document.addEventListener("gitfold:selection-changed", selectionChangedHandler);
     const fileCount = getVisibleFileCount();
     if (fileCount !== null) {
       setState({ status: "idle", fileCount });
@@ -309,6 +394,10 @@
   }
   function cleanup() {
     document.getElementById(MOUNT_ID)?.remove();
+    if (selectionChangedHandler) {
+      document.removeEventListener("gitfold:selection-changed", selectionChangedHandler);
+      selectionChangedHandler = null;
+    }
   }
   function getVisibleFileCount() {
     const countEl = document.querySelector('[data-testid="files-count"]') ?? document.querySelector('[aria-label*="files"]');
@@ -322,22 +411,26 @@
   function checkNavigation() {
     if (location.href !== lastHref) {
       lastHref = location.href;
-      tryMount();
+      mountAndInject();
     }
   }
   setInterval(checkNavigation, 500);
   var origPushState = history.pushState.bind(history);
   history.pushState = (...args) => {
     origPushState(...args);
-    tryMount();
+    mountAndInject();
   };
-  window.addEventListener("popstate", tryMount);
+  window.addEventListener("popstate", mountAndInject);
   var debounceTimer = 0;
   var observer = new MutationObserver(() => {
     clearTimeout(debounceTimer);
-    debounceTimer = window.setTimeout(tryMount, 300);
+    debounceTimer = window.setTimeout(mountAndInject, 300);
   });
   observer.observe(document.body, { childList: true, subtree: false });
-  tryMount();
+  mountAndInject();
+  function mountAndInject() {
+    tryMount();
+    setTimeout(injectCheckboxes, 500);
+  }
 })();
 //# sourceMappingURL=content.js.map

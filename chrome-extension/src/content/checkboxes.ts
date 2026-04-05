@@ -1,0 +1,108 @@
+import { parseGithubUrl } from '../shared/parse-url'
+
+const PREFIX = 'gitfold-cb'
+const STYLE_ID = `${PREFIX}-style`
+
+// Selected paths: set of relative paths within the current directory
+export const selected = new Set<string>()
+
+/** Called from mount.ts to get current selection for download. */
+export function getSelectedPaths(): string[] {
+  return Array.from(selected)
+}
+
+/** Called on navigation: clear selection and remove injected checkboxes. */
+export function cleanupCheckboxes(): void {
+  selected.clear()
+  document.querySelectorAll(`.${PREFIX}-wrap`).forEach(el => el.remove())
+  document.getElementById(STYLE_ID)?.remove()
+  document.getElementById(`${PREFIX}-toolbar`)?.remove()
+}
+
+/**
+ * Inject checkboxes into GitHub's file list rows.
+ * Uses semantic attributes (role="row", data-testid) to find rows.
+ * Styling uses a unique class prefix — no Shadow DOM since checkboxes
+ * must interleave with GitHub's own DOM rows.
+ */
+export function injectCheckboxes(): void {
+  if (!parseGithubUrl(window.location.href)) return
+
+  // Inject styles once
+  if (!document.getElementById(STYLE_ID)) {
+    const style = document.createElement('style')
+    style.id = STYLE_ID
+    style.textContent = `
+      .${PREFIX}-wrap { display: contents; }
+      .${PREFIX}-cb { width: 16px; height: 16px; cursor: pointer; accent-color: #0969da; }
+      .${PREFIX}-toolbar {
+        display: flex; align-items: center; gap: 8px;
+        padding: 4px 8px; font-size: 0.8125rem;
+        color: #656d76;
+      }
+    `
+    document.head.appendChild(style)
+  }
+
+  // Find file list rows
+  const rows = Array.from(
+    document.querySelectorAll('[role="row"][data-testid], [role="row"][aria-label]')
+  ).filter(row => row.querySelector('a[href*="/blob/"], a[href*="/tree/"]'))
+
+  for (const row of rows) {
+    if (row.querySelector(`.${PREFIX}-cb`)) continue  // already injected
+
+    const link = row.querySelector<HTMLAnchorElement>('a[href*="/blob/"], a[href*="/tree/"]')
+    if (!link) continue
+
+    // Extract relative path from the href
+    const match = link.href.match(/\/(blob|tree)\/[^/]+\/(.+)$/)
+    if (!match) continue
+    const path = decodeURIComponent(match[2])
+
+    const wrap = document.createElement('span')
+    wrap.className = `${PREFIX}-wrap`
+
+    const cb = document.createElement('input')
+    cb.type = 'checkbox'
+    cb.className = `${PREFIX}-cb`
+    cb.checked = selected.has(path)
+    cb.setAttribute('aria-label', `Select ${path}`)
+
+    cb.addEventListener('change', () => {
+      if (cb.checked) {
+        selected.add(path)
+      } else {
+        selected.delete(path)
+      }
+      updateToolbar()
+      // Notify mount.ts that selection changed
+      document.dispatchEvent(new CustomEvent('gitfold:selection-changed'))
+    })
+
+    wrap.appendChild(cb)
+    row.insertBefore(wrap, row.firstChild)
+  }
+}
+
+function updateToolbar(): void {
+  const count = selected.size
+  let toolbar = document.getElementById(`${PREFIX}-toolbar`)
+
+  if (count === 0) {
+    toolbar?.remove()
+    return
+  }
+
+  if (!toolbar) {
+    toolbar = document.createElement('div')
+    toolbar.id = `${PREFIX}-toolbar`
+    toolbar.className = `${PREFIX}-toolbar`
+    // Insert above the file list
+    const fileList = document.querySelector('[aria-label="Files"]') ??
+                     document.querySelector('[data-testid="file-tree-content"]')
+    fileList?.parentElement?.insertBefore(toolbar, fileList)
+  }
+
+  toolbar.textContent = `${count} item${count === 1 ? '' : 's'} selected`
+}

@@ -2,8 +2,11 @@ import { parseGithubUrl } from '../shared/parse-url'
 import { findAnchor } from './anchor'
 import { mountButton } from './button'
 import type { ButtonState } from './button'
+import { getSelectedPaths } from './checkboxes'
 
 const MOUNT_ID = 'gitfold-root'
+
+let selectionChangedHandler: (() => void) | null = null
 
 /**
  * Attempt to inject the GitFold button into the current page.
@@ -43,8 +46,14 @@ export function tryMount(): void {
     onDownload: async () => {
       setState({ status: 'loading' })
       try {
+        const selectedPaths = getSelectedPaths()
         const response: { ok: boolean; code?: string; hasToken?: boolean } =
-          await chrome.runtime.sendMessage({ action: 'download', url: window.location.href, info })
+          await chrome.runtime.sendMessage({
+            action: 'download',
+            url: window.location.href,
+            info,
+            selectedPaths: selectedPaths.length > 0 ? selectedPaths : undefined,
+          })
 
         if (response.ok) {
           setState({ status: 'success' })
@@ -73,6 +82,16 @@ export function tryMount(): void {
 
   setState = mountButton(shadow, label, callbacks)
 
+  // Register selection-changed listener (replacing any previous one via cleanup())
+  selectionChangedHandler = () => {
+    const paths = getSelectedPaths()
+    setState({
+      status: 'idle',
+      label: paths.length > 0 ? `Download ${paths.length} selected` : undefined,
+    })
+  }
+  document.addEventListener('gitfold:selection-changed', selectionChangedHandler)
+
   // Initialize with file count hint if available
   const fileCount = getVisibleFileCount()
   if (fileCount !== null) {
@@ -86,6 +105,10 @@ export function tryMount(): void {
 /** Remove the GitFold button from the DOM (called when navigating away from supported pages). */
 export function cleanup(): void {
   document.getElementById(MOUNT_ID)?.remove()
+  if (selectionChangedHandler) {
+    document.removeEventListener('gitfold:selection-changed', selectionChangedHandler)
+    selectionChangedHandler = null
+  }
 }
 
 /**
