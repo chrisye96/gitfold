@@ -334,7 +334,7 @@
         updateToolbar();
         document.dispatchEvent(new CustomEvent("gitfold:selection-changed"));
       });
-      const filenameCol = row.querySelector(".react-directory-filename-column") ?? // subdirectory pages
+      const filenameCol = row.querySelector(".react-directory-row-name-cell-large-screen .react-directory-filename-column") ?? row.querySelector(".react-directory-filename-column") ?? // fallback
       row;
       filenameCol.insertBefore(cb, filenameCol.firstChild);
     }

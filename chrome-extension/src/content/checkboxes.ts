@@ -85,8 +85,11 @@ export function injectCheckboxes(): void {
 
     // Insert inside the filename column (next to the file icon), not as a
     // sibling of <td> elements — that breaks table layout.
+    // GitHub has two name cells per row (small-screen + large-screen);
+    // target the large-screen one which is actually visible on desktop.
     const filenameCol =
-      row.querySelector('.react-directory-filename-column') ??  // subdirectory pages
+      row.querySelector('.react-directory-row-name-cell-large-screen .react-directory-filename-column') ??
+      row.querySelector('.react-directory-filename-column') ??  // fallback
       row  // repo root fallback (role="row" divs)
     filenameCol.insertBefore(cb, filenameCol.firstChild)
   }
