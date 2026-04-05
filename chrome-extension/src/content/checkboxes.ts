@@ -14,7 +14,7 @@ export function getSelectedPaths(): string[] {
 /** Called on navigation: clear selection and remove injected checkboxes. */
 export function cleanupCheckboxes(): void {
   selected.clear()
-  document.querySelectorAll(`.${PREFIX}-wrap`).forEach(el => el.remove())
+  document.querySelectorAll(`.${PREFIX}-cb`).forEach(el => el.remove())
   document.getElementById(STYLE_ID)?.remove()
   document.getElementById(`${PREFIX}-toolbar`)?.remove()
 }
@@ -33,8 +33,10 @@ export function injectCheckboxes(): void {
     const style = document.createElement('style')
     style.id = STYLE_ID
     style.textContent = `
-      .${PREFIX}-wrap { display: contents; }
-      .${PREFIX}-cb { width: 16px; height: 16px; cursor: pointer; accent-color: #0969da; }
+      .${PREFIX}-cb {
+        width: 14px; height: 14px; cursor: pointer; accent-color: #0969da;
+        margin: 0; margin-right: 6px; flex-shrink: 0; vertical-align: middle;
+      }
       .${PREFIX}-toolbar {
         display: flex; align-items: center; gap: 8px;
         padding: 4px 8px; font-size: 0.8125rem;
@@ -64,9 +66,6 @@ export function injectCheckboxes(): void {
     if (!match) continue
     const path = decodeURIComponent(match[2])
 
-    const wrap = document.createElement('span')
-    wrap.className = `${PREFIX}-wrap`
-
     const cb = document.createElement('input')
     cb.type = 'checkbox'
     cb.className = `${PREFIX}-cb`
@@ -84,8 +83,12 @@ export function injectCheckboxes(): void {
       document.dispatchEvent(new CustomEvent('gitfold:selection-changed'))
     })
 
-    wrap.appendChild(cb)
-    row.insertBefore(wrap, row.firstChild)
+    // Insert inside the filename column (next to the file icon), not as a
+    // sibling of <td> elements — that breaks table layout.
+    const filenameCol =
+      row.querySelector('.react-directory-filename-column') ??  // subdirectory pages
+      row  // repo root fallback (role="row" divs)
+    filenameCol.insertBefore(cb, filenameCol.firstChild)
   }
 }
 

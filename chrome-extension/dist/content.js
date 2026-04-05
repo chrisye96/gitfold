@@ -104,6 +104,15 @@
 }
 
 /* \u2500\u2500 Primary download button \u2014 compact, blends with GitHub's toolbar \u2500\u2500\u2500\u2500\u2500\u2500 */
+.gf-btn > span:first-child {
+  display: inline-flex;
+  align-items: center;
+}
+
+.gf-btn svg {
+  display: block;  /* remove inline baseline gap */
+}
+
 .gf-btn {
   display: inline-flex;
   align-items: center;
@@ -277,7 +286,7 @@
   }
   function cleanupCheckboxes() {
     selected.clear();
-    document.querySelectorAll(`.${PREFIX}-wrap`).forEach((el) => el.remove());
+    document.querySelectorAll(`.${PREFIX}-cb`).forEach((el) => el.remove());
     document.getElementById(STYLE_ID)?.remove();
     document.getElementById(`${PREFIX}-toolbar`)?.remove();
   }
@@ -287,8 +296,10 @@
       const style = document.createElement("style");
       style.id = STYLE_ID;
       style.textContent = `
-      .${PREFIX}-wrap { display: contents; }
-      .${PREFIX}-cb { width: 16px; height: 16px; cursor: pointer; accent-color: #0969da; }
+      .${PREFIX}-cb {
+        width: 14px; height: 14px; cursor: pointer; accent-color: #0969da;
+        margin: 0; margin-right: 6px; flex-shrink: 0; vertical-align: middle;
+      }
       .${PREFIX}-toolbar {
         display: flex; align-items: center; gap: 8px;
         padding: 4px 8px; font-size: 0.8125rem;
@@ -309,8 +320,6 @@
       const match = link.href.match(/\/(blob|tree)\/[^/]+\/(.+)$/);
       if (!match) continue;
       const path = decodeURIComponent(match[2]);
-      const wrap = document.createElement("span");
-      wrap.className = `${PREFIX}-wrap`;
       const cb = document.createElement("input");
       cb.type = "checkbox";
       cb.className = `${PREFIX}-cb`;
@@ -325,8 +334,9 @@
         updateToolbar();
         document.dispatchEvent(new CustomEvent("gitfold:selection-changed"));
       });
-      wrap.appendChild(cb);
-      row.insertBefore(wrap, row.firstChild);
+      const filenameCol = row.querySelector(".react-directory-filename-column") ?? // subdirectory pages
+      row;
+      filenameCol.insertBefore(cb, filenameCol.firstChild);
     }
   }
   function updateToolbar() {

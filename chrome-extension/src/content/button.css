@@ -39,6 +39,15 @@
 }
 
 /* ── Primary download button — compact, blends with GitHub's toolbar ────── */
+.gf-btn > span:first-child {
+  display: inline-flex;
+  align-items: center;
+}
+
+.gf-btn svg {
+  display: block;  /* remove inline baseline gap */
+}
+
 .gf-btn {
   display: inline-flex;
   align-items: center;
