@@ -55,6 +55,9 @@ api.get('/download', async (c) => {
 
   const startTime = Date.now()
   const userId = sessionUser?.userId ?? 'anon'
+  const rawClient = c.req.header('X-Client') ?? 'web'
+  const source: 'web' | 'extension' | 'cli' =
+    rawClient === 'extension' || rawClient === 'cli' ? rawClient : 'web'
 
   try {
     // 0. Resolve commit SHA once (reused for cache check + cache save)
@@ -86,6 +89,7 @@ api.get('/download', async (c) => {
         trackDownload(c.env, {
           userId,
           tier: c.get('tier') ?? 'free',
+          source,
           owner: info.owner,
           repo: info.repo,
           path: info.path,
@@ -130,6 +134,7 @@ api.get('/download', async (c) => {
     trackDownload(c.env, {
       userId,
       tier: c.get('tier') ?? 'free',
+      source,
       owner: info.owner,
       repo: info.repo,
       path: info.path,

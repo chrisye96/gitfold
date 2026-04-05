@@ -16,6 +16,7 @@ export interface DownloadEvent {
   /** D1 user ID or 'anon' */
   userId: string
   tier: Tier
+  source: 'web' | 'extension' | 'cli'
   owner: string
   repo: string
   path: string
@@ -43,6 +44,7 @@ export function trackDownload(env: Env, event: DownloadEvent): void {
         event.repo,                     // blob4: repo name
         event.path,                     // blob5: directory path
         event.cacheHit ? '1' : '0',    // blob6: cache hit flag
+        event.source,                   // blob7: client source
       ],
       // Numeric metrics (up to 20 doubles)
       doubles: [
