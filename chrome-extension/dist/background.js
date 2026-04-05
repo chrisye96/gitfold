@@ -19,37 +19,31 @@ async function fetchWithRetry(url, headers, maxRetries = 1) {
   }
   throw lastError;
 }
-function buildApiUrl(info, subPath) {
-  const path = subPath ?? info.path;
-  const ghUrl = `https://github.com/${info.owner}/${info.repo}/tree/${info.branch}/${path}`;
-  return `${API_BASE}/v1/download?url=${encodeURIComponent(ghUrl)}`;
-}
-async function downloadViaApi(apiUrl, token, fallbackFilename) {
-  if (!token) {
-    await chrome.downloads.download({ url: apiUrl, saveAs: false });
-    return null;
+async function downloadBlob(blob, filename) {
+  const buffer = await blob.arrayBuffer();
+  const bytes = new Uint8Array(buffer);
+  let binary = "";
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i]);
   }
-  const headers = {
-    "X-Client": "extension",
-    "X-GitHub-Token": token
-  };
-  const response = await fetchWithRetry(apiUrl, headers);
+  const base64 = btoa(binary);
+  const dataUrl = `data:application/octet-stream;base64,${base64}`;
+  await chrome.downloads.download({ url: dataUrl, filename, saveAs: false });
+}
+async function fetchAndDownload(url, headers, filename) {
+  const response = await fetchWithRetry(url, headers);
   if (response.ok) {
     const blob = await response.blob();
     const cd = response.headers.get("Content-Disposition");
     const cdMatch = cd?.match(/filename="?([^"]+)"?/);
-    const filename = cdMatch?.[1] || fallbackFilename;
-    const buffer = await blob.arrayBuffer();
-    const bytes = new Uint8Array(buffer);
-    let binary = "";
-    for (let i = 0; i < bytes.length; i++) {
-      binary += String.fromCharCode(bytes[i]);
-    }
-    const base64 = btoa(binary);
-    const dataUrl = `data:application/octet-stream;base64,${base64}`;
-    await chrome.downloads.download({ url: dataUrl, filename, saveAs: false });
+    const resolvedFilename = cdMatch?.[1] || filename;
+    await downloadBlob(blob, resolvedFilename);
   }
   return response;
+}
+function buildApiUrl(info) {
+  const ghUrl = `https://github.com/${info.owner}/${info.repo}/tree/${info.branch}/${info.path}`;
+  return `${API_BASE}/v1/download?url=${encodeURIComponent(ghUrl)}`;
 }
 function mapStatusCode(status) {
   if (status === 429) return "rate_limited";
@@ -73,8 +67,11 @@ async function handleDownload(url, info, selectedItems) {
         const item = selectedItems[0];
         const rawUrl = `https://raw.githubusercontent.com/${info.owner}/${info.repo}/${info.branch}/${item.path}`;
         const filename = item.path.split("/").pop() || "file";
-        await chrome.downloads.download({ url: rawUrl, filename, saveAs: false });
-        return { ok: true };
+        const headers = {};
+        if (token) headers["Authorization"] = `Bearer ${token}`;
+        const response = await fetchAndDownload(rawUrl, headers, filename);
+        if (response.ok) return { ok: true };
+        return { ok: false, code: mapStatusCode(response.status), hasToken };
       } catch {
         return { ok: false, code: "network", hasToken };
       }
@@ -83,8 +80,9 @@ async function handleDownload(url, info, selectedItems) {
       const apiUrl = buildApiUrl(info);
       const safePath = info.path.replace(/\//g, "-") || "root";
       const fallbackFilename = `${info.owner}-${info.repo}-${safePath}.zip`;
-      const response = await downloadViaApi(apiUrl, token, fallbackFilename);
-      if (!response) return { ok: true };
+      const headers = { "X-Client": "extension" };
+      if (token) headers["X-GitHub-Token"] = token;
+      const response = await fetchAndDownload(apiUrl, headers, fallbackFilename);
       if (response.ok) return { ok: true };
       return { ok: false, code: mapStatusCode(response.status), hasToken };
     } catch {
@@ -95,8 +93,9 @@ async function handleDownload(url, info, selectedItems) {
     const apiUrl = buildApiUrl(info);
     const safePath = info.path.replace(/\//g, "-") || "root";
     const fallbackFilename = `${info.owner}-${info.repo}-${safePath}.zip`;
-    const response = await downloadViaApi(apiUrl, token, fallbackFilename);
-    if (!response) return { ok: true };
+    const headers = { "X-Client": "extension" };
+    if (token) headers["X-GitHub-Token"] = token;
+    const response = await fetchAndDownload(apiUrl, headers, fallbackFilename);
     if (response.ok) return { ok: true };
     return { ok: false, code: mapStatusCode(response.status), hasToken };
   } catch (err) {

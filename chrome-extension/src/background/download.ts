@@ -26,13 +26,11 @@ async function fetchWithRetry(
     try {
       const res = await fetch(url, { signal: controller.signal, headers })
       clearTimeout(timeoutId)
-      // Only retry on 5xx server errors — not on 4xx client errors
       if (res.status >= 500 && attempt < maxRetries) continue
       return res
     } catch (err) {
       clearTimeout(timeoutId)
       lastError = err
-      // Don't retry AbortError (timeout)
       if ((err as Error).name === 'AbortError') throw err
     }
   }
@@ -40,64 +38,58 @@ async function fetchWithRetry(
 }
 
 /**
- * Build the GitFold API download URL for a GitHub tree path.
+ * Convert a Blob to a base64 data URL and trigger chrome.downloads.
+ *
+ * MV3 service workers can't use URL.createObjectURL reliably (different
+ * execution context from the download manager). We always use data URLs
+ * with application/octet-stream to force Chrome to treat it as a binary
+ * download and respect the filename parameter.
  */
-function buildApiUrl(info: RepoInfo, subPath?: string): string {
-  const path = subPath ?? info.path
-  const ghUrl = `https://github.com/${info.owner}/${info.repo}/tree/${info.branch}/${path}`
-  return `${API_BASE}/v1/download?url=${encodeURIComponent(ghUrl)}`
+async function downloadBlob(blob: Blob, filename: string): Promise<void> {
+  const buffer = await blob.arrayBuffer()
+  const bytes = new Uint8Array(buffer)
+  let binary = ''
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i])
+  }
+  const base64 = btoa(binary)
+  const dataUrl = `data:application/octet-stream;base64,${base64}`
+  await chrome.downloads.download({ url: dataUrl, filename, saveAs: false })
 }
 
 /**
- * Download via the GitFold API.
+ * Fetch a URL and trigger a download if successful.
+ * Returns the Response for status inspection.
  *
- * Strategy:
- *   - Without token → let chrome.downloads fetch the API URL directly.
- *     The API returns Content-Disposition with the correct filename, so
- *     Chrome saves "docs — gitfold.cc.zip" etc. automatically.
- *   - With token → we must fetch ourselves (to send X-GitHub-Token header),
- *     then pipe the response to chrome.downloads via a data URL.
+ * Always fetches first (never chrome.downloads.download(url) directly)
+ * because:
+ *   1. Error responses (413, 429) would be saved as download.json
+ *   2. raw.githubusercontent.com returns Content-Type: text/plain
+ *      which makes Chrome rename .md → .txt
+ *   3. We need to send custom headers (X-GitHub-Token, X-Client)
  */
-async function downloadViaApi(
-  apiUrl: string,
-  token: string | undefined,
-  fallbackFilename: string,
-): Promise<Response | null> {
-  if (!token) {
-    // Direct download — Chrome handles filename from Content-Disposition
-    await chrome.downloads.download({ url: apiUrl, saveAs: false })
-    return null  // no Response to inspect; assume success
-  }
-
-  // Authenticated download — need to proxy through service worker
-  const headers: Record<string, string> = {
-    'X-Client': 'extension',
-    'X-GitHub-Token': token,
-  }
-  const response = await fetchWithRetry(apiUrl, headers)
+async function fetchAndDownload(
+  url: string,
+  headers: Record<string, string>,
+  filename: string,
+): Promise<Response> {
+  const response = await fetchWithRetry(url, headers)
   if (response.ok) {
     const blob = await response.blob()
-    // Extract filename from Content-Disposition if available
+    // Try to extract filename from Content-Disposition (API sets it)
     const cd = response.headers.get('Content-Disposition')
     const cdMatch = cd?.match(/filename="?([^"]+)"?/)
-    const filename = cdMatch?.[1] || fallbackFilename
-
-    const buffer = await blob.arrayBuffer()
-    const bytes = new Uint8Array(buffer)
-    let binary = ''
-    for (let i = 0; i < bytes.length; i++) {
-      binary += String.fromCharCode(bytes[i])
-    }
-    const base64 = btoa(binary)
-    const dataUrl = `data:application/octet-stream;base64,${base64}`
-    await chrome.downloads.download({ url: dataUrl, filename, saveAs: false })
+    const resolvedFilename = cdMatch?.[1] || filename
+    await downloadBlob(blob, resolvedFilename)
   }
   return response
 }
 
-/**
- * Map an HTTP status code to our typed error code.
- */
+function buildApiUrl(info: RepoInfo): string {
+  const ghUrl = `https://github.com/${info.owner}/${info.repo}/tree/${info.branch}/${info.path}`
+  return `${API_BASE}/v1/download?url=${encodeURIComponent(ghUrl)}`
+}
+
 function mapStatusCode(status: number): DownloadResult['code'] {
   if (status === 429) return 'rate_limited'
   if (status === 404) return 'not_found'
@@ -111,17 +103,10 @@ function mapStatusCode(status: number): DownloadResult['code'] {
  *
  * Behavior by selection:
  *   - No selection (Download Folder / Download Repository button):
- *       repo  → redirect to GitHub's native archive URL
+ *       repo   → redirect to GitHub's native archive URL
  *       folder → download zip via GitFold API
- *
- *   - Single file selected:
- *       Download the raw file directly from GitHub
- *
- *   - Multiple items selected, or any folder selected:
- *       Download the entire current directory as a zip via GitFold API
- *       (bundling individual files client-side is unreliable without a
- *        server-side batch endpoint; downloading the parent folder is
- *        the most reliable approach)
+ *   - Single file selected → download raw file from GitHub
+ *   - Multiple items or folder selected → download current directory as zip
  */
 export async function handleDownload(
   url: string,
@@ -136,36 +121,37 @@ export async function handleDownload(
     return { ok: true }
   }
 
-  // Read optional token from storage
   const { github_token: token } = await chrome.storage.local.get('github_token') as { github_token?: string }
   const hasToken = Boolean(token)
 
   // ── Selection handling ──────────────────────────────────────────────────
 
   if (selectedItems && selectedItems.length > 0) {
-    // Single file selected → direct raw download (no zip)
+    // Single file selected → download raw file (no zip)
     if (selectedItems.length === 1 && selectedItems[0].type === 'blob') {
       try {
         const item = selectedItems[0]
         const rawUrl = `https://raw.githubusercontent.com/${info.owner}/${info.repo}/${info.branch}/${item.path}`
         const filename = item.path.split('/').pop() || 'file'
-        await chrome.downloads.download({ url: rawUrl, filename, saveAs: false })
-        return { ok: true }
+        const headers: Record<string, string> = {}
+        if (token) headers['Authorization'] = `Bearer ${token}`
+        const response = await fetchAndDownload(rawUrl, headers, filename)
+        if (response.ok) return { ok: true }
+        return { ok: false, code: mapStatusCode(response.status), hasToken }
       } catch {
         return { ok: false, code: 'network', hasToken }
       }
     }
 
     // Multiple items or any folder → download current directory as zip
-    // This is more reliable than downloading each item separately, and
-    // avoids the need for client-side zip creation.
     try {
       const apiUrl = buildApiUrl(info)
       const safePath = info.path.replace(/\//g, '-') || 'root'
       const fallbackFilename = `${info.owner}-${info.repo}-${safePath}.zip`
+      const headers: Record<string, string> = { 'X-Client': 'extension' }
+      if (token) headers['X-GitHub-Token'] = token
 
-      const response = await downloadViaApi(apiUrl, token, fallbackFilename)
-      if (!response) return { ok: true }  // direct download (no token), assumed ok
+      const response = await fetchAndDownload(apiUrl, headers, fallbackFilename)
       if (response.ok) return { ok: true }
       return { ok: false, code: mapStatusCode(response.status), hasToken }
     } catch {
@@ -179,9 +165,10 @@ export async function handleDownload(
     const apiUrl = buildApiUrl(info)
     const safePath = info.path.replace(/\//g, '-') || 'root'
     const fallbackFilename = `${info.owner}-${info.repo}-${safePath}.zip`
+    const headers: Record<string, string> = { 'X-Client': 'extension' }
+    if (token) headers['X-GitHub-Token'] = token
 
-    const response = await downloadViaApi(apiUrl, token, fallbackFilename)
-    if (!response) return { ok: true }  // direct download (no token)
+    const response = await fetchAndDownload(apiUrl, headers, fallbackFilename)
     if (response.ok) return { ok: true }
     return { ok: false, code: mapStatusCode(response.status), hasToken }
 
