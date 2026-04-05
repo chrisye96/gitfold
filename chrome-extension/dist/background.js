@@ -19,11 +19,7 @@ async function fetchWithRetry(url, headers, maxRetries = 1) {
   }
   throw lastError;
 }
-async function blobToDownloadUrl(blob) {
-  if (typeof URL.createObjectURL === "function") {
-    const url2 = URL.createObjectURL(blob);
-    return { url: url2, revoke: () => setTimeout(() => URL.revokeObjectURL(url2), 6e4) };
-  }
+async function downloadBlob(blob, filename) {
   const buffer = await blob.arrayBuffer();
   const bytes = new Uint8Array(buffer);
   let binary = "";
@@ -31,9 +27,8 @@ async function blobToDownloadUrl(blob) {
     binary += String.fromCharCode(bytes[i]);
   }
   const base64 = btoa(binary);
-  const url = `data:${blob.type || "application/zip"};base64,${base64}`;
-  return { url, revoke: () => {
-  } };
+  const dataUrl = `data:application/octet-stream;base64,${base64}`;
+  await chrome.downloads.download({ url: dataUrl, filename, saveAs: false });
 }
 async function handleDownload(url, info, selectedItems) {
   if (info.type === "repo") {
@@ -53,28 +48,18 @@ async function handleDownload(url, info, selectedItems) {
       try {
         if (item.type === "blob") {
           const rawUrl = `https://raw.githubusercontent.com/${info.owner}/${info.repo}/${info.branch}/${item.path}`;
-          const response = await fetchWithRetry(rawUrl, token ? { Authorization: `Bearer ${token}` } : {});
-          if (response.ok) {
-            const blob = await response.blob();
-            const { url: dlUrl, revoke } = await blobToDownloadUrl(blob);
-            const filename = item.path.split("/").pop() || "file";
-            await chrome.downloads.download({ url: dlUrl, filename, saveAs: false });
-            revoke();
-            successCount++;
-          } else {
-            lastErrorCode = response.status === 404 ? "not_found" : "unknown";
-          }
+          const filename = item.path.split("/").pop() || "file";
+          await chrome.downloads.download({ url: rawUrl, filename, saveAs: false });
+          successCount++;
         } else {
           const treeUrl = `https://github.com/${info.owner}/${info.repo}/tree/${info.branch}/${item.path}`;
           const apiUrl = `${API_BASE}/v1/download?url=${encodeURIComponent(treeUrl)}`;
           const response = await fetchWithRetry(apiUrl, headers);
           if (response.ok) {
             const blob = await response.blob();
-            const { url: dlUrl, revoke } = await blobToDownloadUrl(blob);
             const safePath = item.path.replace(/\//g, "-");
             const filename = `${info.owner}-${info.repo}-${safePath}.zip`;
-            await chrome.downloads.download({ url: dlUrl, filename, saveAs: false });
-            revoke();
+            await downloadBlob(blob, filename);
             successCount++;
           } else {
             const s = response.status;
@@ -99,11 +84,9 @@ async function handleDownload(url, info, selectedItems) {
     const response = await fetchWithRetry(apiUrl, headers);
     if (response.ok) {
       const blob = await response.blob();
-      const { url: dlUrl, revoke } = await blobToDownloadUrl(blob);
       const safePath = info.path.replace(/\//g, "-") || "root";
       const filename = `${info.owner}-${info.repo}-${safePath}.zip`;
-      await chrome.downloads.download({ url: dlUrl, filename, saveAs: false });
-      revoke();
+      await downloadBlob(blob, filename);
       return { ok: true };
     }
     const hasToken = Boolean(token);

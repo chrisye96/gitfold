@@ -35,18 +35,14 @@ async function fetchWithRetry(
 }
 
 /**
- * Convert a Blob to a downloadable URL.
- * Prefers blob URL (fast, zero-copy) but falls back to base64 data URL
- * if URL.createObjectURL is unavailable in the service worker context.
+ * Trigger a download from a Blob fetched in the service worker.
+ *
+ * MV3 service workers don't reliably support URL.createObjectURL —
+ * even when it exists, the blob URL is often inaccessible to Chrome's
+ * download manager (different execution context). So we always use a
+ * base64 data URL, which works universally.
  */
-async function blobToDownloadUrl(blob: Blob): Promise<{ url: string; revoke: () => void }> {
-  // Try blob URL first (available in Chrome 120+ service workers)
-  if (typeof URL.createObjectURL === 'function') {
-    const url = URL.createObjectURL(blob)
-    return { url, revoke: () => setTimeout(() => URL.revokeObjectURL(url), 60_000) }
-  }
-
-  // Fallback: base64 data URL (works everywhere, but uses more memory)
+async function downloadBlob(blob: Blob, filename: string): Promise<void> {
   const buffer = await blob.arrayBuffer()
   const bytes = new Uint8Array(buffer)
   let binary = ''
@@ -54,8 +50,10 @@ async function blobToDownloadUrl(blob: Blob): Promise<{ url: string; revoke: () 
     binary += String.fromCharCode(bytes[i])
   }
   const base64 = btoa(binary)
-  const url = `data:${blob.type || 'application/zip'};base64,${base64}`
-  return { url, revoke: () => {} }  // data URLs don't need revoking
+  // Use application/octet-stream so Chrome treats it as a binary download
+  // and respects the filename parameter (text/* types may get renamed).
+  const dataUrl = `data:application/octet-stream;base64,${base64}`
+  await chrome.downloads.download({ url: dataUrl, filename, saveAs: false })
 }
 
 /**
@@ -104,19 +102,13 @@ export async function handleDownload(
     for (const item of selectedItems) {
       try {
         if (item.type === 'blob') {
-          // Raw file download directly from GitHub (no GitFold API needed)
+          // Raw file: let Chrome's download manager fetch directly — no need
+          // to fetch+blob in the service worker. This avoids data URL issues
+          // where Chrome ignores the filename parameter.
           const rawUrl = `https://raw.githubusercontent.com/${info.owner}/${info.repo}/${info.branch}/${item.path}`
-          const response = await fetchWithRetry(rawUrl, token ? { Authorization: `Bearer ${token}` } : {})
-          if (response.ok) {
-            const blob = await response.blob()
-            const { url: dlUrl, revoke } = await blobToDownloadUrl(blob)
-            const filename = item.path.split('/').pop() || 'file'
-            await chrome.downloads.download({ url: dlUrl, filename, saveAs: false })
-            revoke()
-            successCount++
-          } else {
-            lastErrorCode = response.status === 404 ? 'not_found' : 'unknown'
-          }
+          const filename = item.path.split('/').pop() || 'file'
+          await chrome.downloads.download({ url: rawUrl, filename, saveAs: false })
+          successCount++
         } else {
           // Folder download via GitFold API
           const treeUrl = `https://github.com/${info.owner}/${info.repo}/tree/${info.branch}/${item.path}`
@@ -124,11 +116,9 @@ export async function handleDownload(
           const response = await fetchWithRetry(apiUrl, headers)
           if (response.ok) {
             const blob = await response.blob()
-            const { url: dlUrl, revoke } = await blobToDownloadUrl(blob)
             const safePath = item.path.replace(/\//g, '-')
             const filename = `${info.owner}-${info.repo}-${safePath}.zip`
-            await chrome.downloads.download({ url: dlUrl, filename, saveAs: false })
-            revoke()
+            await downloadBlob(blob, filename)
             successCount++
           } else {
             const s = response.status
@@ -158,12 +148,10 @@ export async function handleDownload(
 
     if (response.ok) {
       const blob = await response.blob()
-      const { url: dlUrl, revoke } = await blobToDownloadUrl(blob)
       const safePath = info.path.replace(/\//g, '-') || 'root'
       const filename = `${info.owner}-${info.repo}-${safePath}.zip`
 
-      await chrome.downloads.download({ url: dlUrl, filename, saveAs: false })
-      revoke()
+      await downloadBlob(blob, filename)
 
       return { ok: true }
     }
