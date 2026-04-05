@@ -83,7 +83,74 @@ async function validateToken(token) {
   }
 }
 
+// src/shared/parse-url.ts
+function parseGithubUrl(url) {
+  if (!url || typeof url !== "string") return null;
+  let normalized = url.trim();
+  if (normalized.startsWith("//")) normalized = "https:" + normalized;
+  if (!normalized.startsWith("http")) normalized = "https://" + normalized;
+  let u;
+  try {
+    u = new URL(normalized);
+  } catch {
+    return null;
+  }
+  if (u.hostname !== "github.com" && u.hostname !== "gitfold.cc") return null;
+  const treeMatch = u.pathname.match(/^\/([^/]+)\/([^/]+)\/tree\/([^/]+)(?:\/(.+))?$/);
+  const repoMatch = !treeMatch && u.pathname.match(/^\/([^/]+)\/([^/]+)\/?$/);
+  const match = treeMatch || repoMatch;
+  if (!match) return null;
+  const owner = match[1];
+  const repo = match[2];
+  if (!owner || !repo) return null;
+  if (owner === "login" || owner === "settings" || owner === "explore") return null;
+  if (treeMatch) {
+    const branch = treeMatch[3];
+    const rawPath = treeMatch[4] || "";
+    const path = rawPath.replace(/\/+$/, "");
+    return {
+      provider: "github",
+      type: path ? "folder" : "repo",
+      owner,
+      repo,
+      branch,
+      path,
+      originalUrl: url
+    };
+  }
+  return {
+    provider: "github",
+    type: "repo",
+    owner,
+    repo,
+    branch: "",
+    path: "",
+    originalUrl: url
+  };
+}
+
+// src/background/context-menu.ts
+var MENU_ID = "gitfold-download";
+function registerContextMenu() {
+  chrome.contextMenus.create({
+    id: MENU_ID,
+    title: "Download with GitFold",
+    contexts: ["page"],
+    documentUrlPatterns: [
+      "https://github.com/*/tree/*",
+      "https://github.com/*/*"
+    ]
+  });
+  chrome.contextMenus.onClicked.addListener((info, tab) => {
+    if (info.menuItemId !== MENU_ID || !tab?.url) return;
+    const repoInfo = parseGithubUrl(tab.url);
+    if (!repoInfo) return;
+    handleDownload(tab.url, repoInfo).catch(console.error);
+  });
+}
+
 // src/background/index.ts
+registerContextMenu();
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (msg.action === "download") {
     handleDownload(msg.url, msg.info).then(sendResponse).catch(() => sendResponse({ ok: false, code: "network", hasToken: false }));

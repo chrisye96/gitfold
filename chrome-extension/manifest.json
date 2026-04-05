@@ -6,7 +6,8 @@
 
   "permissions": [
     "storage",
-    "downloads"
+    "downloads",
+    "contextMenus"
   ],
 
   "host_permissions": [

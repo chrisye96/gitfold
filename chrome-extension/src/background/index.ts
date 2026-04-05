@@ -1,5 +1,9 @@
 import { handleDownload } from './download'
 import { saveToken, clearToken, validateToken } from './token'
+import { registerContextMenu } from './context-menu'
+
+// Register context menu once at service worker startup
+registerContextMenu()
 
 /**
  * Background service worker — message router.
