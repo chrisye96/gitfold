@@ -27,8 +27,11 @@ async function downloadBlob(blob, filename) {
     binary += String.fromCharCode(bytes[i]);
   }
   const base64 = btoa(binary);
-  const dataUrl = `data:application/octet-stream;base64,${base64}`;
+  const dataUrl = `data:application/zip;base64,${base64}`;
   await chrome.downloads.download({ url: dataUrl, filename, saveAs: false });
+}
+function sanitizeFilename(name) {
+  return name.replace(/[—–]/g, "-").replace(/[^\x20-\x7E]/g, "").replace(/\s+/g, " ").replace(/^\.+/, "").trim();
 }
 async function fetchAndDownload(url, headers, filename) {
   const response = await fetchWithRetry(url, headers);
@@ -36,7 +39,8 @@ async function fetchAndDownload(url, headers, filename) {
     const blob = await response.blob();
     const cd = response.headers.get("Content-Disposition");
     const cdMatch = cd?.match(/filename="?([^"]+)"?/);
-    const resolvedFilename = cdMatch?.[1] || filename;
+    const rawFilename = cdMatch?.[1] || filename;
+    const resolvedFilename = sanitizeFilename(rawFilename);
     await downloadBlob(blob, resolvedFilename);
   }
   return response;
@@ -98,8 +102,7 @@ async function handleDownload(url, info, selectedItems) {
     const response = await fetchAndDownload(apiUrl, headers, fallbackFilename);
     if (response.ok) return { ok: true };
     return { ok: false, code: mapStatusCode(response.status), hasToken };
-  } catch (err) {
-    if (err.name === "AbortError") return { ok: false, code: "network", hasToken };
+  } catch {
     return { ok: false, code: "network", hasToken };
   }
 }

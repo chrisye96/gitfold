@@ -41,9 +41,12 @@ async function fetchWithRetry(
  * Convert a Blob to a base64 data URL and trigger chrome.downloads.
  *
  * MV3 service workers can't use URL.createObjectURL reliably (different
- * execution context from the download manager). We always use data URLs
- * with application/octet-stream to force Chrome to treat it as a binary
- * download and respect the filename parameter.
+ * execution context from the download manager). We use data URLs with
+ * application/zip so Chrome treats the file as an archive and respects
+ * the filename parameter without security-renaming it.
+ *
+ * Note: application/octet-stream caused Chrome to save as UUID.tmp when
+ * the filename contained intermediate extensions (e.g. "name-gitfold.cc.zip").
  */
 async function downloadBlob(blob: Blob, filename: string): Promise<void> {
   const buffer = await blob.arrayBuffer()
@@ -53,8 +56,22 @@ async function downloadBlob(blob: Blob, filename: string): Promise<void> {
     binary += String.fromCharCode(bytes[i])
   }
   const base64 = btoa(binary)
-  const dataUrl = `data:application/octet-stream;base64,${base64}`
+  const dataUrl = `data:application/zip;base64,${base64}`
   await chrome.downloads.download({ url: dataUrl, filename, saveAs: false })
+}
+
+/**
+ * Sanitize a filename for chrome.downloads.download().
+ * Chrome rejects filenames with non-ASCII characters (e.g. em dash U+2014).
+ * Replace common Unicode punctuation with ASCII equivalents and strip the rest.
+ */
+function sanitizeFilename(name: string): string {
+  return name
+    .replace(/[—–]/g, '-')        // em dash / en dash → hyphen
+    .replace(/[^\x20-\x7E]/g, '') // strip remaining non-printable / non-ASCII
+    .replace(/\s+/g, ' ')         // collapse multiple spaces
+    .replace(/^\.+/, '')          // strip leading dots (Chrome rejects dot-prefixed filenames)
+    .trim()
 }
 
 /**
@@ -76,10 +93,10 @@ async function fetchAndDownload(
   const response = await fetchWithRetry(url, headers)
   if (response.ok) {
     const blob = await response.blob()
-    // Try to extract filename from Content-Disposition (API sets it)
     const cd = response.headers.get('Content-Disposition')
     const cdMatch = cd?.match(/filename="?([^"]+)"?/)
-    const resolvedFilename = cdMatch?.[1] || filename
+    const rawFilename = cdMatch?.[1] || filename
+    const resolvedFilename = sanitizeFilename(rawFilename)
     await downloadBlob(blob, resolvedFilename)
   }
   return response
@@ -172,8 +189,7 @@ export async function handleDownload(
     if (response.ok) return { ok: true }
     return { ok: false, code: mapStatusCode(response.status), hasToken }
 
-  } catch (err) {
-    if ((err as Error).name === 'AbortError') return { ok: false, code: 'network', hasToken }
+  } catch {
     return { ok: false, code: 'network', hasToken }
   }
 }

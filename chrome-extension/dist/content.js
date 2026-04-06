@@ -395,7 +395,10 @@
             setState({ status: "error", code: "network", hasToken: false });
           } else if (response.ok) {
             setState({ status: "success" });
-            setTimeout(() => setState({ status: "idle" }), 2e3);
+            setTimeout(() => {
+              const remaining = getSelectedItems();
+              setState({ status: "idle", label: remaining.length > 0 ? `Download ${remaining.length} selected` : void 0 });
+            }, 2e3);
           } else {
             setState({
               status: "error",
