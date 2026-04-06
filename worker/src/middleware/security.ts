@@ -53,6 +53,9 @@ export async function validateUrl(
   c: Context<{ Bindings: Env; Variables: { repoInfo: RepoInfo } }>,
   next: Next,
 ) {
+  // POST endpoints (e.g. multi-path download) have their own body validation
+  if (c.req.method === 'POST') return next()
+
   const rawUrl = c.req.query('url')
 
   if (!rawUrl) {
