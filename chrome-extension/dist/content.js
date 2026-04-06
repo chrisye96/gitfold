@@ -49,12 +49,16 @@
   // src/content/anchor.ts
   function findAnchor() {
     const byAriaLabel = document.querySelector('[aria-label="Code"]');
-    if (byAriaLabel) return byAriaLabel;
+    if (byAriaLabel) return { element: byAriaLabel, position: "before" };
     const byTestId = document.querySelector('[data-testid="code-button"]');
-    if (byTestId) return byTestId;
+    if (byTestId) return { element: byTestId, position: "before" };
     const buttons = Array.from(document.querySelectorAll("button"));
     const byText = buttons.find((btn) => btn.textContent?.trim() === "Code");
-    if (byText) return byText;
+    if (byText) return { element: byText, position: "before" };
+    const copyPathBtn = document.querySelector('[aria-label="Copy path"]');
+    if (copyPathBtn) return { element: copyPathBtn, position: "after" };
+    const addFileBtn = document.querySelector('[aria-label="Add file"]');
+    if (addFileBtn) return { element: addFileBtn, position: "before" };
     return null;
   }
 
@@ -66,6 +70,7 @@
 :host {
   display: inline-flex;
   align-items: center;
+  margin-left: 12px;
   margin-right: 8px;
 
   /* Light mode \u2014 mirrors web/css/tokens.css */
@@ -98,28 +103,38 @@
   }
 }
 
-/* \u2500\u2500 Primary download button \u2014 matches .btn-token-save from web \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
+/* \u2500\u2500 Primary download button \u2014 compact, blends with GitHub's toolbar \u2500\u2500\u2500\u2500\u2500\u2500 */
+.gf-btn > span:first-child {
+  display: inline-flex;
+  align-items: center;
+}
+
+.gf-btn svg {
+  display: block;  /* remove inline baseline gap */
+}
+
 .gf-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 5px 12px;
-  background: var(--c-primary);
-  color: #ffffff;
-  border: 1px solid transparent;
+  gap: 4px;
+  padding: 3px 8px;
+  background: transparent;
+  color: var(--c-primary);
+  border: 1px solid var(--c-border);
   border-radius: var(--radius-sm);
   font-family: var(--font-body);
-  font-size: 0.8125rem;
+  font-size: 0.75rem;
   font-weight: 500;
   line-height: 1.25;
   cursor: pointer;
-  transition: background var(--transition), opacity var(--transition);
+  transition: background var(--transition), color var(--transition), opacity var(--transition);
   white-space: nowrap;
   user-select: none;
 }
 
 .gf-btn:hover:not(:disabled) {
-  background: var(--c-primary-hover);
+  background: var(--c-surface);
+  color: var(--c-primary-hover);
 }
 
 .gf-btn:focus-visible {
@@ -178,10 +193,10 @@
 }
 
 .gf-spinner {
-  width: 13px;
-  height: 13px;
-  border: 2px solid rgba(255, 255, 255, 0.35);
-  border-top-color: #ffffff;
+  width: 11px;
+  height: 11px;
+  border: 1.5px solid var(--c-focus-ring);
+  border-top-color: var(--c-primary);
   border-radius: 50%;
   animation: gf-spin 0.65s linear infinite;
   flex-shrink: 0;
@@ -189,7 +204,7 @@
 `;
 
   // src/content/button.ts
-  var ICON_DOWNLOAD = `<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+  var ICON_DOWNLOAD = `<svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
   <path d="M2.75 14A1.75 1.75 0 0 1 1 12.25v-2.5a.75.75 0 0 1 1.5 0v2.5c0 .138.112.25.25.25h10.5a.25.25 0 0 0 .25-.25v-2.5a.75.75 0 0 1 1.5 0v2.5A1.75 1.75 0 0 1 13.25 14Z"/>
   <path d="M7.25 7.689V2a.75.75 0 0 1 1.5 0v5.689l1.97-1.97a.749.749 0 1 1 1.06 1.06l-3.25 3.25a.749.749 0 0 1-1.06 0L4.22 6.779a.749.749 0 1 1 1.06-1.06l1.97 1.97Z"/>
 </svg>`;
@@ -265,13 +280,13 @@
   // src/content/checkboxes.ts
   var PREFIX = "gitfold-cb";
   var STYLE_ID = `${PREFIX}-style`;
-  var selected = /* @__PURE__ */ new Set();
-  function getSelectedPaths() {
-    return Array.from(selected);
+  var selected = /* @__PURE__ */ new Map();
+  function getSelectedItems() {
+    return Array.from(selected.entries()).map(([path, type]) => ({ path, type }));
   }
   function cleanupCheckboxes() {
     selected.clear();
-    document.querySelectorAll(`.${PREFIX}-wrap`).forEach((el) => el.remove());
+    document.querySelectorAll(`.${PREFIX}-cb`).forEach((el) => el.remove());
     document.getElementById(STYLE_ID)?.remove();
     document.getElementById(`${PREFIX}-toolbar`)?.remove();
   }
@@ -281,8 +296,10 @@
       const style = document.createElement("style");
       style.id = STYLE_ID;
       style.textContent = `
-      .${PREFIX}-wrap { display: contents; }
-      .${PREFIX}-cb { width: 16px; height: 16px; cursor: pointer; accent-color: #0969da; }
+      .${PREFIX}-cb {
+        width: 14px; height: 14px; cursor: pointer; accent-color: #0969da;
+        margin: 0; margin-right: 6px; flex-shrink: 0; vertical-align: middle;
+      }
       .${PREFIX}-toolbar {
         display: flex; align-items: center; gap: 8px;
         padding: 4px 8px; font-size: 0.8125rem;
@@ -292,7 +309,9 @@
       document.head.appendChild(style);
     }
     const rows = Array.from(
-      document.querySelectorAll('[role="row"][data-testid], [role="row"][aria-label]')
+      document.querySelectorAll(
+        '[role="row"][data-testid], [role="row"][aria-label], tr.react-directory-row'
+      )
     ).filter((row) => row.querySelector('a[href*="/blob/"], a[href*="/tree/"]'));
     for (const row of rows) {
       if (row.querySelector(`.${PREFIX}-cb`)) continue;
@@ -300,9 +319,8 @@
       if (!link) continue;
       const match = link.href.match(/\/(blob|tree)\/[^/]+\/(.+)$/);
       if (!match) continue;
+      const itemType = match[1];
       const path = decodeURIComponent(match[2]);
-      const wrap = document.createElement("span");
-      wrap.className = `${PREFIX}-wrap`;
       const cb = document.createElement("input");
       cb.type = "checkbox";
       cb.className = `${PREFIX}-cb`;
@@ -310,15 +328,16 @@
       cb.setAttribute("aria-label", `Select ${path}`);
       cb.addEventListener("change", () => {
         if (cb.checked) {
-          selected.add(path);
+          selected.set(path, itemType);
         } else {
           selected.delete(path);
         }
         updateToolbar();
         document.dispatchEvent(new CustomEvent("gitfold:selection-changed"));
       });
-      wrap.appendChild(cb);
-      row.insertBefore(wrap, row.firstChild);
+      const filenameCol = row.querySelector(".react-directory-row-name-cell-large-screen .react-directory-filename-column") ?? row.querySelector(".react-directory-filename-column") ?? // fallback
+      row;
+      filenameCol.insertBefore(cb, filenameCol.firstChild);
     }
   }
   function updateToolbar() {
@@ -341,15 +360,21 @@
   // src/content/mount.ts
   var MOUNT_ID = "gitfold-root";
   var selectionChangedHandler = null;
+  var mountedForUrl = "";
   function tryMount() {
     const info = parseGithubUrl(window.location.href);
     if (!info) {
       cleanup();
       return;
     }
-    if (document.getElementById(MOUNT_ID)) return;
-    const anchor = findAnchor();
-    if (!anchor) return;
+    const currentUrl = window.location.href;
+    if (document.getElementById(MOUNT_ID)) {
+      if (currentUrl === mountedForUrl) return;
+      cleanup();
+    }
+    const anchorResult = findAnchor();
+    if (!anchorResult) return;
+    const { element: anchor, position: insertPosition } = anchorResult;
     const label = info.type === "folder" ? "Download Folder" : "Download Repository";
     const host = document.createElement("div");
     host.id = MOUNT_ID;
@@ -359,16 +384,21 @@
       onDownload: async () => {
         setState({ status: "loading" });
         try {
-          const selectedPaths = getSelectedPaths();
+          const selectedItems = getSelectedItems();
           const response = await chrome.runtime.sendMessage({
             action: "download",
             url: window.location.href,
             info,
-            selectedPaths: selectedPaths.length > 0 ? selectedPaths : void 0
+            selectedItems: selectedItems.length > 0 ? selectedItems : void 0
           });
-          if (response.ok) {
+          if (!response) {
+            setState({ status: "error", code: "network", hasToken: false });
+          } else if (response.ok) {
             setState({ status: "success" });
-            setTimeout(() => setState({ status: "idle" }), 2e3);
+            setTimeout(() => {
+              const remaining = getSelectedItems();
+              setState({ status: "idle", label: remaining.length > 0 ? `Download ${remaining.length} selected` : void 0 });
+            }, 2e3);
           } else {
             setState({
               status: "error",
@@ -389,10 +419,10 @@
     };
     setState = mountButton(shadow, label, callbacks);
     selectionChangedHandler = () => {
-      const paths = getSelectedPaths();
+      const items = getSelectedItems();
       setState({
         status: "idle",
-        label: paths.length > 0 ? `Download ${paths.length} selected` : void 0
+        label: items.length > 0 ? `Download ${items.length} selected` : void 0
       });
     };
     document.addEventListener("gitfold:selection-changed", selectionChangedHandler);
@@ -400,7 +430,12 @@
     if (fileCount !== null) {
       setState({ status: "idle", fileCount });
     }
-    anchor.parentElement?.insertBefore(host, anchor);
+    if (insertPosition === "after") {
+      anchor.parentElement?.insertBefore(host, anchor.nextSibling);
+    } else {
+      anchor.parentElement?.insertBefore(host, anchor);
+    }
+    mountedForUrl = currentUrl;
   }
   function cleanup() {
     document.getElementById(MOUNT_ID)?.remove();

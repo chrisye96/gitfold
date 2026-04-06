@@ -5,6 +5,7 @@
 :host {
   display: inline-flex;
   align-items: center;
+  margin-left: 12px;
   margin-right: 8px;
 
   /* Light mode — mirrors web/css/tokens.css */
@@ -37,28 +38,38 @@
   }
 }
 
-/* ── Primary download button — matches .btn-token-save from web ─────────── */
+/* ── Primary download button — compact, blends with GitHub's toolbar ────── */
+.gf-btn > span:first-child {
+  display: inline-flex;
+  align-items: center;
+}
+
+.gf-btn svg {
+  display: block;  /* remove inline baseline gap */
+}
+
 .gf-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 5px 12px;
-  background: var(--c-primary);
-  color: #ffffff;
-  border: 1px solid transparent;
+  gap: 4px;
+  padding: 3px 8px;
+  background: transparent;
+  color: var(--c-primary);
+  border: 1px solid var(--c-border);
   border-radius: var(--radius-sm);
   font-family: var(--font-body);
-  font-size: 0.8125rem;
+  font-size: 0.75rem;
   font-weight: 500;
   line-height: 1.25;
   cursor: pointer;
-  transition: background var(--transition), opacity var(--transition);
+  transition: background var(--transition), color var(--transition), opacity var(--transition);
   white-space: nowrap;
   user-select: none;
 }
 
 .gf-btn:hover:not(:disabled) {
-  background: var(--c-primary-hover);
+  background: var(--c-surface);
+  color: var(--c-primary-hover);
 }
 
 .gf-btn:focus-visible {
@@ -117,10 +128,10 @@
 }
 
 .gf-spinner {
-  width: 13px;
-  height: 13px;
-  border: 2px solid rgba(255, 255, 255, 0.35);
-  border-top-color: #ffffff;
+  width: 11px;
+  height: 11px;
+  border: 1.5px solid var(--c-focus-ring);
+  border-top-color: var(--c-primary);
   border-radius: 50%;
   animation: gf-spin 0.65s linear infinite;
   flex-shrink: 0;

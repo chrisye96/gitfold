@@ -41,3 +41,4 @@ function mountAndInject(): void {
   // Small delay to let GitHub's file list render
   setTimeout(injectCheckboxes, 500)
 }
+

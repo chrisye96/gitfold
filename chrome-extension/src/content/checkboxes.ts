@@ -3,18 +3,24 @@ import { parseGithubUrl } from '../shared/parse-url'
 const PREFIX = 'gitfold-cb'
 const STYLE_ID = `${PREFIX}-style`
 
-// Selected paths: set of relative paths within the current directory
-export const selected = new Set<string>()
+export interface SelectedItem {
+  path: string
+  /** 'blob' = file, 'tree' = folder */
+  type: 'blob' | 'tree'
+}
+
+// Selected items: map of path → type
+export const selected = new Map<string, 'blob' | 'tree'>()
 
 /** Called from mount.ts to get current selection for download. */
-export function getSelectedPaths(): string[] {
-  return Array.from(selected)
+export function getSelectedItems(): SelectedItem[] {
+  return Array.from(selected.entries()).map(([path, type]) => ({ path, type }))
 }
 
 /** Called on navigation: clear selection and remove injected checkboxes. */
 export function cleanupCheckboxes(): void {
   selected.clear()
-  document.querySelectorAll(`.${PREFIX}-wrap`).forEach(el => el.remove())
+  document.querySelectorAll(`.${PREFIX}-cb`).forEach(el => el.remove())
   document.getElementById(STYLE_ID)?.remove()
   document.getElementById(`${PREFIX}-toolbar`)?.remove()
 }
@@ -33,8 +39,10 @@ export function injectCheckboxes(): void {
     const style = document.createElement('style')
     style.id = STYLE_ID
     style.textContent = `
-      .${PREFIX}-wrap { display: contents; }
-      .${PREFIX}-cb { width: 16px; height: 16px; cursor: pointer; accent-color: #0969da; }
+      .${PREFIX}-cb {
+        width: 14px; height: 14px; cursor: pointer; accent-color: #0969da;
+        margin: 0; margin-right: 6px; flex-shrink: 0; vertical-align: middle;
+      }
       .${PREFIX}-toolbar {
         display: flex; align-items: center; gap: 8px;
         padding: 4px 8px; font-size: 0.8125rem;
@@ -44,9 +52,13 @@ export function injectCheckboxes(): void {
     document.head.appendChild(style)
   }
 
-  // Find file list rows
+  // Find file list rows — GitHub uses different DOM structures:
+  //   - Repo root: [role="row"] with data-testid or aria-label
+  //   - Subdirectory pages: <tr class="react-directory-row">
   const rows = Array.from(
-    document.querySelectorAll('[role="row"][data-testid], [role="row"][aria-label]')
+    document.querySelectorAll(
+      '[role="row"][data-testid], [role="row"][aria-label], tr.react-directory-row'
+    )
   ).filter(row => row.querySelector('a[href*="/blob/"], a[href*="/tree/"]'))
 
   for (const row of rows) {
@@ -58,10 +70,8 @@ export function injectCheckboxes(): void {
     // Extract relative path from the href
     const match = link.href.match(/\/(blob|tree)\/[^/]+\/(.+)$/)
     if (!match) continue
+    const itemType = match[1] as 'blob' | 'tree'
     const path = decodeURIComponent(match[2])
-
-    const wrap = document.createElement('span')
-    wrap.className = `${PREFIX}-wrap`
 
     const cb = document.createElement('input')
     cb.type = 'checkbox'
@@ -71,7 +81,7 @@ export function injectCheckboxes(): void {
 
     cb.addEventListener('change', () => {
       if (cb.checked) {
-        selected.add(path)
+        selected.set(path, itemType)
       } else {
         selected.delete(path)
       }
@@ -80,8 +90,15 @@ export function injectCheckboxes(): void {
       document.dispatchEvent(new CustomEvent('gitfold:selection-changed'))
     })
 
-    wrap.appendChild(cb)
-    row.insertBefore(wrap, row.firstChild)
+    // Insert inside the filename column (next to the file icon), not as a
+    // sibling of <td> elements — that breaks table layout.
+    // GitHub has two name cells per row (small-screen + large-screen);
+    // target the large-screen one which is actually visible on desktop.
+    const filenameCol =
+      row.querySelector('.react-directory-row-name-cell-large-screen .react-directory-filename-column') ??
+      row.querySelector('.react-directory-filename-column') ??  // fallback
+      row  // repo root fallback (role="row" divs)
+    filenameCol.insertBefore(cb, filenameCol.firstChild)
   }
 }
 

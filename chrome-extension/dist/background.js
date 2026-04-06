@@ -19,7 +19,44 @@ async function fetchWithRetry(url, headers, maxRetries = 1) {
   }
   throw lastError;
 }
-async function handleDownload(url, info, selectedPaths) {
+async function downloadBlob(blob, filename) {
+  const buffer = await blob.arrayBuffer();
+  const bytes = new Uint8Array(buffer);
+  let binary = "";
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  const base64 = btoa(binary);
+  const dataUrl = `data:application/zip;base64,${base64}`;
+  await chrome.downloads.download({ url: dataUrl, filename, saveAs: false });
+}
+function sanitizeFilename(name) {
+  return name.replace(/[—–]/g, "-").replace(/[^\x20-\x7E]/g, "").replace(/\s+/g, " ").replace(/^\.+/, "").trim();
+}
+async function fetchAndDownload(url, headers, filename) {
+  const response = await fetchWithRetry(url, headers);
+  if (response.ok) {
+    const blob = await response.blob();
+    const cd = response.headers.get("Content-Disposition");
+    const cdMatch = cd?.match(/filename="?([^"]+)"?/);
+    const rawFilename = cdMatch?.[1] || filename;
+    const resolvedFilename = sanitizeFilename(rawFilename);
+    await downloadBlob(blob, resolvedFilename);
+  }
+  return response;
+}
+function buildApiUrl(info) {
+  const ghUrl = `https://github.com/${info.owner}/${info.repo}/tree/${info.branch}/${info.path}`;
+  return `${API_BASE}/v1/download?url=${encodeURIComponent(ghUrl)}`;
+}
+function mapStatusCode(status) {
+  if (status === 429) return "rate_limited";
+  if (status === 404) return "not_found";
+  if (status === 401 || status === 403) return "forbidden";
+  if (status === 413) return "too_many_files";
+  return "unknown";
+}
+async function handleDownload(url, info, selectedItems) {
   if (info.type === "repo") {
     const branch = info.branch || "HEAD";
     const archiveUrl = `https://github.com/${info.owner}/${info.repo}/archive/refs/heads/${branch}.zip`;
@@ -27,72 +64,45 @@ async function handleDownload(url, info, selectedPaths) {
     return { ok: true };
   }
   const { github_token: token } = await chrome.storage.local.get("github_token");
-  if (selectedPaths && selectedPaths.length > 0) {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
-    try {
-      const headers = {
-        "Content-Type": "application/json",
-        "X-Client": "extension"
-      };
-      if (token) headers["X-GitHub-Token"] = token;
-      const response = await fetch(`${API_BASE}/v1/download`, {
-        method: "POST",
-        signal: controller.signal,
-        headers,
-        body: JSON.stringify({
-          owner: info.owner,
-          repo: info.repo,
-          branch: info.branch,
-          paths: selectedPaths
-        })
-      });
-      if (response.ok) {
-        const blob = await response.blob();
-        const blobUrl = URL.createObjectURL(blob);
-        const filename = `${info.owner}-${info.repo}-selection.zip`;
-        await chrome.downloads.download({ url: blobUrl, filename, saveAs: false });
-        setTimeout(() => URL.revokeObjectURL(blobUrl), 6e4);
-        return { ok: true };
+  const hasToken = Boolean(token);
+  if (selectedItems && selectedItems.length > 0) {
+    if (selectedItems.length === 1 && selectedItems[0].type === "blob") {
+      try {
+        const item = selectedItems[0];
+        const rawUrl = `https://raw.githubusercontent.com/${info.owner}/${info.repo}/${info.branch}/${item.path}`;
+        const filename = item.path.split("/").pop() || "file";
+        const headers = {};
+        if (token) headers["Authorization"] = `Bearer ${token}`;
+        const response = await fetchAndDownload(rawUrl, headers, filename);
+        if (response.ok) return { ok: true };
+        return { ok: false, code: mapStatusCode(response.status), hasToken };
+      } catch {
+        return { ok: false, code: "network", hasToken };
       }
-      const hasToken = Boolean(token);
-      if (response.status === 429) return { ok: false, code: "rate_limited", hasToken };
-      if (response.status === 404) return { ok: false, code: "not_found", hasToken };
-      if (response.status === 401 || response.status === 403) return { ok: false, code: "forbidden", hasToken };
-      if (response.status === 413) return { ok: false, code: "too_many_files", hasToken };
-      return { ok: false, code: "unknown", hasToken };
-    } catch (err) {
-      const hasToken = Boolean(token);
-      if (err.name === "AbortError") return { ok: false, code: "network", hasToken };
+    }
+    try {
+      const apiUrl = buildApiUrl(info);
+      const safePath = info.path.replace(/\//g, "-") || "root";
+      const fallbackFilename = `${info.owner}-${info.repo}-${safePath}.zip`;
+      const headers = { "X-Client": "extension" };
+      if (token) headers["X-GitHub-Token"] = token;
+      const response = await fetchAndDownload(apiUrl, headers, fallbackFilename);
+      if (response.ok) return { ok: true };
+      return { ok: false, code: mapStatusCode(response.status), hasToken };
+    } catch {
       return { ok: false, code: "network", hasToken };
-    } finally {
-      clearTimeout(timeoutId);
     }
   }
   try {
-    const apiUrl = `${API_BASE}/v1/download?url=${encodeURIComponent(url)}`;
+    const apiUrl = buildApiUrl(info);
+    const safePath = info.path.replace(/\//g, "-") || "root";
+    const fallbackFilename = `${info.owner}-${info.repo}-${safePath}.zip`;
     const headers = { "X-Client": "extension" };
     if (token) headers["X-GitHub-Token"] = token;
-    const response = await fetchWithRetry(apiUrl, headers);
-    if (response.ok) {
-      const blob = await response.blob();
-      const blobUrl = URL.createObjectURL(blob);
-      const safePath = info.path.replace(/\//g, "-") || "root";
-      const filename = `${info.owner}-${info.repo}-${safePath}.zip`;
-      await chrome.downloads.download({ url: blobUrl, filename, saveAs: false });
-      setTimeout(() => URL.revokeObjectURL(blobUrl), 6e4);
-      return { ok: true };
-    }
-    const hasToken = Boolean(token);
-    const status = response.status;
-    if (status === 429) return { ok: false, code: "rate_limited", hasToken };
-    if (status === 404) return { ok: false, code: "not_found", hasToken };
-    if (status === 401 || status === 403) return { ok: false, code: "forbidden", hasToken };
-    if (status === 413) return { ok: false, code: "too_many_files", hasToken };
-    return { ok: false, code: "unknown", hasToken };
-  } catch (err) {
-    const hasToken = Boolean(token);
-    if (err.name === "AbortError") return { ok: false, code: "network", hasToken };
+    const response = await fetchAndDownload(apiUrl, headers, fallbackFilename);
+    if (response.ok) return { ok: true };
+    return { ok: false, code: mapStatusCode(response.status), hasToken };
+  } catch {
     return { ok: false, code: "network", hasToken };
   }
 }
@@ -174,14 +184,16 @@ function parseGithubUrl(url) {
 // src/background/context-menu.ts
 var MENU_ID = "gitfold-download";
 function registerContextMenu() {
-  chrome.contextMenus.create({
-    id: MENU_ID,
-    title: "Download with GitFold",
-    contexts: ["page"],
-    documentUrlPatterns: [
-      "https://github.com/*/tree/*",
-      "https://github.com/*/*"
-    ]
+  chrome.contextMenus.removeAll(() => {
+    chrome.contextMenus.create({
+      id: MENU_ID,
+      title: "Download with GitFold",
+      contexts: ["page"],
+      documentUrlPatterns: [
+        "https://github.com/*/tree/*",
+        "https://github.com/*/*"
+      ]
+    });
   });
   chrome.contextMenus.onClicked.addListener((info, tab) => {
     if (info.menuItemId !== MENU_ID || !tab?.url) return;
@@ -195,7 +207,10 @@ function registerContextMenu() {
 registerContextMenu();
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (msg.action === "download") {
-    handleDownload(msg.url, msg.info, msg.selectedPaths).then(sendResponse).catch(() => sendResponse({ ok: false, code: "network", hasToken: false }));
+    handleDownload(msg.url, msg.info, msg.selectedItems).then(sendResponse).catch((err) => {
+      console.error("[GitFold] download failed:", err);
+      sendResponse({ ok: false, code: "network", hasToken: false });
+    });
     return true;
   }
   if (msg.action === "saveToken") {

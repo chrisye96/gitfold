@@ -2,11 +2,13 @@ import { parseGithubUrl } from '../shared/parse-url'
 import { findAnchor } from './anchor'
 import { mountButton } from './button'
 import type { ButtonState } from './button'
-import { getSelectedPaths, cleanupCheckboxes } from './checkboxes'
+import { getSelectedItems, cleanupCheckboxes } from './checkboxes'
 
 const MOUNT_ID = 'gitfold-root'
 
 let selectionChangedHandler: (() => void) | null = null
+/** URL that was active when the button was last mounted */
+let mountedForUrl = ''
 
 /**
  * Attempt to inject the GitFold button into the current page.
@@ -26,12 +28,18 @@ export function tryMount(): void {
     return
   }
 
-  // Already mounted — idempotency check
-  if (document.getElementById(MOUNT_ID)) return
+  // If URL changed since last mount, tear down and re-mount fresh.
+  // This clears stale error/success states from the previous directory.
+  const currentUrl = window.location.href
+  if (document.getElementById(MOUNT_ID)) {
+    if (currentUrl === mountedForUrl) return  // same page, truly idempotent
+    cleanup()  // different page → reset
+  }
 
   // Find stable anchor in GitHub's toolbar
-  const anchor = findAnchor()
-  if (!anchor) return  // graceful degradation — will retry on next trigger
+  const anchorResult = findAnchor()
+  if (!anchorResult) return  // graceful degradation — will retry on next trigger
+  const { element: anchor, position: insertPosition } = anchorResult
 
   const label = info.type === 'folder' ? 'Download Folder' : 'Download Repository'
 
@@ -46,18 +54,24 @@ export function tryMount(): void {
     onDownload: async () => {
       setState({ status: 'loading' })
       try {
-        const selectedPaths = getSelectedPaths()
+        const selectedItems = getSelectedItems()
         const response: { ok: boolean; code?: string; hasToken?: boolean } =
           await chrome.runtime.sendMessage({
             action: 'download',
             url: window.location.href,
             info,
-            selectedPaths: selectedPaths.length > 0 ? selectedPaths : undefined,
+            selectedItems: selectedItems.length > 0 ? selectedItems : undefined,
           })
 
-        if (response.ok) {
+        // response can be undefined if the service worker was inactive
+        if (!response) {
+          setState({ status: 'error', code: 'network', hasToken: false })
+        } else if (response.ok) {
           setState({ status: 'success' })
-          setTimeout(() => setState({ status: 'idle' }), 2000)
+          setTimeout(() => {
+            const remaining = getSelectedItems()
+            setState({ status: 'idle', label: remaining.length > 0 ? `Download ${remaining.length} selected` : undefined })
+          }, 2000)
         } else {
           setState({
             status: 'error',
@@ -84,10 +98,10 @@ export function tryMount(): void {
 
   // Register selection-changed listener (replacing any previous one via cleanup())
   selectionChangedHandler = () => {
-    const paths = getSelectedPaths()
+    const items = getSelectedItems()
     setState({
       status: 'idle',
-      label: paths.length > 0 ? `Download ${paths.length} selected` : undefined,
+      label: items.length > 0 ? `Download ${items.length} selected` : undefined,
     })
   }
   document.addEventListener('gitfold:selection-changed', selectionChangedHandler)
@@ -98,8 +112,14 @@ export function tryMount(): void {
     setState({ status: 'idle', fileCount })
   }
 
-  // Insert the host element before the anchor in GitHub's toolbar
-  anchor.parentElement?.insertBefore(host, anchor)
+  // Insert the host element relative to the anchor
+  if (insertPosition === 'after') {
+    anchor.parentElement?.insertBefore(host, anchor.nextSibling)
+  } else {
+    anchor.parentElement?.insertBefore(host, anchor)
+  }
+
+  mountedForUrl = currentUrl
 }
 
 /** Remove the GitFold button from the DOM (called when navigating away from supported pages). */
