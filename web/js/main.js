@@ -69,7 +69,7 @@ function announce(msg) {
   requestAnimationFrame(() => { statusRegion.textContent = msg })
 }
 
-const TOKEN_FORMAT = /^(ghp_|github_pat_|gho_|ghs_|ghu_|ghr_)[A-Za-z0-9_]+$/
+const TOKEN_FORMAT = /^(gh[pousr]_[A-Za-z0-9]{36}|github_pat_[A-Za-z0-9]{22}_[A-Za-z0-9]{59})$/
 
 /** Read token from input (or localStorage fallback). */
 function getToken() {
