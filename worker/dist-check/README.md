@@ -1,0 +1,1 @@
+This folder contains the built output assets for the worker "gitfold-worker" generated at 2026-04-06T10:02:49.318Z.
