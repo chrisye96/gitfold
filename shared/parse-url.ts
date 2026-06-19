@@ -52,7 +52,7 @@ export function parseGithubUrl(url: string): RepoInfo | null {
   if (owner === 'login' || owner === 'settings' || owner === 'explore') return null
 
   if (treeMatch) {
-    const branch  = treeMatch[3]
+    const branch  = treeMatch[3]!
     const rawPath = treeMatch[4] || ''
     const path    = rawPath.replace(/\/+$/, '')
     return {
