@@ -5,7 +5,7 @@
 ## What it does
 
 GitFold lets you download a specific folder inside a GitHub repository as a zip or tar.gz,
-without cloning the full repo. Works for public repositories and private repos (with OAuth login).
+without cloning the full repo. Works for public repositories.
 
 ## Quickest way to use it
 
@@ -27,7 +27,6 @@ Returns: `application/zip` or `application/gzip` stream. Full-repo URLs → 302 
 
 Optional headers:
 - `X-GitHub-Token: ghp_...` — raises rate limit to 5,000 req/hour
-- `X-Sub-Token: sub_...` — subscription token for Pro/Power tier
 
 Example:
 
@@ -39,22 +38,6 @@ Example:
     GET /v1/info?url={encoded_github_tree_url}
 
 Returns JSON with fileCount, totalSize, files list, tier, and fileLimit.
-
-## Authentication (OAuth)
-
-Sign in with GitHub to use your OAuth token automatically (no manual PAT needed):
-
-    GET /v1/auth/github          → redirect to GitHub OAuth
-    GET /v1/auth/me              → current session info (requires credentials: 'include')
-    POST /v1/auth/logout         → clear session
-
-Session is managed via an HttpOnly cookie (`gitfold_session`). Use `credentials: 'include'` in fetch calls.
-
-## Subscriptions
-
-    POST /v1/checkout            → create Stripe Checkout session (body: {email, tier})
-    GET  /v1/sub/status?token=   → query subscription status by sub token
-    GET  /v1/sub/claim?session_id= → claim sub token after Stripe checkout
 
 ## CLI
 
@@ -77,9 +60,7 @@ Error codes: `INVALID_URL`, `NOT_FOUND`, `TOO_LARGE`, `TOO_MANY_FILES`, `RATE_LI
 | Tier   | Max files | How to unlock                   |
 |--------|-----------|---------------------------------|
 | Free   | 50        | Default                         |
-| Token  | 200       | GitHub PAT or sign in with GitHub |
-| Pro    | 1,000     | gitfold.cc/pricing              |
-| Power  | 5,000     | gitfold.cc/pricing              |
+| Token  | 200       | Send your own GitHub PAT via X-GitHub-Token header |
 
 Max directory size: 100 MB per request.
 

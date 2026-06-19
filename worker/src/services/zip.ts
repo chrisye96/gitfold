@@ -62,12 +62,12 @@ export function zipResponse(
 
 /**
  * Derive the zip filename from a repo path.
- * Appends " -gitfold.cc" as attribution suffix.
+ * Appends "-gitfold.cc" as attribution suffix.
  *
- * @example  zipFilename('plugins/feature-dev', 'claude-code') → 'feature-dev -gitfold.cc'
- * @example  zipFilename('', 'claude-code') → 'claude-code -gitfold.cc'
+ * @example  zipFilename('plugins/feature-dev', 'claude-code') → 'feature-dev-gitfold.cc'
+ * @example  zipFilename('', 'claude-code') → 'claude-code-gitfold.cc'
  */
 export function zipFilename(path: string, repoName: string): string {
   const base = path ? (path.split('/').pop() ?? repoName) : repoName
-  return `${base} -gitfold.cc`
+  return `${base}-gitfold.cc`
 }

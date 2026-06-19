@@ -6,20 +6,15 @@
  * @module github
  */
 
-import { getSubToken, isProUser } from './subscription.js'
-import { isAuthenticated } from './auth.js'
-
 const GITHUB_API = 'https://api.github.com'
 const RAW_BASE = 'https://raw.githubusercontent.com'
 
 // ─── Tier-based concurrency & throttling ────────────────────────────────────
 
 export function getTierConfig() {
-  if (isProUser()) return { concurrency: 8, delayMs: 0 }
-  // OAuth or token user gets slightly better throughput
-  const hasToken = !!localStorage.getItem('gitfold_token') || isAuthenticated()
-  if (hasToken) return { concurrency: 3, delayMs: 100 }
-  return { concurrency: 2, delayMs: 200 }
+  // Bring-your-own-token users get slightly better throughput.
+  const hasToken = !!localStorage.getItem('gitfold_token')
+  return hasToken ? { concurrency: 3, delayMs: 100 } : { concurrency: 2, delayMs: 200 }
 }
 
 /** Sleep for a given number of milliseconds. */

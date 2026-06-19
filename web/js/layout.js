@@ -17,8 +17,6 @@
 function currentPage() {
   const p = window.location.pathname
   if (p === '/docs' || p === '/docs.html' || p.startsWith('/docs#')) return 'docs'
-  if (p === '/pricing' || p === '/pricing.html') return 'pricing'
-  if (p === '/team' || p === '/team.html') return 'team'
   return 'home'
 }
 
@@ -38,7 +36,6 @@ function headerHTML(page) {
        target="_blank" rel="noopener noreferrer"
        data-i18n="nav.github"
        aria-label="GitFold on GitHub (opens in new tab)">GitHub</a>
-    <span id="user-menu" class="user-menu" hidden></span>
     <button id="theme-toggle" class="btn-theme-toggle" type="button" aria-label="Switch to light mode">
       <!-- IoSunnyOutline — shown when preference = light -->
       <svg id="icon-sun" viewBox="0 0 512 512" width="18" height="18" fill="none" stroke="currentColor" stroke-width="32" stroke-linecap="round" stroke-miterlimit="10" aria-hidden="true" hidden>

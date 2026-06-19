@@ -904,6 +904,7 @@ html[data-theme="dark"] .tool-power .bookmarklet-btn img { filter: invert(1); }
   border: none;
   color: var(--c-text-muted);
   font-size: 0.75rem;
+  font-family: inherit;
   cursor: pointer;
   padding: 0.2rem 0.5rem;
   border-radius: var(--radius-sm);

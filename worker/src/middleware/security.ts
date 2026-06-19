@@ -12,9 +12,8 @@
  */
 
 import type { Context, Next } from 'hono'
-import type { Env, RepoInfo, Tier, SessionUser } from '../types.js'
+import type { Env, RepoInfo, Tier } from '../types.js'
 import { parseGithubUrl } from '@shared/parse-url.js'
-import { getFileLimit } from '../services/subscription.js'
 
 // ─── Limits ──────────────────────────────────────────────────────────────────
 
@@ -53,6 +52,9 @@ export async function validateUrl(
   c: Context<{ Bindings: Env; Variables: { repoInfo: RepoInfo } }>,
   next: Next,
 ) {
+  // POST endpoints (e.g. multi-path download) have their own body validation
+  if (c.req.method === 'POST') return next()
+
   const rawUrl = c.req.query('url')
 
   if (!rawUrl) {
@@ -87,49 +89,23 @@ export async function validateUrl(
 }
 
 /**
- * Middleware: resolve the user's tier and file limit.
+ * Middleware: resolve the per-download file limit (BYOT model).
  *
- * Priority:
- *   1. Session JWT (D1 user — Phase 2)
- *   2. X-Sub-Token header (KV subscription — Phase 1 backward compat)
- *   3. X-GitHub-Token (free user with PAT)
- *   4. Anonymous free user
+ * Bringing your own GitHub token (X-GitHub-Token) raises the cap from
+ * FREE_FILE_LIMIT to TOKEN_FILE_LIMIT. There are no paid tiers.
  */
 export async function resolveTier(
-  c: Context<{ Bindings: Env; Variables: { tier: Tier; fileLimit: number; sessionUser?: SessionUser } }>,
+  c: Context<{ Bindings: Env; Variables: { tier: Tier; fileLimit: number } }>,
   next: Next,
 ) {
-  // Check session user first (set by session middleware)
-  const sessionUser = c.get('sessionUser')
-  if (sessionUser && sessionUser.tier !== 'free') {
-    const limit = tierToLimit(sessionUser.tier, c.env)
-    c.set('tier', sessionUser.tier)
-    c.set('fileLimit', limit)
-    return next()
-  }
-
-  // Fall back to KV-based subscription lookup (Phase 1 path)
-  const { tier, limit } = await getFileLimit(c.req.raw, c.env)
-
-  // Session user with GitHub OAuth counts as having a token
-  if (tier === 'free' && sessionUser) {
-    c.set('tier', 'free')
-    c.set('fileLimit', parseInt(c.env.TOKEN_FILE_LIMIT ?? '200', 10))
-    return next()
-  }
-
-  c.set('tier', tier)
+  const hasToken = Boolean(c.req.header('X-GitHub-Token'))
+  const limit = parseInt(
+    (hasToken ? c.env.TOKEN_FILE_LIMIT : c.env.FREE_FILE_LIMIT) ?? (hasToken ? '200' : '50'),
+    10,
+  )
+  c.set('tier', 'free')
   c.set('fileLimit', limit)
   return next()
-}
-
-/** Convert a tier to its file limit using env vars. */
-function tierToLimit(tier: Tier, env: Env): number {
-  switch (tier) {
-    case 'power': return parseInt(env.POWER_FILE_LIMIT ?? '5000', 10)
-    case 'pro':   return parseInt(env.PRO_FILE_LIMIT ?? '1000', 10)
-    default:      return parseInt(env.FREE_FILE_LIMIT ?? '50', 10)
-  }
 }
 
 /**

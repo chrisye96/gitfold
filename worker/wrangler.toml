@@ -9,7 +9,7 @@ routes = [
   { pattern = "api.gitfold.cc/*", zone_name = "gitfold.cc" }
 ]
 
-# KV namespace for caching GitHub tree responses
+# KV namespace for caching GitHub tree responses + SSE job zips
 [[kv_namespaces]]
 binding = "GITFOLD_CACHE"
 id = "375e5ab3bb2f4eb7a396b1fdca020652"
@@ -22,52 +22,23 @@ name = "RATE_LIMITER"
 namespace_id = "1001"
 simple = { limit = 20, period = 60 }
 
-# KV namespace for subscription state (Phase 1)
-[[kv_namespaces]]
-binding = "GITFOLD_SUBS"
-id = "8d91d2432a264c1e8426be9ddfb7a054"
-preview_id = "fdd12a2d960e440ca3a28e33509d78d2"
-
 [vars]
 ENVIRONMENT = "production"
 MAX_FILES = "500"
 MAX_SIZE_MB = "100"
 
-# Tier file limits (Phase 1)
+# File limits — bring-your-own GitHub token raises the cap (no paid tiers)
 FREE_FILE_LIMIT = "50"
 TOKEN_FILE_LIMIT = "200"
-PRO_FILE_LIMIT = "1000"
-POWER_FILE_LIMIT = "5000"
 
-# ─── D1 Database (Phase 2) ──────────────────────────────
-[[d1_databases]]
-binding = "DB"
-database_name = "gitfold-db"
-database_id = "9de55166-a54a-4b89-a9e1-8fa344ccc0cb"
-migrations_dir = "src/db/migrations"
-
-# ─── R2 Bucket for ZIP caching (Phase 2) ───────────────
+# ─── R2 Bucket for ZIP caching ─────────────────────────
 [[r2_buckets]]
 binding = "R2_CACHE"
 bucket_name = "gitfold-cache"
-
-# ─── Analytics Engine (Phase 2) ────────────────────────
-[[analytics_engine_datasets]]
-binding = "ANALYTICS"
-dataset = "gitfold_usage"
 
 # ─── Cron Trigger: clean up old R2 ZIP caches daily ────
 [triggers]
 crons = ["0 3 * * *"]
 
 # Secrets (set via: wrangler secret put <NAME>)
-# GITHUB_TOKEN = "..."
-# STRIPE_SECRET_KEY = "..."
-# STRIPE_WEBHOOK_SECRET = "..."
-# STRIPE_PRO_PRICE_ID = "..."
-# STRIPE_POWER_PRICE_ID = "..."
-# GITHUB_CLIENT_ID = "..."
-# GITHUB_CLIENT_SECRET = "..."
-# JWT_SECRET = "..."
-# TOKEN_ENCRYPTION_KEY = "..."
-
+# GITHUB_TOKEN = "..."   # optional shared fallback token for anonymous requests

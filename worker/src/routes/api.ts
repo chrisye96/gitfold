@@ -12,14 +12,12 @@
  */
 
 import { Hono } from 'hono'
-import type { Env, Tier, SessionUser } from '../types.js'
+import type { Env, Tier } from '../types.js'
 import { fetchTree, fetchAllFiles, buildInfo } from '../services/github.js'
 import { createZip, zipResponse, zipFilename } from '../services/zip.js'
 import { tarGzResponse } from '../services/tar.js'
 import { corsHeaders, checkLimits } from '../middleware/security.js'
 import { zipCacheKey, getZipFromR2, saveZipToR2, fetchCommitSha } from '../services/cache.js'
-import { trackDownload } from '../services/analytics.js'
-import { getUserOAuthToken } from '../services/auth.js'
 
 const api = new Hono<{
   Bindings: Env
@@ -27,7 +25,6 @@ const api = new Hono<{
     repoInfo: import('../types.js').RepoInfo
     tier: Tier
     fileLimit: number
-    sessionUser?: SessionUser
   }
 }>()
 
@@ -35,13 +32,7 @@ const api = new Hono<{
 
 api.get('/download', async (c) => {
   const info  = c.get('repoInfo')
-  const sessionUser = c.get('sessionUser')
-  let token = c.req.header('X-GitHub-Token')
-  // If no explicit token header, try the session user's stored OAuth token
-  if (!token && sessionUser && c.env.TOKEN_ENCRYPTION_KEY) {
-    token = await getUserOAuthToken(c.env.DB, sessionUser.userId, c.env.TOKEN_ENCRYPTION_KEY) ?? undefined
-  }
-  token = token ?? c.env.GITHUB_TOKEN
+  const token = c.req.header('X-GitHub-Token') ?? c.env.GITHUB_TOKEN
   const fmt   = c.req.query('format')
   const useTarGz = fmt === 'tar.gz' || fmt === 'tgz'
 
@@ -52,9 +43,6 @@ api.get('/download', async (c) => {
       `https://github.com/${info.owner}/${info.repo}/archive/refs/heads/${info.branch}.${ext}`
     return c.redirect(archiveUrl, 302)
   }
-
-  const startTime = Date.now()
-  const userId = sessionUser?.userId ?? 'anon'
 
   try {
     // 0. Resolve commit SHA once (reused for cache check + cache save)
@@ -82,18 +70,6 @@ api.get('/download', async (c) => {
       if (cached) {
         const name = zipFilename(info.path, info.repo)
         const safeName = name.endsWith('.zip') ? name : name + '.zip'
-
-        trackDownload(c.env, {
-          userId,
-          tier: c.get('tier') ?? 'free',
-          owner: info.owner,
-          repo: info.repo,
-          path: info.path,
-          fileCount: tree.length,
-          totalBytes: cached.size,
-          durationMs: Date.now() - startTime,
-          cacheHit: true,
-        })
 
         return new Response(cached.body, {
           status: 200,
@@ -126,19 +102,6 @@ api.get('/download', async (c) => {
       c.executionCtx.waitUntil(saveZipToR2(c.env, cacheKey, zipData))
     }
 
-    // 8. Track download
-    trackDownload(c.env, {
-      userId,
-      tier: c.get('tier') ?? 'free',
-      owner: info.owner,
-      repo: info.repo,
-      path: info.path,
-      fileCount: tree.length,
-      totalBytes: zipData.byteLength,
-      durationMs: Date.now() - startTime,
-      cacheHit: false,
-    })
-
     return zipResponse(zipData, name, corsHeaders())
 
   } catch (err) {
@@ -155,12 +118,7 @@ api.get('/download', async (c) => {
 
 api.get('/info', async (c) => {
   const info  = c.get('repoInfo')
-  const sessionUser = c.get('sessionUser')
-  let token = c.req.header('X-GitHub-Token')
-  if (!token && sessionUser && c.env.TOKEN_ENCRYPTION_KEY) {
-    token = await getUserOAuthToken(c.env.DB, sessionUser.userId, c.env.TOKEN_ENCRYPTION_KEY) ?? undefined
-  }
-  token = token ?? c.env.GITHUB_TOKEN
+  const token = c.req.header('X-GitHub-Token') ?? c.env.GITHUB_TOKEN
 
   try {
     const tree   = await fetchTree(info, token, c.env.GITFOLD_CACHE)
@@ -194,12 +152,7 @@ api.get('/info', async (c) => {
 
 api.get('/download/progress', async (c) => {
   const info       = c.get('repoInfo')
-  const sessionUser = c.get('sessionUser')
-  let token = c.req.header('X-GitHub-Token')
-  if (!token && sessionUser && c.env.TOKEN_ENCRYPTION_KEY) {
-    token = await getUserOAuthToken(c.env.DB, sessionUser.userId, c.env.TOKEN_ENCRYPTION_KEY) ?? undefined
-  }
-  token = token ?? c.env.GITHUB_TOKEN
+  const token = c.req.header('X-GitHub-Token') ?? c.env.GITHUB_TOKEN
 
   if (info.type === 'repo') {
     return Response.json(
@@ -292,6 +245,70 @@ api.get('/download/progress', async (c) => {
       ...corsHeaders(c.req.header('Origin')),
     },
   })
+})
+
+// ─── POST /v1/download (multi-path) ────────────────────────────────────────
+
+api.post('/download', async (c) => {
+  const token = c.req.header('X-GitHub-Token') ?? c.env.GITHUB_TOKEN
+
+  let body: { owner: string; repo: string; branch: string; paths: string[] }
+  try {
+    body = await c.req.json()
+  } catch {
+    return Response.json({ code: 'INVALID_URL', message: 'Invalid JSON body' }, { status: 400 })
+  }
+
+  const { owner, repo, branch, paths } = body
+  if (!owner || !repo || !branch || !Array.isArray(paths) || paths.length === 0 || paths.length > 10) {
+    return Response.json({ code: 'INVALID_URL', message: 'Missing required fields or too many paths (max 10)' }, { status: 400 })
+  }
+
+  const fileLimit = c.get('fileLimit')
+
+  try {
+    // Step 1: Fetch all trees and accumulate entries (for limit check before fetching content)
+    const allTrees: import('../types.js').TreeEntry[][] = []
+    let totalEntries = 0
+    let totalTreeSize = 0
+
+    for (const path of paths) {
+      const pathInfo: import('../types.js').RepoInfo = {
+        provider: 'github', type: 'folder', owner, repo, branch, path, originalUrl: '',
+      }
+      const tree = await fetchTree(pathInfo, token, c.env.GITFOLD_CACHE)
+      totalEntries += tree.length
+      totalTreeSize += tree.reduce((s, e) => s + (e.size ?? 0), 0)
+      allTrees.push(tree)
+    }
+
+    // Step 2: Check combined limits before fetching file content
+    const limitCheck = checkLimits(totalEntries, totalTreeSize, fileLimit)
+    if (!limitCheck.ok) return limitCheck.response
+
+    // Step 3: Fetch actual file contents (uses raw.githubusercontent.com, no rate-limit cost)
+    const allFiles: Array<{ path: string; data: Uint8Array }> = []
+    for (let i = 0; i < paths.length; i++) {
+      const currentPath = paths[i]!
+      const currentTree = allTrees[i]!
+      const pathInfo: import('../types.js').RepoInfo = {
+        provider: 'github', type: 'folder', owner, repo, branch, path: currentPath, originalUrl: '',
+      }
+      const files = await fetchAllFiles(currentTree, pathInfo)
+      allFiles.push(...files)
+    }
+
+    // Step 4: Build zip and respond
+    const zipData = createZip(allFiles, '')
+    const filename = zipFilename('selection', repo)
+
+    return zipResponse(zipData, filename, corsHeaders(c.req.header('Origin')))
+
+  } catch (err) {
+    if (err instanceof Response) return err
+    console.error('[POST /download]', err)
+    return Response.json({ code: 'GITHUB_ERROR', message: 'Unexpected error' }, { status: 500 })
+  }
 })
 
 export default api
