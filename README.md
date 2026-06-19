@@ -2,7 +2,7 @@
 
 > Download any GitHub directory as a zip — instantly.
 
-**[gitfold.cc](https://gitfold.cc)** · [Docs](https://gitfold.cc/docs) · [Pricing](https://gitfold.cc/pricing) · [API](https://api.gitfold.cc/docs)
+**[gitfold.cc](https://gitfold.cc)** · [Docs](https://gitfold.cc/docs) · [API](https://api.gitfold.cc/docs)
 
 ---
 
