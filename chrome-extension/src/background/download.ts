@@ -1,4 +1,5 @@
 import type { RepoInfo } from '../shared/types'
+import { zipFilename } from '../shared/parse-url'
 
 const API_BASE = 'https://api.gitfold.cc'
 const TIMEOUT_MS = 30_000
@@ -163,8 +164,7 @@ export async function handleDownload(
     // Multiple items or any folder → download current directory as zip
     try {
       const apiUrl = buildApiUrl(info)
-      const safePath = info.path.replace(/\//g, '-') || 'root'
-      const fallbackFilename = `${info.owner}-${info.repo}-${safePath}.zip`
+      const fallbackFilename = zipFilename(info)
       const headers: Record<string, string> = { 'X-Client': 'extension' }
       if (token) headers['X-GitHub-Token'] = token
 
@@ -180,8 +180,7 @@ export async function handleDownload(
 
   try {
     const apiUrl = buildApiUrl(info)
-    const safePath = info.path.replace(/\//g, '-') || 'root'
-    const fallbackFilename = `${info.owner}-${info.repo}-${safePath}.zip`
+    const fallbackFilename = zipFilename(info)
     const headers: Record<string, string> = { 'X-Client': 'extension' }
     if (token) headers['X-GitHub-Token'] = token
 

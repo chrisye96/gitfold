@@ -77,3 +77,14 @@ export function parseGithubUrl(url: string): RepoInfo | null {
     originalUrl: url,
   }
 }
+
+/**
+ * Derive the zip filename from the current directory being downloaded.
+ * Mirrors web/js/parse-url.js and worker zipFilename so every client names
+ * the archive after the folder, e.g. "feature-dev-gitfold.cc.zip".
+ */
+export function zipFilename(info: Pick<RepoInfo, 'type' | 'repo' | 'path'>): string {
+  if (info.type === 'repo') return `${info.repo}.zip`
+  const base = info.path.split('/').pop() || info.repo
+  return `${base}-gitfold.cc.zip`
+}

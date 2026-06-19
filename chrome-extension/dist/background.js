@@ -1,3 +1,54 @@
+// src/shared/parse-url.ts
+function parseGithubUrl(url) {
+  if (!url || typeof url !== "string") return null;
+  let normalized = url.trim();
+  if (normalized.startsWith("//")) normalized = "https:" + normalized;
+  if (!normalized.startsWith("http")) normalized = "https://" + normalized;
+  let u;
+  try {
+    u = new URL(normalized);
+  } catch {
+    return null;
+  }
+  if (u.hostname !== "github.com" && u.hostname !== "gitfold.cc") return null;
+  const treeMatch = u.pathname.match(/^\/([^/]+)\/([^/]+)\/tree\/([^/]+)(?:\/(.+))?$/);
+  const repoMatch = !treeMatch && u.pathname.match(/^\/([^/]+)\/([^/]+)\/?$/);
+  const match = treeMatch || repoMatch;
+  if (!match) return null;
+  const owner = match[1];
+  const repo = match[2];
+  if (!owner || !repo) return null;
+  if (owner === "login" || owner === "settings" || owner === "explore") return null;
+  if (treeMatch) {
+    const branch = treeMatch[3];
+    const rawPath = treeMatch[4] || "";
+    const path = rawPath.replace(/\/+$/, "");
+    return {
+      provider: "github",
+      type: path ? "folder" : "repo",
+      owner,
+      repo,
+      branch,
+      path,
+      originalUrl: url
+    };
+  }
+  return {
+    provider: "github",
+    type: "repo",
+    owner,
+    repo,
+    branch: "",
+    path: "",
+    originalUrl: url
+  };
+}
+function zipFilename(info) {
+  if (info.type === "repo") return `${info.repo}.zip`;
+  const base = info.path.split("/").pop() || info.repo;
+  return `${base}-gitfold.cc.zip`;
+}
+
 // src/background/download.ts
 var API_BASE = "https://api.gitfold.cc";
 var TIMEOUT_MS = 3e4;
@@ -82,8 +133,7 @@ async function handleDownload(url, info, selectedItems) {
     }
     try {
       const apiUrl = buildApiUrl(info);
-      const safePath = info.path.replace(/\//g, "-") || "root";
-      const fallbackFilename = `${info.owner}-${info.repo}-${safePath}.zip`;
+      const fallbackFilename = zipFilename(info);
       const headers = { "X-Client": "extension" };
       if (token) headers["X-GitHub-Token"] = token;
       const response = await fetchAndDownload(apiUrl, headers, fallbackFilename);
@@ -95,8 +145,7 @@ async function handleDownload(url, info, selectedItems) {
   }
   try {
     const apiUrl = buildApiUrl(info);
-    const safePath = info.path.replace(/\//g, "-") || "root";
-    const fallbackFilename = `${info.owner}-${info.repo}-${safePath}.zip`;
+    const fallbackFilename = zipFilename(info);
     const headers = { "X-Client": "extension" };
     if (token) headers["X-GitHub-Token"] = token;
     const response = await fetchAndDownload(apiUrl, headers, fallbackFilename);
@@ -133,52 +182,6 @@ async function validateToken(token) {
   } catch {
     return { valid: true, limit: 0 };
   }
-}
-
-// src/shared/parse-url.ts
-function parseGithubUrl(url) {
-  if (!url || typeof url !== "string") return null;
-  let normalized = url.trim();
-  if (normalized.startsWith("//")) normalized = "https:" + normalized;
-  if (!normalized.startsWith("http")) normalized = "https://" + normalized;
-  let u;
-  try {
-    u = new URL(normalized);
-  } catch {
-    return null;
-  }
-  if (u.hostname !== "github.com" && u.hostname !== "gitfold.cc") return null;
-  const treeMatch = u.pathname.match(/^\/([^/]+)\/([^/]+)\/tree\/([^/]+)(?:\/(.+))?$/);
-  const repoMatch = !treeMatch && u.pathname.match(/^\/([^/]+)\/([^/]+)\/?$/);
-  const match = treeMatch || repoMatch;
-  if (!match) return null;
-  const owner = match[1];
-  const repo = match[2];
-  if (!owner || !repo) return null;
-  if (owner === "login" || owner === "settings" || owner === "explore") return null;
-  if (treeMatch) {
-    const branch = treeMatch[3];
-    const rawPath = treeMatch[4] || "";
-    const path = rawPath.replace(/\/+$/, "");
-    return {
-      provider: "github",
-      type: path ? "folder" : "repo",
-      owner,
-      repo,
-      branch,
-      path,
-      originalUrl: url
-    };
-  }
-  return {
-    provider: "github",
-    type: "repo",
-    owner,
-    repo,
-    branch: "",
-    path: "",
-    originalUrl: url
-  };
 }
 
 // src/background/context-menu.ts
