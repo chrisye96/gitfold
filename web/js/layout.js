@@ -17,8 +17,6 @@
 function currentPage() {
   const p = window.location.pathname
   if (p === '/docs' || p === '/docs.html' || p.startsWith('/docs#')) return 'docs'
-  if (p === '/pricing' || p === '/pricing.html') return 'pricing'
-  if (p === '/team' || p === '/team.html') return 'team'
   return 'home'
 }
 

@@ -12,14 +12,12 @@
  */
 
 import { Hono } from 'hono'
-import type { Env, Tier, SessionUser } from '../types.js'
+import type { Env, Tier } from '../types.js'
 import { fetchTree, fetchAllFiles, buildInfo } from '../services/github.js'
 import { createZip, zipResponse, zipFilename } from '../services/zip.js'
 import { tarGzResponse } from '../services/tar.js'
 import { corsHeaders, checkLimits } from '../middleware/security.js'
 import { zipCacheKey, getZipFromR2, saveZipToR2, fetchCommitSha } from '../services/cache.js'
-import { trackDownload } from '../services/analytics.js'
-import { getUserOAuthToken } from '../services/auth.js'
 
 const api = new Hono<{
   Bindings: Env
@@ -27,7 +25,6 @@ const api = new Hono<{
     repoInfo: import('../types.js').RepoInfo
     tier: Tier
     fileLimit: number
-    sessionUser?: SessionUser
   }
 }>()
 
@@ -35,13 +32,7 @@ const api = new Hono<{
 
 api.get('/download', async (c) => {
   const info  = c.get('repoInfo')
-  const sessionUser = c.get('sessionUser')
-  let token = c.req.header('X-GitHub-Token')
-  // If no explicit token header, try the session user's stored OAuth token
-  if (!token && sessionUser && c.env.TOKEN_ENCRYPTION_KEY) {
-    token = await getUserOAuthToken(c.env.DB, sessionUser.userId, c.env.TOKEN_ENCRYPTION_KEY) ?? undefined
-  }
-  token = token ?? c.env.GITHUB_TOKEN
+  const token = c.req.header('X-GitHub-Token') ?? c.env.GITHUB_TOKEN
   const fmt   = c.req.query('format')
   const useTarGz = fmt === 'tar.gz' || fmt === 'tgz'
 
@@ -52,12 +43,6 @@ api.get('/download', async (c) => {
       `https://github.com/${info.owner}/${info.repo}/archive/refs/heads/${info.branch}.${ext}`
     return c.redirect(archiveUrl, 302)
   }
-
-  const startTime = Date.now()
-  const userId = sessionUser?.userId ?? 'anon'
-  const rawClient = c.req.header('X-Client') ?? 'web'
-  const source: 'web' | 'extension' | 'cli' =
-    rawClient === 'extension' || rawClient === 'cli' ? rawClient : 'web'
 
   try {
     // 0. Resolve commit SHA once (reused for cache check + cache save)
@@ -85,19 +70,6 @@ api.get('/download', async (c) => {
       if (cached) {
         const name = zipFilename(info.path, info.repo)
         const safeName = name.endsWith('.zip') ? name : name + '.zip'
-
-        trackDownload(c.env, {
-          userId,
-          tier: c.get('tier') ?? 'free',
-          source,
-          owner: info.owner,
-          repo: info.repo,
-          path: info.path,
-          fileCount: tree.length,
-          totalBytes: cached.size,
-          durationMs: Date.now() - startTime,
-          cacheHit: true,
-        })
 
         return new Response(cached.body, {
           status: 200,
@@ -130,20 +102,6 @@ api.get('/download', async (c) => {
       c.executionCtx.waitUntil(saveZipToR2(c.env, cacheKey, zipData))
     }
 
-    // 8. Track download
-    trackDownload(c.env, {
-      userId,
-      tier: c.get('tier') ?? 'free',
-      source,
-      owner: info.owner,
-      repo: info.repo,
-      path: info.path,
-      fileCount: tree.length,
-      totalBytes: zipData.byteLength,
-      durationMs: Date.now() - startTime,
-      cacheHit: false,
-    })
-
     return zipResponse(zipData, name, corsHeaders())
 
   } catch (err) {
@@ -160,12 +118,7 @@ api.get('/download', async (c) => {
 
 api.get('/info', async (c) => {
   const info  = c.get('repoInfo')
-  const sessionUser = c.get('sessionUser')
-  let token = c.req.header('X-GitHub-Token')
-  if (!token && sessionUser && c.env.TOKEN_ENCRYPTION_KEY) {
-    token = await getUserOAuthToken(c.env.DB, sessionUser.userId, c.env.TOKEN_ENCRYPTION_KEY) ?? undefined
-  }
-  token = token ?? c.env.GITHUB_TOKEN
+  const token = c.req.header('X-GitHub-Token') ?? c.env.GITHUB_TOKEN
 
   try {
     const tree   = await fetchTree(info, token, c.env.GITFOLD_CACHE)
@@ -199,12 +152,7 @@ api.get('/info', async (c) => {
 
 api.get('/download/progress', async (c) => {
   const info       = c.get('repoInfo')
-  const sessionUser = c.get('sessionUser')
-  let token = c.req.header('X-GitHub-Token')
-  if (!token && sessionUser && c.env.TOKEN_ENCRYPTION_KEY) {
-    token = await getUserOAuthToken(c.env.DB, sessionUser.userId, c.env.TOKEN_ENCRYPTION_KEY) ?? undefined
-  }
-  token = token ?? c.env.GITHUB_TOKEN
+  const token = c.req.header('X-GitHub-Token') ?? c.env.GITHUB_TOKEN
 
   if (info.type === 'repo') {
     return Response.json(
@@ -302,12 +250,7 @@ api.get('/download/progress', async (c) => {
 // ─── POST /v1/download (multi-path) ────────────────────────────────────────
 
 api.post('/download', async (c) => {
-  const sessionUser = c.get('sessionUser')
-  let token = c.req.header('X-GitHub-Token')
-  if (!token && sessionUser && c.env.TOKEN_ENCRYPTION_KEY) {
-    token = await getUserOAuthToken(c.env.DB, sessionUser.userId, c.env.TOKEN_ENCRYPTION_KEY) ?? undefined
-  }
-  token = token ?? c.env.GITHUB_TOKEN
+  const token = c.req.header('X-GitHub-Token') ?? c.env.GITHUB_TOKEN
 
   let body: { owner: string; repo: string; branch: string; paths: string[] }
   try {
@@ -321,12 +264,7 @@ api.post('/download', async (c) => {
     return Response.json({ code: 'INVALID_URL', message: 'Missing required fields or too many paths (max 10)' }, { status: 400 })
   }
 
-  const startTime = Date.now()
-  const userId = sessionUser?.userId ?? 'anon'
   const fileLimit = c.get('fileLimit')
-  const rawClient = c.req.header('X-Client') ?? 'web'
-  const source: 'web' | 'extension' | 'cli' =
-    rawClient === 'extension' || rawClient === 'cli' ? rawClient : 'web'
 
   try {
     // Step 1: Fetch all trees and accumulate entries (for limit check before fetching content)
@@ -363,18 +301,6 @@ api.post('/download', async (c) => {
     // Step 4: Build zip and respond
     const zipData = createZip(allFiles, '')
     const filename = zipFilename('selection', repo)
-
-    trackDownload(c.env, {
-      userId,
-      tier: c.get('tier') ?? 'free',
-      source,
-      owner, repo,
-      path: paths.join(','),
-      fileCount: allFiles.length,
-      totalBytes: allFiles.reduce((s, f) => s + f.data.byteLength, 0),
-      durationMs: Date.now() - startTime,
-      cacheHit: false,
-    })
 
     return zipResponse(zipData, filename, corsHeaders(c.req.header('Origin')))
 

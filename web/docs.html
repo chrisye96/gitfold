@@ -234,9 +234,7 @@ curl -L -H "X-GitHub-Token: ghp_xxxx" \
         <thead><tr><th>Tier</th><th>Max files</th><th>How to unlock</th></tr></thead>
         <tbody>
           <tr><td>Free</td><td>50</td><td>Default</td></tr>
-          <tr><td>Token</td><td>200</td><td>GitHub PAT header or sign in with GitHub</td></tr>
-          <tr><td>Pro</td><td>1,000</td><td><a href="/pricing">Subscribe</a></td></tr>
-          <tr><td>Power</td><td>5,000</td><td><a href="/pricing">Subscribe</a></td></tr>
+          <tr><td>Token</td><td>200</td><td>Send a GitHub PAT via the <code>X-GitHub-Token</code> header</td></tr>
         </tbody>
       </table>
 
@@ -318,9 +316,8 @@ Use the GitFold API at https://gitfold.cc/llms.txt"</code></pre>
       </p>
 
       <h3>Is there a file size limit?</h3>
-      <p>All tiers share a 100 MB maximum per request. File <em>count</em> limits vary by tier:
-         50 (Free), 200 (Token / signed in with GitHub), 1,000 (Pro), 5,000 (Power).
-         See <a href="/pricing">pricing</a> to upgrade. For very large directories,
+      <p>Requests share a 100 MB maximum. The file <em>count</em> limit is 50 by default,
+         or 200 when you send your own GitHub token (free). For very large directories,
          use <code>git sparse-checkout</code> instead.</p>
 
       <h3>Can I self-host GitFold?</h3>

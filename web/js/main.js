@@ -17,7 +17,7 @@ import { mountAllAds } from './ads.js'
 import { renderLayout } from './layout.js'
 import { initTheme } from './theme.js'
 import { getSubToken, getFileLimit, isProUser, handleCheckoutReturn, verifySubscription } from './subscription.js'
-import { checkSession, handleAuthReturn, isAuthenticated, startGitHubLogin, getCachedSession } from './auth.js'
+import { checkSession, handleAuthReturn, getCachedSession } from './auth.js'
 import { saveToHistory, getHistory, renderHistory } from './history.js'
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -355,7 +355,7 @@ async function startDownload() {
           const errorMap = {
             TOO_MANY_FILES: {
               msg: err.message,
-              action: { label: 'Upgrade', handler() { window.location.href = '/pricing' } },
+              action: { label: t('feedback.action.add_token'), handler() { tokenPanel.hidden = false; tokenToggle.setAttribute('aria-expanded', 'true'); tokenInput.removeAttribute('readonly'); tokenInput.focus() } },
             },
             RATE_LIMITED: {
               msg: t('feedback.rate_limited'),
@@ -423,9 +423,9 @@ async function startDownload() {
       },
       TOO_MANY_FILES: {
         msg: err.message || `Too many files (limit: ${fileLimit}).`,
-        action: isProUser()
+        action: hasToken
           ? { label: t('feedback.action.retry'), handler: startDownload }
-          : { label: 'Get full folder', handler() { window.location.href = '/pricing' } },
+          : { label: t('feedback.action.add_token'), handler() { tokenPanel.hidden = false; tokenToggle.setAttribute('aria-expanded', 'true'); tokenInput.removeAttribute('readonly'); tokenInput.focus() } },
       },
       default: {
         msg: err.message || t('feedback.default_error'),
@@ -600,31 +600,16 @@ function showUpgradeModal(fileCount, limit, hasToken, onPartialDownload) {
     <div class="upgrade-modal">
       <button class="upgrade-modal-close" aria-label="Close">&times;</button>
       <h3>Large folder detected (${fileCount} files)</h3>
-      <p class="upgrade-modal-count">Free${hasToken ? ' + token' : ''}: up to ${limit} files</p>
-      <div class="upgrade-modal-tiers">
-        <div class="upgrade-modal-tier">
-          <strong>${hasToken ? 'With token' : 'Free'}</strong>
-          <span>Up to ${limit} files</span>
-        </div>
-        <div class="upgrade-modal-tier upgrade-modal-tier--pro">
-          <strong>Pro</strong>
-          <span>Up to 1,000 files</span>
-        </div>
-      </div>
+      <p class="upgrade-modal-count">${hasToken ? 'With token' : 'Free'}: up to ${limit} files</p>
       <div class="upgrade-modal-actions">
-        <button class="btn btn--secondary" data-action="partial">
+        <button class="btn btn--primary" data-action="partial">
           Download ${Math.min(fileCount, limit)} files
         </button>
-        ${!hasToken && !isAuthenticated() ? `<button class="btn btn--secondary" data-action="github-login">
-          Sign in with GitHub
-        </button>
-        <button class="btn btn--secondary btn--text" data-action="token">
-          or paste token manually
+        ${!hasToken ? `<button class="btn btn--secondary" data-action="token">
+          Add a GitHub token for a higher limit (free)
         </button>` : ''}
-        <a href="/pricing" class="btn btn--primary">
-          Get full folder &rarr;
-        </a>
       </div>
+      ${hasToken ? '<p class="upgrade-modal-hint">For larger folders, try a smaller subdirectory or git sparse-checkout.</p>' : ''}
     </div>
   `
 
@@ -643,12 +628,6 @@ function showUpgradeModal(fileCount, limit, hasToken, onPartialDownload) {
   modal.querySelector('[data-action="partial"]')?.addEventListener('click', () => {
     modal.remove()
     onPartialDownload()
-  })
-
-  // GitHub login (OAuth)
-  modal.querySelector('[data-action="github-login"]')?.addEventListener('click', () => {
-    modal.remove()
-    startGitHubLogin(API_BASE)
   })
 
   // Add token manually

@@ -13,11 +13,7 @@ import { Hono } from 'hono'
 import type { Context } from 'hono'
 import type { Env, Tier, SessionUser } from './types.js'
 import { validateUrl, resolveTier, corsHeaders } from './middleware/security.js'
-import { sessionMiddleware } from './middleware/session.js'
 import apiRoutes from './routes/api.js'
-import billingRoutes from './routes/billing.js'
-import authRoutes from './routes/auth.js'
-import teamRoutes from './routes/team.js'
 
 const app = new Hono<{
   Bindings: Env
@@ -28,11 +24,6 @@ const app = new Hono<{
     sessionUser?: SessionUser
   }
 }>()
-
-// ─── Global middleware ───────────────────────────────────────────────────────
-
-// Session middleware: extract JWT from cookie (non-blocking)
-app.use('*', sessionMiddleware)
 
 // ─── CORS preflight ───────────────────────────────────────────────────────────
 
@@ -56,21 +47,6 @@ app.get('/health', (c) =>
 app.get('/docs', (c) =>
   c.redirect('https://gitfold.cc/docs', 302),
 )
-
-// ─── Auth routes (Phase 2 — OAuth, session) ─────────────────────────────────
-
-app.route('/api/v1', authRoutes)
-app.route('/v1', authRoutes)
-
-// ─── Billing routes (no URL validation needed) ───────────────────────────────
-
-app.route('/api/v1', billingRoutes)
-app.route('/v1', billingRoutes)
-
-// ─── Team routes (Phase 3 — Power tier) ─────────────────────────────────────
-
-app.route('/api/v1', teamRoutes)
-app.route('/v1', teamRoutes)
 
 // ─── GET /v1/download/result — retrieve SSE job zip (no URL validation needed) ─
 

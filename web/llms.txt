@@ -77,9 +77,7 @@ Error codes: `INVALID_URL`, `NOT_FOUND`, `TOO_LARGE`, `TOO_MANY_FILES`, `RATE_LI
 | Tier   | Max files | How to unlock                   |
 |--------|-----------|---------------------------------|
 | Free   | 50        | Default                         |
-| Token  | 200       | GitHub PAT or sign in with GitHub |
-| Pro    | 1,000     | gitfold.cc/pricing              |
-| Power  | 5,000     | gitfold.cc/pricing              |
+| Token  | 200       | Send your own GitHub token (PAT) |
 
 Max directory size: 100 MB per request.
 

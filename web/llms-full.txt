@@ -313,10 +313,8 @@ All errors return JSON:
 
 | Tier   | Max files | How to unlock                              |
 |--------|-----------|--------------------------------------------|
-| Free   | 50        | Default (no token, no login)               |
-| Token  | 200       | GitHub PAT header or sign in with GitHub   |
-| Pro    | 1,000     | Subscribe at gitfold.cc/pricing            |
-| Power  | 5,000     | Subscribe at gitfold.cc/pricing            |
+| Free   | 50        | Default (no token)                         |
+| Token  | 200       | Send your own GitHub token (X-GitHub-Token)|
 
 Max directory size: 100 MB per request (all tiers).
 
