@@ -43,17 +43,6 @@ npx gitfold <url> --token ghp_xxxx
 
 ---
 
-## Tiers
-
-| Tier | Files | How to unlock |
-|------|-------|---------------|
-| Free | 50 | Default |
-| Token | 200 | Add GitHub PAT or sign in with GitHub |
-| Pro | 1,000 | [Subscribe](https://gitfold.cc/pricing) |
-| Power | 5,000 | [Subscribe](https://gitfold.cc/pricing) |
-
----
-
 ## Project Structure
 
 ```
