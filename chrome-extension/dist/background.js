@@ -46,7 +46,7 @@ function parseGithubUrl(url) {
 function zipFilename(info) {
   if (info.type === "repo") return `${info.repo}.zip`;
   const base = info.path.split("/").pop() || info.repo;
-  return `${base}-gitfold.cc.zip`;
+  return `${base}_gitfold-cc.zip`;
 }
 
 // src/background/download.ts
