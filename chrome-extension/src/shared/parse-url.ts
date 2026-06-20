@@ -86,5 +86,5 @@ export function parseGithubUrl(url: string): RepoInfo | null {
 export function zipFilename(info: Pick<RepoInfo, 'type' | 'repo' | 'path'>): string {
   if (info.type === 'repo') return `${info.repo}.zip`
   const base = info.path.split('/').pop() || info.repo
-  return `${base}-gitfold.cc.zip`
+  return `${base}_gitfold-cc.zip`
 }
