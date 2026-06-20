@@ -560,13 +560,17 @@ async function downloadViaSSE(info, token) {
       } else if (event.type === 'zipping') {
         showFeedback('loading', 'Creating zip…')
       } else if (event.type === 'done') {
-        // Trigger download of the completed zip
-        const a = document.createElement('a')
-        a.href = `${API_BASE}/v1/download/result?jobId=${encodeURIComponent(event.jobId)}`
-        a.download = event.filename ? (event.filename.endsWith('.zip') ? event.filename : event.filename + '.zip') : 'download.zip'
-        document.body.appendChild(a)
-        a.click()
-        document.body.removeChild(a)
+        // Fetch the finished zip and save it via a same-origin blob URL.
+        // A cross-origin <a download> has its filename dropped by Chrome (the
+        // file saves as "download"), so we re-download the bytes and let
+        // downloadBlob name it from the same-origin blob: URL.
+        const resultRes = await fetch(`${API_BASE}/v1/download/result?jobId=${encodeURIComponent(event.jobId)}`)
+        if (!resultRes.ok) return false  // job expired/error → fall back to client-side
+        const blob = await resultRes.blob()
+        const name = event.filename
+          ? (event.filename.endsWith('.zip') ? event.filename : event.filename + '.zip')
+          : zipFilename(info)
+        downloadBlob(blob, name)
         return true
       } else if (event.type === 'too_large') {
         return false  // fall back to client-side
