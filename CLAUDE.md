@@ -10,7 +10,7 @@ Monorepo with four packages, **no bundler** for the frontend:
 | `web/` | Static HTML/CSS/JS frontend | Cloudflare Pages |
 | `worker/` | API (zip streaming, caching) | Cloudflare Workers |
 | `shared/` | URL parsing & types (TS) | Shared |
-| `cli/` | `npx gitfold <url>` | Node.js |
+| `cli/` | `npx gitfold.cc <url>` | Node.js |
 
 Package manager: **pnpm** (workspaces).
 

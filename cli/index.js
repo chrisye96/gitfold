@@ -4,7 +4,7 @@
  * Download any GitHub directory as a zip or tar.gz.
  *
  * Usage:
- *   npx gitfold <github-url> [options]
+ *   npx gitfold.cc <github-url> [options]
  *
  * Requires Node.js >= 18 (native fetch + parseArgs).
  */
@@ -13,9 +13,11 @@ import { parseArgs } from 'node:util'
 import { createWriteStream } from 'node:fs'
 import { pipeline } from 'node:stream/promises'
 import { Readable } from 'node:stream'
+import { createRequire } from 'node:module'
 
 const API     = 'https://api.gitfold.cc/v1'
-const VERSION = '0.1.0'
+// Single source of truth: bump with `npm version patch` in cli/.
+const { version: VERSION } = createRequire(import.meta.url)('./package.json')
 
 // ─── Args ─────────────────────────────────────────────────────────────────────
 
@@ -42,7 +44,7 @@ if (values.help || positionals.length === 0) {
 gitfold v${VERSION} — Download any GitHub directory as a zip or tar.gz
 
 Usage:
-  npx gitfold <github-url> [options]
+  npx gitfold.cc <github-url> [options]
 
 Options:
   -o, --output <file>        Output path (default: <dirname> -gitfold.cc.zip)
@@ -53,11 +55,11 @@ Options:
   -h, --help                 Show this help
 
 Examples:
-  npx gitfold https://github.com/anthropics/claude-code/tree/main/plugins
-  npx gitfold https://github.com/... -o archive.zip
-  npx gitfold https://github.com/... --format tar.gz
-  npx gitfold https://github.com/... --info
-  npx gitfold https://github.com/... --token ghp_xxxx
+  npx gitfold.cc https://github.com/anthropics/claude-code/tree/main/plugins
+  npx gitfold.cc https://github.com/... -o archive.zip
+  npx gitfold.cc https://github.com/... --format tar.gz
+  npx gitfold.cc https://github.com/... --info
+  npx gitfold.cc https://github.com/... --token ghp_xxxx
 `)
   process.exit(values.help ? 0 : 1)
 }
@@ -109,22 +111,24 @@ if (values.info) {
     console.log(`    ${f.path}  (${formatBytes(f.size)})`)
   }
   console.log()
-  process.exit(0)
-}
+  // No process.exit() after fetch: on Windows it races undici's socket
+  // teardown and aborts with a libuv UV_HANDLE_CLOSING assertion.
+} else {
 
 // ─── Download mode ────────────────────────────────────────────────────────────
 
-if (values.token && !/^[\x20-\x7E]+$/.test(values.token)) {
-  console.error('Error: --token must contain only ASCII characters')
-  process.exit(1)
+  if (values.token && !/^[\x20-\x7E]+$/.test(values.token)) {
+    console.error('Error: --token must contain only ASCII characters')
+    process.exit(1)
+  }
+
+  const fmt = ['tar.gz', 'tgz'].includes(values.format) ? 'tar.gz' : 'zip'
+  const outPath = values.output || defaultFilename(positionals[0], fmt)
+
+  process.stdout.write(`Downloading → ${outPath} ... `)
+
+  const res = await apiFetch(`/download?url=${encodeURIComponent(positionals[0])}&format=${fmt}`)
+  await pipeline(Readable.fromWeb(res.body), createWriteStream(outPath))
+
+  console.log('done ✓')
 }
-
-const fmt = ['tar.gz', 'tgz'].includes(values.format) ? 'tar.gz' : 'zip'
-const outPath = values.output || defaultFilename(positionals[0], fmt)
-
-process.stdout.write(`Downloading → ${outPath} ... `)
-
-const res = await apiFetch(`/download?url=${encodeURIComponent(positionals[0])}&format=${fmt}`)
-await pipeline(Readable.fromWeb(res.body), createWriteStream(outPath))
-
-console.log('done ✓')

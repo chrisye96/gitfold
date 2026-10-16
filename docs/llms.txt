@@ -41,11 +41,11 @@ Returns JSON with fileCount, totalSize, files list, tier, and fileLimit.
 
 ## CLI
 
-    npx gitfold https://github.com/anthropics/claude-code/tree/main/plugins
-    npx gitfold <url> --output archive.zip
-    npx gitfold <url> --format tar.gz
-    npx gitfold <url> --info
-    npx gitfold <url> --token ghp_xxxx
+    npx gitfold.cc https://github.com/anthropics/claude-code/tree/main/plugins
+    npx gitfold.cc <url> --output archive.zip
+    npx gitfold.cc <url> --format tar.gz
+    npx gitfold.cc <url> --info
+    npx gitfold.cc <url> --token ghp_xxxx
 
 ## Error format
 

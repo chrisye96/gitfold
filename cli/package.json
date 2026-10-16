@@ -1,6 +1,6 @@
 {
-  "name": "gitfold",
-  "version": "0.1.0",
+  "name": "gitfold.cc",
+  "version": "0.1.1",
   "description": "Download any GitHub directory as a zip from the command line",
   "type": "module",
   "main": "./lib.js",
@@ -9,17 +9,30 @@
     "./cli": "./index.js"
   },
   "bin": {
-    "gitfold": "./index.js"
+    "gitfold": "index.js"
   },
   "engines": {
     "node": ">=18"
   },
-  "keywords": ["github", "download", "directory", "zip", "tar", "cli"],
+  "keywords": [
+    "github",
+    "download",
+    "directory",
+    "folder",
+    "subdirectory",
+    "zip",
+    "tar",
+    "cli",
+    "gitfold"
+  ],
   "license": "MIT",
   "homepage": "https://gitfold.cc",
   "repository": {
     "type": "git",
-    "url": "https://github.com/chrisye96/gitfold",
+    "url": "git+https://github.com/chrisye96/gitfold.git",
     "directory": "cli"
+  },
+  "scripts": {
+    "release": "npm version patch --no-git-tag-version --no-workspaces-update && npm publish"
   }
 }
