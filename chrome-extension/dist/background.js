@@ -52,6 +52,15 @@ function zipFilename(info) {
 // src/background/download.ts
 var API_BASE = "https://api.gitfold.cc";
 var TIMEOUT_MS = 3e4;
+var pendingFilename = null;
+chrome.downloads.onDeterminingFilename.addListener((_item, suggest) => {
+  if (pendingFilename) {
+    suggest({ filename: pendingFilename, conflictAction: "uniquify" });
+    pendingFilename = null;
+  } else {
+    suggest();
+  }
+});
 async function fetchWithRetry(url, headers, maxRetries = 1) {
   let lastError;
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
@@ -79,6 +88,7 @@ async function downloadBlob(blob, filename) {
   }
   const base64 = btoa(binary);
   const dataUrl = `data:application/zip;base64,${base64}`;
+  pendingFilename = filename;
   await chrome.downloads.download({ url: dataUrl, filename, saveAs: false });
 }
 function sanitizeFilename(name) {

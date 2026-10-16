@@ -148,14 +148,14 @@ All errors return JSON:
 ## CLI
 
     # No install needed
-    npx gitfold <url>
+    npx gitfold.cc <url>
 
     # Options
-    npx gitfold <url>                          # download zip to current directory
-    npx gitfold <url> --output ./archive.zip   # custom output path
-    npx gitfold <url> --info                   # list files, no download
-    npx gitfold <url> --token ghp_xxxx         # use GitHub token
-    npx gitfold <url> --format tar.gz          # download as tar.gz
+    npx gitfold.cc <url>                          # download zip to current directory
+    npx gitfold.cc <url> --output ./archive.zip   # custom output path
+    npx gitfold.cc <url> --info                   # list files, no download
+    npx gitfold.cc <url> --token ghp_xxxx         # use GitHub token
+    npx gitfold.cc <url> --format tar.gz          # download as tar.gz
 
 ---
 

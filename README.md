@@ -35,10 +35,10 @@ curl -L "https://api.gitfold.cc/v1/download?url=...&format=tar.gz" -o archive.ta
 
 **CLI**
 ```bash
-npx gitfold https://github.com/anthropics/claude-code/tree/main/plugins/feature-dev
-npx gitfold <url> --format tar.gz
-npx gitfold <url> --info
-npx gitfold <url> --token ghp_xxxx
+npx gitfold.cc https://github.com/anthropics/claude-code/tree/main/plugins/feature-dev
+npx gitfold.cc <url> --format tar.gz
+npx gitfold.cc <url> --info
+npx gitfold.cc <url> --token ghp_xxxx
 ```
 
 ---
@@ -56,7 +56,7 @@ gitfold/
 │       ├── middleware/ # security, session
 │       └── db/      # D1 schema + migrations
 ├── docs/            # llms.txt, llms-full.txt
-└── cli/             # npx gitfold
+└── cli/             # npx gitfold.cc
 ```
 
 ## Development

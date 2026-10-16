@@ -260,20 +260,20 @@ curl -L -H "X-GitHub-Token: ghp_xxxx" \
       <!-- ────────────────────── CLI ────────────────────────────────────── -->
       <h2 id="cli" data-nav-section="Developers">CLI</h2>
       <pre><code># No install needed — run with npx
-npx gitfold https://github.com/anthropics/claude-code/tree/main/plugins/feature-dev
+npx gitfold.cc https://github.com/anthropics/claude-code/tree/main/plugins/feature-dev
 
 # Options
-npx gitfold &lt;url&gt; --output archive.zip   # custom output path
-npx gitfold &lt;url&gt; --format tar.gz        # download as tar.gz
-npx gitfold &lt;url&gt; --info                 # show file list without downloading
-npx gitfold &lt;url&gt; --token ghp_xxxx      # use GitHub token</code></pre>
+npx gitfold.cc &lt;url&gt; --output archive.zip   # custom output path
+npx gitfold.cc &lt;url&gt; --format tar.gz        # download as tar.gz
+npx gitfold.cc &lt;url&gt; --info                 # show file list without downloading
+npx gitfold.cc &lt;url&gt; --token ghp_xxxx      # use GitHub token</code></pre>
 
       <!-- ────────────────────── LIBRARY ───────────────────────────────── -->
       <h2 id="library" data-nav-section="Developers">Library</h2>
       <p>Use GitFold programmatically in Node.js:</p>
-      <pre><code>npm install gitfold
-# or: npx gitfold &lt;url&gt;</code></pre>
-      <pre><code>import { snip, info } from 'gitfold'
+      <pre><code>npm install gitfold.cc
+# or: npx gitfold.cc &lt;url&gt;</code></pre>
+      <pre><code>import { snip, info } from 'gitfold.cc'
 
 // Download a directory as a zip Buffer
 const zip = await snip('https://github.com/owner/repo/tree/main/path')

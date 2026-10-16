@@ -4,6 +4,24 @@ import { zipFilename } from '../shared/parse-url'
 const API_BASE = 'https://api.gitfold.cc'
 const TIMEOUT_MS = 30_000
 
+/**
+ * Chrome ignores the `filename` option of chrome.downloads.download() for
+ * data: URLs — the file saves as "download". onDeterminingFilename is the
+ * authoritative override that fires for every download, so we stash the
+ * desired name here and apply it when Chrome determines the filename.
+ * ponytail: single in-flight download (user-initiated clicks); no queue needed.
+ */
+let pendingFilename: string | null = null
+
+chrome.downloads.onDeterminingFilename.addListener((_item, suggest) => {
+  if (pendingFilename) {
+    suggest({ filename: pendingFilename, conflictAction: 'uniquify' })
+    pendingFilename = null
+  } else {
+    suggest()
+  }
+})
+
 export interface DownloadResult {
   ok: boolean
   code?: 'rate_limited' | 'not_found' | 'forbidden' | 'network' | 'too_many_files' | 'unknown'
@@ -58,6 +76,8 @@ async function downloadBlob(blob: Blob, filename: string): Promise<void> {
   }
   const base64 = btoa(binary)
   const dataUrl = `data:application/zip;base64,${base64}`
+  // filename here is the fallback; onDeterminingFilename applies it reliably.
+  pendingFilename = filename
   await chrome.downloads.download({ url: dataUrl, filename, saveAs: false })
 }
 

@@ -2,7 +2,7 @@
 /**
  * gitfold — programmatic library
  *
- * import { info, snip } from 'gitfold'
+ * import { info, snip } from 'gitfold.cc'
  *
  * Works in Node.js 18+ and modern browsers (native fetch required).
  * Zero dependencies.
@@ -64,7 +64,7 @@ export async function info(url, { token, apiBase = DEFAULT_API } = {}) {
  *
  * @example
  * // Download and save (Node.js)
- * import { snip } from 'gitfold'
+ * import { snip } from 'gitfold.cc'
  * import { pipeline } from 'node:stream/promises'
  * import { Readable } from 'node:stream'
  * import { createWriteStream } from 'node:fs'
