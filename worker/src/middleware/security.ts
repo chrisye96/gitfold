@@ -129,7 +129,7 @@ export function checkLimits(
         'TOO_MANY_FILES',
         `Directory contains ${fileCount} files (limit: ${effectiveLimit}).`,
         effectiveLimit < LIMITS.maxFiles
-          ? 'Upgrade your plan for higher limits, or try a smaller subdirectory.'
+          ? 'A GitHub token (X-GitHub-Token header) raises the file limit, or try a smaller subdirectory.'
           : 'Try a smaller subdirectory, or use git sparse-checkout for large repos.',
       ),
     }

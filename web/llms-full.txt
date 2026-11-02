@@ -185,4 +185,4 @@ Bookmarklet: drag `javascript:window.location.href=window.location.href.replace(
 ## Source code
 
 https://github.com/chrisye96/gitfold (MIT license)
-Runs on Cloudflare Workers + Pages + D1 + R2.
+Runs on Cloudflare Workers + Pages + KV + R2.

@@ -11,7 +11,7 @@
 
 import { Hono } from 'hono'
 import type { Context } from 'hono'
-import type { Env, Tier, SessionUser } from './types.js'
+import type { Env, Tier } from './types.js'
 import { validateUrl, resolveTier, corsHeaders } from './middleware/security.js'
 import apiRoutes from './routes/api.js'
 
@@ -21,7 +21,6 @@ const app = new Hono<{
     repoInfo: import('./types.js').RepoInfo
     tier: Tier
     fileLimit: number
-    sessionUser?: SessionUser
   }
 }>()
 
@@ -50,7 +49,7 @@ app.get('/docs', (c) =>
 
 // ─── GET /v1/download/result — retrieve SSE job zip (no URL validation needed) ─
 
-async function downloadResultHandler(c: Context<{ Bindings: Env; Variables: { repoInfo: import('./types.js').RepoInfo; tier: Tier; fileLimit: number; sessionUser?: SessionUser } }>) {
+async function downloadResultHandler(c: Context<{ Bindings: Env; Variables: { repoInfo: import('./types.js').RepoInfo; tier: Tier; fileLimit: number } }>) {
   const jobId = c.req.query('jobId')
   if (!jobId) {
     return Response.json(
