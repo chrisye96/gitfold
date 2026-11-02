@@ -32,3 +32,4 @@ pnpm-debug.log*
 plans/
 .claude/
 superpowers/
+.claude/settings.local.json
