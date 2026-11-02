@@ -47,16 +47,17 @@ npx gitfold.cc <url> --token ghp_xxxx
 
 ```
 gitfold/
-├── shared/          # URL parser & types (used by both web and worker)
-├── web/             # Static frontend → gitfold.cc (Cloudflare Pages)
-├── worker/          # REST API backend → api.gitfold.cc (Cloudflare Workers)
+├── shared/           # URL parser & types (used by both web and worker)
+├── web/              # Static frontend → gitfold.cc (Cloudflare Pages)
+├── worker/           # REST API backend → api.gitfold.cc (Cloudflare Workers)
 │   └── src/
-│       ├── routes/  # api.ts, auth.ts, billing.ts
-│       ├── services/# github, zip, tar, cache, auth, stripe, analytics, crypto, jwt
-│       ├── middleware/ # security, session
-│       └── db/      # D1 schema + migrations
-├── docs/            # llms.txt, llms-full.txt
-└── cli/             # npx gitfold.cc
+│       ├── routes/     # api.ts
+│       ├── services/   # github, zip, tar, cache
+│       └── middleware/ # security
+├── chrome-extension/ # Browser extension
+├── action/           # GitHub Action
+├── docs/             # llms.txt, llms-full.txt
+└── cli/              # npx gitfold.cc
 ```
 
 ## Development
@@ -72,41 +73,27 @@ pnpm dev:worker
 pnpm dev:web
 ```
 
-Copy `worker/.dev.vars.example` → `worker/.dev.vars` and fill in secrets:
+Copy `worker/.dev.vars.example` → `worker/.dev.vars`:
 
 ```ini
 GITHUB_TOKEN=ghp_...             # optional system token
-STRIPE_SECRET_KEY=sk_test_...    # Phase 1
-STRIPE_WEBHOOK_SECRET=whsec_...
-STRIPE_PRO_PRICE_ID=price_...
-STRIPE_POWER_PRICE_ID=price_...
-GITHUB_CLIENT_ID=...             # Phase 2 OAuth
-GITHUB_CLIENT_SECRET=...
-JWT_SECRET=...                   # 32+ char random string
-TOKEN_ENCRYPTION_KEY=...         # 64 hex chars (32 bytes)
 ```
 
 ## Deployment
 
-See `plans/implementation-plan.md` for full deployment steps. Quick reference:
-
 ```bash
-# Create infrastructure
-wrangler d1 create gitfold-db
+# Create infrastructure, then put the namespace id in worker/wrangler.toml
+wrangler kv namespace create GITFOLD_CACHE
 wrangler r2 bucket create gitfold-cache
 
-# Apply DB migrations
-wrangler d1 migrations apply gitfold-db
-
-# Set secrets
-wrangler secret put GITHUB_CLIENT_ID
-wrangler secret put GITHUB_CLIENT_SECRET
-wrangler secret put JWT_SECRET
-wrangler secret put TOKEN_ENCRYPTION_KEY
+# Optional shared fallback token for anonymous requests
+wrangler secret put GITHUB_TOKEN
 
 # Deploy
 pnpm deploy:worker
 ```
+
+The frontend deploys to Cloudflare Pages on `git push`.
 
 ---
 
