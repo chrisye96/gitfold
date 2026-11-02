@@ -550,7 +550,7 @@ html[data-theme="dark"] .tool-power .bookmarklet-btn img { filter: invert(1); }
   padding-top: 1rem;
 }
 
-/* ── Upgrade modal (triggered when file count exceeds tier limit) ─────────── */
+/* ── Upgrade modal (triggered when file count exceeds the file limit) ─────── */
 .upgrade-modal-overlay {
   position: fixed;
   inset: 0;
@@ -593,36 +593,6 @@ html[data-theme="dark"] .tool-power .bookmarklet-btn img { filter: invert(1); }
   margin-bottom: 1rem;
 }
 
-.upgrade-modal-tiers {
-  display: flex;
-  gap: 0.75rem;
-  margin-bottom: 1.25rem;
-}
-
-.upgrade-modal-tier {
-  flex: 1;
-  padding: 0.75rem;
-  border: 1px solid var(--c-border);
-  border-radius: var(--radius);
-  text-align: center;
-  background: var(--c-surface);
-}
-
-.upgrade-modal-tier strong {
-  display: block;
-  margin-bottom: 0.25rem;
-}
-
-.upgrade-modal-tier span {
-  font-size: 0.875rem;
-  color: var(--c-text-muted);
-}
-
-.upgrade-modal-tier--pro {
-  border-color: var(--c-primary);
-  background: var(--c-surface-2);
-}
-
 .upgrade-modal-actions {
   display: flex;
   flex-direction: column;
@@ -660,43 +630,6 @@ html[data-theme="dark"] .tool-power .bookmarklet-btn img { filter: invert(1); }
   background: var(--c-primary-hover);
 }
 
-/* ── User menu (Phase 2 — OAuth) ─────────────────────────────────────────── */
-.user-menu {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.8125rem;
-  color: var(--c-text-muted);
-}
-.user-menu-login {
-  font-weight: 500;
-  color: var(--c-text);
-}
-.user-menu-logout {
-  background: none;
-  border: none;
-  color: var(--c-text-muted);
-  font-size: 0.75rem;
-  cursor: pointer;
-  padding: 0.2rem 0.4rem;
-  border-radius: var(--radius-sm);
-  transition: color var(--transition);
-}
-.user-menu-logout:hover {
-  color: var(--c-text);
-}
-.btn--text {
-  background: none;
-  border: none;
-  color: var(--c-text-muted);
-  font-size: 0.8125rem;
-  cursor: pointer;
-  text-decoration: underline;
-  padding: 0.3rem 0;
-}
-.btn--text:hover {
-  color: var(--c-text);
-}
 
 /* ── Team page ───────────────────────────────────────────────────────────────── */
 .site-main--narrow {

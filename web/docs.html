@@ -168,14 +168,11 @@ After:  https://gitfold.cc/anthropics/claude-code/tree/main/plugins</code></pre>
       <p>Base URL: <code>https://api.gitfold.cc</code></p>
 
       <h3>Authentication</h3>
-      <p>Two ways to authenticate:</p>
-      <ul>
-        <li><strong>Sign in with GitHub</strong> (recommended) — click your profile in the top-right corner. Your OAuth token is used automatically on every request, no copy-paste needed.</li>
-        <li><strong>GitHub Personal Access Token (PAT)</strong> — pass it as a header for direct API calls:</li>
-      </ul>
+      <p>Authentication is optional. To use your own GitHub Personal Access Token (PAT),
+         pass it as a header:</p>
       <pre><code>X-GitHub-Token: ghp_your_token_here</code></pre>
-      <p>Both methods raise the GitHub API rate limit from 60 to 5,000 requests/hour and unlock
-         the 200-file limit (Token tier).</p>
+      <p>A token raises the GitHub API rate limit from 60 to 5,000 requests/hour and raises
+         the file limit from 50 to 200 files per download. There are no accounts or sign-in.</p>
 
       <h3>Download a directory</h3>
       <div class="endpoint">
@@ -244,7 +241,7 @@ curl -L -H "X-GitHub-Token: ghp_xxxx" \
         <tbody>
           <tr><td><code>400</code></td><td><code>INVALID_URL</code></td><td>URL is not a valid GitHub tree URL, or path is empty</td></tr>
           <tr><td><code>404</code></td><td><code>NOT_FOUND</code></td><td>Repository, branch, or path does not exist</td></tr>
-          <tr><td><code>413</code></td><td><code>TOO_MANY_FILES</code></td><td>Directory exceeds tier file-count limit</td></tr>
+          <tr><td><code>413</code></td><td><code>TOO_MANY_FILES</code></td><td>Directory exceeds the file-count limit (50, or 200 with a token)</td></tr>
           <tr><td><code>413</code></td><td><code>TOO_LARGE</code></td><td>Directory exceeds 100 MB size limit</td></tr>
           <tr><td><code>429</code></td><td><code>RATE_LIMITED</code></td><td>GitHub API rate limit exceeded</td></tr>
           <tr><td><code>502</code></td><td><code>GITHUB_ERROR</code></td><td>GitHub API returned an unexpected error</td></tr>
@@ -254,7 +251,7 @@ curl -L -H "X-GitHub-Token: ghp_xxxx" \
 {
   "code": "TOO_MANY_FILES",
   "message": "Directory contains 132 files (limit: 50).",
-  "hint": "Upgrade your plan for higher limits, or try a smaller subdirectory."
+  "hint": "A GitHub token (X-GitHub-Token header) raises the file limit, or try a smaller subdirectory."
 }</code></pre>
 
       <!-- ────────────────────── CLI ────────────────────────────────────── -->
@@ -304,12 +301,14 @@ Use the GitFold API at https://gitfold.cc/llms.txt"</code></pre>
          use the API endpoint which streams a pre-built zip.</p>
 
       <h3>Can I download private repositories?</h3>
-      <p>Yes — sign in with GitHub (click the top-right corner). GitFold securely stores your
-         OAuth token (AES-256-GCM encrypted) and uses it automatically when you download.
-         No manual copy-paste of tokens required.</p>
+      <p>Yes. Add a GitHub Personal Access Token that can read the repository
+         (<strong>Need higher limits? Add your GitHub Token</strong> below the download box,
+         or the <code>X-GitHub-Token</code> header for the API). GitFold sends it with each
+         download; there is no sign-in.</p>
 
       <h3>I hit the GitHub rate limit. What do I do?</h3>
-      <p>Add a GitHub Personal Access Token in the Settings panel (⚙).
+      <p>Add a GitHub Personal Access Token via <strong>Need higher limits? Add your GitHub Token</strong>
+         below the download box.
          A token increases your limit from 60 to 5,000 requests/hour.
          <a href="https://github.com/settings/tokens/new?scopes=public_repo&description=GitFold"
             target="_blank" rel="noopener noreferrer">Generate one here ↗</a>
@@ -328,8 +327,11 @@ Use the GitFold API at https://gitfold.cc/llms.txt"</code></pre>
 
       <h3>Is my GitHub token safe?</h3>
       <p>
-        <strong>PAT (manually pasted):</strong> stored in your browser's localStorage only — never sent to our servers.<br>
-        <strong>OAuth (Sign in with GitHub):</strong> your token is encrypted with AES-256-GCM before being stored in our database. It is only decrypted server-side to make GitHub API requests on your behalf, and is never returned to the client.
+        <strong>Website:</strong> stored in your browser's localStorage.<br>
+        <strong>Chrome extension:</strong> stored in <code>chrome.storage.local</code> on your device.<br>
+        When you download, the token is sent in the <code>X-GitHub-Token</code> header to
+        <code>api.gitfold.cc</code>, which uses it only to call the GitHub API for that request
+        and does not store it. There are no accounts and no server-side token database.
       </p>
 
     </main><!-- /docs-content -->
