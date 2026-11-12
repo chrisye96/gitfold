@@ -1,5 +1,7 @@
 # GitFold
 
+**English** | [简体中文](README.zh-CN.md) | [繁體中文](README.zh-TW.md)
+
 > Download any GitHub directory as a zip — instantly.
 
 **[gitfold.cc](https://gitfold.cc)** · [Docs](https://gitfold.cc/docs) · [API](https://api.gitfold.cc/docs)
